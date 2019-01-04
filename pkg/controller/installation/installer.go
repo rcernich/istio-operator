@@ -1,11 +1,12 @@
-package stub
+package installation
 
 import (
+	"bytes"
+
 	"github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
 
-	"github.com/operator-framework/operator-sdk/pkg/sdk"
-	"bytes"
 	"k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -13,11 +14,11 @@ const (
 	installerJobName = "openshift-ansible-istio-installer-job"
 )
 
-func (h *Handler) getInstallerJob(cr *v1alpha1.Installation) *v1.Job {
+func (h *ReconcileInstallation) getInstallerJob(cr *v1alpha1.Installation) *v1.Job {
 	return h.getJob(installerJobName, namespace)
 }
 
-func (h *Handler) newInstallerJobItems(cr *v1alpha1.Installation) []sdk.Object {
+func (h *ReconcileInstallation) newInstallerJobItems(cr *v1alpha1.Installation) []runtime.Object {
 	return h.newJobItems(cr, installerJobName, installerConfigMapName, namespace, h.getInstallerInventory(cr))
 }
 

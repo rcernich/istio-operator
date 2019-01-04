@@ -1,11 +1,12 @@
-package stub
+package installation
 
 import (
+	"bytes"
+
 	"github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
 
-	"github.com/operator-framework/operator-sdk/pkg/sdk"
-	"bytes"
 	"k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -17,7 +18,7 @@ func (h *Handler) getRemovalJob(cr *v1alpha1.Installation) *v1.Job {
 	return h.getJob(removalJobName, namespace)
 }
 
-func (h *Handler) newRemovalJobItems(cr *v1alpha1.Installation) []sdk.Object {
+func (h *Handler) newRemovalJobItems(cr *v1alpha1.Installation) []runtime.Object {
 	return h.newJobItems(cr, removalJobName, removalConfigMapName, namespace, h.getRemovalInventory(cr))
 }
 

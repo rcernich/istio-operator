@@ -1,12 +1,12 @@
-package stub
+package installation
 
 import (
 	"github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/api/batch/v1"
-	"github.com/operator-framework/operator-sdk/pkg/sdk"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func (h *Handler) getJob(name, namespace string) *v1.Job {
@@ -22,7 +22,7 @@ func (h *Handler) getJob(name, namespace string) *v1.Job {
 	}
 }
 
-func (h *Handler) newJobItems(cr *v1alpha1.Installation, jobName, configMapName, namespace, configMapContent string) []sdk.Object {
+func (h *Handler) newJobItems(cr *v1alpha1.Installation, jobName, configMapName, namespace, configMapContent string) []runtime.Object {
 	var (
 		backoffLimit int32 = 6
 		completions int32 = 1
@@ -31,7 +31,7 @@ func (h *Handler) newJobItems(cr *v1alpha1.Installation, jobName, configMapName,
 		terminationGracePeriod int64 = 30
 	)
 
-	return []sdk.Object {
+	return []runtime.Object {
 		&corev1.ConfigMap{
 			TypeMeta: metav1.TypeMeta {
 				Kind: "ConfigMap",

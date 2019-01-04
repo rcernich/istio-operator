@@ -1,9 +1,12 @@
-package stub
+package installation
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"context"
+
 	securityv1 "github.com/openshift/api/security/v1"
-	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	"github.com/sirupsen/logrus"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -16,7 +19,7 @@ const (
 	clusterAdmin = "cluster-admin"
 )
 
-func ensureProjectAndServiceAccount() error {
+func (h *ReconcileInstallation) ensureProjectAndServiceAccount() error {
 	project := &corev1.Namespace {
 		TypeMeta: metav1.TypeMeta {
 			Kind: "Namespace",
@@ -28,7 +31,7 @@ func ensureProjectAndServiceAccount() error {
 		},
 	}
 
-	if err := sdk.Create(project) ; err != nil && !errors.IsAlreadyExists(err) {
+	if err := h.client.Create(context.TODO(), project) ; err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Infof("Failed to create namespace %v, error is: %v", namespace, err)
 		return err
 	}
@@ -44,24 +47,24 @@ func ensureProjectAndServiceAccount() error {
 		},
 	}
 
-	if err := sdk.Create(serviceAccount) ; err != nil && !errors.IsAlreadyExists(err) {
+	if err := h.client.Create(context.TODO(), serviceAccount) ; err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Infof("Failed to create service account %v, error is: %v", serviceAccountName, err)
 		return err
 	}
 
-	if err := addServiceAccountToSCC(namespace, serviceAccountName, anyuid) ; err != nil {
+	if err := h.addServiceAccountToSCC(namespace, serviceAccountName, anyuid) ; err != nil {
 		logrus.Infof("Failed to add service account %v to scc %v, error is: %v", serviceAccountName, anyuid, err)
 		return err
 	}
 
-	if err := addClusterRoleToServiceAccount(clusterAdmin, namespace, serviceAccountName) ; err != nil {
+	if err := h.addClusterRoleToServiceAccount(clusterAdmin, namespace, serviceAccountName) ; err != nil {
 		logrus.Infof("Failed to add cluster role %v to service account %v, error is: %v", clusterAdmin, serviceAccountName, err)
 		return err
 	}
 	return nil
 }
 
-func addServiceAccountToSCC(namespace, serviceAccountName, scc string) error {
+func (h *ReconcileInstallation) addServiceAccountToSCC(namespace, serviceAccountName, scc string) error {
 	constraint := &securityv1.SecurityContextConstraints{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "SecurityContextConstraints",
@@ -72,7 +75,12 @@ func addServiceAccountToSCC(namespace, serviceAccountName, scc string) error {
 		},
 	}
 
-	if err := sdk.Get(constraint); err != nil {
+	objectKey, err := client.ObjectKeyFromObject(constraint)
+	if err != nil {
+		logrus.Infof("Failed to create object key for scc: %v", err)
+		return err
+	}
+	if err := h.client.Get(context.TODO(), objectKey, constraint); err != nil {
 		logrus.Infof("Failed to retrieve scc: %v", err)
 		return err
 	}
@@ -86,7 +94,7 @@ func addServiceAccountToSCC(namespace, serviceAccountName, scc string) error {
 
 	constraint.Users = append(constraint.Users, serviceAccount)
 
-	if err := sdk.Update(constraint); err != nil {
+	if err := h.client.Update(context.TODO(), constraint); err != nil {
 		logrus.Infof("Failed to update scc: %v", err)
 		return err
 	}
@@ -94,7 +102,7 @@ func addServiceAccountToSCC(namespace, serviceAccountName, scc string) error {
 	return nil
 }
 
-func addClusterRoleToServiceAccount(clusterRole, namespace, serviceAccountName string) error {
+func (h *ReconcileInstallation) addClusterRoleToServiceAccount(clusterRole, namespace, serviceAccountName string) error {
 	binding := &v1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "ClusterRoleBinding",
@@ -116,7 +124,7 @@ func addClusterRoleToServiceAccount(clusterRole, namespace, serviceAccountName s
 		}},
 	}
 
-	if err := sdk.Create(binding); err != nil && ! errors.IsAlreadyExists(err) {
+	if err := h.client.Create(context.TODO(), binding); err != nil && ! errors.IsAlreadyExists(err) {
 		logrus.Infof("Failed to create cluster role binding: %v", err)
 		return err
 	}
