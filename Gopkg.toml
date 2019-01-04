@@ -41,3 +41,7 @@ required = [
   # The version rule is used for a specific release and the master branch for in between releases.
   branch = "master"
   # version = "=v0.0.5"
+
+[[constraint]]
+  branch = "release-3.11"
+  name = "github.com/openshift/library-go"

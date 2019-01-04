@@ -134,6 +134,14 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
+  digest = "1:a25a2c5ae694b01713fb6cd03c3b1ac1ccc1902b9f0a922680a88ec254f968e1"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = ""
+  revision = "9b3b1e0f5f99ae461456d768e7d301a7acdaa2d8"
+  version = "v1.1.0"
+
+[[projects]]
   digest = "1:16b2837c8b3cf045fa2cdc82af0cf78b19582701394484ae76b2c3bc3c99ad73"
   name = "github.com/googleapis/gnostic"
   packages = [
@@ -220,9 +228,26 @@
   branch = "release-3.10"
   digest = "1:c13b55b296c5a00dfbfed9f01b83ba9e59526f89ec11ec6d7ef35f672dc1f997"
   name = "github.com/openshift/api"
-  packages = ["security/v1"]
+  packages = [
+    "config/v1",
+    "operator/v1alpha1",
+    "security/v1",
+  ]
   pruneopts = ""
   revision = "6a90ae6466cec806da11feb3b15708ca33c1c54b"
+
+[[projects]]
+  branch = "release-3.11"
+  digest = "1:bacfd95f75c5d0fd05e65d6fb197f93059b06f8a48953a7603fb7f9cf0a80bf5"
+  name = "github.com/openshift/library-go"
+  packages = [
+    "pkg/operator/resource/resourceapply",
+    "pkg/operator/resource/resourcecread",
+    "pkg/operator/resource/resourcemerge",
+    "pkg/operator/v1alpha1helpers",
+  ]
+  pruneopts = ""
+  revision = "0b8367a4679859036c27a30dbe010d76409e7075"
 
 [[projects]]
   branch = "master"
@@ -237,6 +262,14 @@
   ]
   pruneopts = ""
   revision = "fa4ea1863be25bdba7da06220eb7a32d8978d58f"
+
+[[projects]]
+  digest = "1:a5484d4fa43127138ae6e7b2299a6a52ae006c7f803d98d717f60abf3e97192e"
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  pruneopts = ""
+  revision = "adf5a7427709b9deb95d29d3fa8a2bf9cfd388f1"
+  version = "v1.2"
 
 [[projects]]
   digest = "1:4142d94383572e74b42352273652c62afec5b23f325222ed09198f46009022d1"
@@ -472,10 +505,22 @@
   source = "https://github.com/openshift/kubernetes-api.git"
 
 [[projects]]
+  branch = "release-1.10"
+  digest = "1:d39affe538df2794e0c89aa14116da22faa3468ddf76bb1ad40f4bed04dffbd7"
+  name = "k8s.io/apiextensions-apiserver"
+  packages = [
+    "pkg/apis/apiextensions",
+    "pkg/apis/apiextensions/v1beta1",
+  ]
+  pruneopts = ""
+  revision = "f584b16eb23bd2a3fd292a027d698d95db427c5d"
+
+[[projects]]
   branch = "origin-3.10-kubernetes-1.10.2"
   digest = "1:9102523fe0230c9e3287323c42b11f463aca2c576b334af5c07c4ddabc20cc32"
   name = "k8s.io/apimachinery"
   packages = [
+    "pkg/api/equality",
     "pkg/api/errors",
     "pkg/api/meta",
     "pkg/api/resource",
@@ -507,6 +552,7 @@
     "pkg/util/net",
     "pkg/util/runtime",
     "pkg/util/sets",
+    "pkg/util/uuid",
     "pkg/util/validation",
     "pkg/util/validation/field",
     "pkg/util/wait",
@@ -656,16 +702,22 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/openshift/api/operator/v1alpha1",
     "github.com/openshift/api/security/v1",
+    "github.com/openshift/library-go/pkg/operator/resource/resourceapply",
+    "github.com/openshift/library-go/pkg/operator/resource/resourcecread",
+    "github.com/operator-framework/operator-sdk/pkg/k8sclient",
     "github.com/operator-framework/operator-sdk/pkg/sdk",
     "github.com/operator-framework/operator-sdk/pkg/util/k8sutil",
     "github.com/operator-framework/operator-sdk/version",
     "github.com/sirupsen/logrus",
+    "k8s.io/api/apps/v1",
     "k8s.io/api/batch/v1",
     "k8s.io/api/core/v1",
     "k8s.io/api/rbac/v1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/labels",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
