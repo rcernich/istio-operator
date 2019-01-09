@@ -5,25 +5,32 @@ import (
     "text/template"
 )
 
-type CommonTemplateParams struct {
+type TemplateParams struct {
     Namespace string
+    Image string
+    ImagePullPolicy string
+    ReplicaCount int
     ServiceAccountName string
     ClusterRoleName string
     ClusterRoleBindingName string
 }
 
-type commonTemplates struct {
+type Templates struct {
+	ClusterRoleTemplate        *template.Template
     ServiceAccountTemplate *template.Template
     ClusterRoleBindingTemplate *template.Template
+	ServiceTemplate            *template.Template
+	DeploymentTemplate         *template.Template
+	ConfigMapTemplate          *template.Template
 }
 
 var (
-    _singleton *commonTemplates
+    _singleton *Templates
     _init sync.Once
 )
-func CommonTemplates() *commonTemplates {
+func TemplatesInstance() *Templates {
     _init.Do(func() {
-        _singleton = &commonTemplates{
+        _singleton = &Templates{
             ServiceAccountTemplate: template.New("ServiceAccount.yaml"),
             ClusterRoleBindingTemplate: template.New("ClusterRoleBinding.yaml"),
         }

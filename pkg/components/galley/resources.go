@@ -1,52 +1,45 @@
 package galley
 
 import (
-    "sync"
+	"sync"
 	"text/template"
-    "github.com/maistra/istio-operator/pkg/components/common"
-)
-type galleyTemplateParams struct {
-    common.CommonTemplateParams
-    PriorityClassName string
-    ReplicaCount int
-    MonitoringPort int
-    ControlPlaneSecurityEnabled bool
-    ConfigureValidation bool
-}
 
-type galleyTemplates struct {
-    ServiceAccountTemplate *template.Template
-    ClusterRoleBindingTemplate *template.Template
-    ServiceTemplate *template.Template
-    DeploymentTemplate *template.Template
-    ClusterRoleTemplate *template.Template
-    ConfigMapTemplate *template.Template
+	"github.com/maistra/istio-operator/pkg/components/common"
+)
+
+type templateParams struct {
+	common.TemplateParams
+	PriorityClassName           string
+	MonitoringPort              int
+	ControlPlaneSecurityEnabled bool
+	ConfigureValidation         bool
 }
 
 var (
-    _singleton *galleyTemplates
-    _init sync.Once
+	_singleton *common.Templates
+	_init      sync.Once
 )
-func GalleyTemplates() *galleyTemplates {
-    _init.Do(func() {
-        commonTemplates := common.CommonTemplates()
-        _singleton = &galleyTemplates{
-            ServiceAccountTemplate: commonTemplates.ServiceAccountTemplate,
-            ClusterRoleBindingTemplate: commonTemplates.ClusterRoleBindingTemplate,
-            ServiceTemplate: template.New("Service.yaml"),
-            DeploymentTemplate: template.New("Deployment.yaml"),
-            ClusterRoleTemplate: template.New("ClusterRole.yaml"),
-            ConfigMapTemplate: template.New("ConfigMap.yaml"),
-        }
-        _singleton.ServiceTemplate.Parse(galleyServiceYamlTemplate)
-        _singleton.DeploymentTemplate.Parse(galleyDeploymentYamlTemplate)
-        _singleton.ClusterRoleTemplate.Parse(galleyClusterRoleYamlTemplate)
-        _singleton.ConfigMapTemplate.Parse(galleyClusterRoleYamlTemplate)
-    })
-    return _singleton
+
+func TemplatesInstance() *common.Templates {
+	_init.Do(func() {
+		commonTemplates := common.TemplatesInstance()
+		_singleton = &common.Templates{
+			ServiceAccountTemplate:     commonTemplates.ServiceAccountTemplate,
+			ClusterRoleBindingTemplate: commonTemplates.ClusterRoleBindingTemplate,
+			ServiceTemplate:            template.New("Service.yaml"),
+			DeploymentTemplate:         template.New("Deployment.yaml"),
+			ClusterRoleTemplate:        template.New("ClusterRole.yaml"),
+			ConfigMapTemplate:          template.New("ConfigMap.yaml"),
+		}
+		_singleton.ServiceTemplate.Parse(serviceYamlTemplate)
+		_singleton.DeploymentTemplate.Parse(deploymentYamlTemplate)
+		_singleton.ClusterRoleTemplate.Parse(clusterRoleYamlTemplate)
+		_singleton.ConfigMapTemplate.Parse(configMapYamlTemplate)
+	})
+	return _singleton
 }
 
-const galleyServiceYamlTemplate = `
+const serviceYamlTemplate = `
 apiVersion: v1
 kind: Service
 metadata:
@@ -66,7 +59,7 @@ spec:
     istio: galley
 `
 
-const galleyDeploymentYamlTemplate = `
+const deploymentYamlTemplate = `
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -88,7 +81,7 @@ spec:
         sidecar.istio.io/inject: "false"
         scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
-      serviceAccountName: istio-galley-service-account
+      serviceAccountName: {{ .ServiceAccountName }}
 {{- if .PriorityClassName }}
       priorityClassName: "{{ .PriorityClassName }}"
 {{- end }}
@@ -169,7 +162,7 @@ spec:
       {{- include "nodeaffinity" . | indent 6 }}
 `
 
-const galleyClusterRoleYamlTemplate = `
+const clusterRoleYamlTemplate = `
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -204,7 +197,7 @@ rules:
   verbs: ["get", "list", "watch"]
 `
 
-const galleyConfigMapYamlTemplate = `
+const configMapYamlTemplate = `
 apiVersion: v1
 kind: ConfigMap
 metadata:
