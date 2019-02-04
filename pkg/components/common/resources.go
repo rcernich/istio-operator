@@ -13,6 +13,13 @@ type TemplateParams struct {
     ServiceAccountName string
     ClusterRoleName string
     ClusterRoleBindingName string
+    Autoscaler struct {
+        Name string
+        Deployment string
+        Min int
+        Max int
+        TargetAverageCPUUtilization int32
+    }
 }
 
 type Templates struct {
@@ -67,4 +74,26 @@ subjects:
   - kind: ServiceAccount
     name: {{ .ServiceAccountName }}
     namespace: {{ .Namespace }}
+`
+
+const horizontalAutoscalerYamlTemplate = `
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {.Autoscaler.Name}
+  namespace: {{ .Namespace }}
+  labels:
+    app: istio
+spec:
+  maxReplicas: {{ .Values.autoscaleMax }}
+  minReplicas: {{ .Values.autoscaleMin }}
+  scaleTargetRef:
+    apiVersion: apps/v1beta1
+    kind: Deployment
+    name: {.Autoscaler.Deployment}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: {{ .Values.cpu.targetAverageUtilization }}
 `

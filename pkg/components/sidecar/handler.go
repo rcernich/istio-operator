@@ -17,9 +17,15 @@ import (
 )
 
 var (
-	coreScheme = runtime.NewScheme()
-	coreCodecs = serializer.NewCodecFactory(coreScheme)
+	admissionScheme = runtime.NewScheme()
+	admissionCodecs = serializer.NewCodecFactory(admissionScheme)
 )
+
+func init() {
+	if err := admissionregistrationv1beta1.AddToScheme(admissionScheme); err != nil {
+		panic(err)
+	}
+}
 
 func Sync(config *istioopv1alpha1.IstioOperatorConfig) []error {
 
@@ -60,7 +66,7 @@ func Sync(config *istioopv1alpha1.IstioOperatorConfig) []error {
 }
 
 func readMutatingWebhookConfigurationV1Beta1OrDie(objBytes []byte) *admissionregistrationv1beta1.MutatingWebhookConfiguration {
-	requiredObj, err := runtime.Decode(coreCodecs.UniversalDecoder(admissionregistrationv1beta1.SchemeGroupVersion), objBytes)
+	requiredObj, err := runtime.Decode(admissionCodecs.UniversalDecoder(admissionregistrationv1beta1.SchemeGroupVersion), objBytes)
 	if err != nil {
 		panic(err)
 	}

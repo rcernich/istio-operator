@@ -5,11 +5,38 @@ import (
 	"fmt"
 	"text/template"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/dynamic"
+
 	istioopv1alpha1 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	resourceread "github.com/openshift/library-go/pkg/operator/resource/resourcecread"
 	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
 )
+
+var (
+	authenticationV1alpha1GV = schema.GroupVersion{Group: "authentication.istio.io", Version: "v1alpha1"}
+	networkingV1alpha3GV     = schema.GroupVersion{Group: "networking.istio.io", Version: "v1alpha3"}
+	destinationRuleGVK       = networkingV1alpha3GV.WithKind("DestinationRule")
+	destinationRuleListGVK   = networkingV1alpha3GV.WithKind("DestinationRuleList")
+	destinationRuleResource  = "destinationrules"
+	policyGVK                = authenticationV1alpha1GV.WithKind("Policy")
+	meshPolicyGVK            = authenticationV1alpha1GV.WithKind("MeshPolicy")
+	meshPolicyResource       = "meshpolicies"
+	dynamicScheme            = runtime.NewScheme()
+	dynamicCodecs            = serializer.NewCodecFactory(dynamicScheme)
+)
+
+func init() {
+	dynamicScheme.AddKnownTypeWithName(destinationRuleGVK, &unstructured.Unstructured{})
+	dynamicScheme.AddKnownTypeWithName(destinationRuleListGVK, &unstructured.UnstructuredList{})
+	dynamicScheme.AddKnownTypeWithName(meshPolicyGVK, &unstructured.Unstructured{})
+}
 
 func Sync(config *istioopv1alpha1.IstioOperatorConfig, component string, templates *Templates, templateParams interface{}) []error {
 
@@ -109,4 +136,59 @@ func ProcessTemplate(template *template.Template, params interface{}) (*bytes.Bu
 	var buf bytes.Buffer
 	err := template.Execute(&buf, params)
 	return &buf, err
+}
+
+func ReadDestinationRuleV1Alpha3OrDie(objBytes []byte) *unstructured.Unstructured {
+	return readDynamicObjectOrDie(networkingV1alpha3GV, objBytes)
+}
+
+func ReadDestinationRuleListV1Alpha3OrDie(objBytes []byte) *unstructured.UnstructuredList {
+	return readDynamicListOrDie(networkingV1alpha3GV, objBytes)
+}
+
+func ApplyDestinationRule(client dynamic.DynamicInterface, required *unstructured.Unstructured) (*unstructured.Unstructured, bool, error) {
+	return applyDynamicObject(client, networkingV1alpha3GV.WithResource(destinationRuleResource), required, true)
+}
+
+func ReadMeshPolicyV1Alpha1OrDie(objBytes []byte) *unstructured.Unstructured {
+	return readDynamicObjectOrDie(authenticationV1alpha1GV, objBytes)
+}
+
+func ApplyMeshPolicy(client dynamic.DynamicInterface, required *unstructured.Unstructured) (*unstructured.Unstructured, bool, error) {
+	return applyDynamicObject(client, authenticationV1alpha1GV.WithResource(meshPolicyResource), required, false)
+}
+
+func readDynamicObjectOrDie(gv schema.GroupVersion, objBytes []byte) *unstructured.Unstructured {
+	requiredObj, err := runtime.Decode(dynamicCodecs.UniversalDecoder(gv), objBytes)
+	if err != nil {
+		panic(err)
+	}
+	return requiredObj.(*unstructured.Unstructured)
+}
+
+func readDynamicListOrDie(gv schema.GroupVersion, objBytes []byte) *unstructured.UnstructuredList {
+	requiredObj, err := runtime.Decode(dynamicCodecs.UniversalDecoder(gv), objBytes)
+	if err != nil {
+		panic(err)
+	}
+	return requiredObj.(*unstructured.UnstructuredList)
+}
+
+func applyDynamicObject(client dynamic.DynamicInterface, gvr schema.GroupVersionResource, required *unstructured.Unstructured, namespaced bool) (*unstructured.Unstructured, bool, error) {
+	var resourceInterface dynamic.DynamicResourceInterface
+	if namespaced {
+		resourceInterface = client.NamespacedResource(gvr, required.GetNamespace())
+	} else {
+		resourceInterface = client.ClusterResource(gvr)
+	}
+	existing, err := resourceInterface.Get(required.GetName(), metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		actual, err := resourceInterface.Create(required)
+		return actual, true, err
+	}
+	if err != nil {
+		return nil, false, err
+	}
+
+	return existing, false, err
 }

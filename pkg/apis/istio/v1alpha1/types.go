@@ -21,7 +21,7 @@ type IstioOperatorConfigSpec struct {
 
 	GeneralConfig GeneralConfig `json:"generalConfig"`
 	SidecarInjectorConfig SidecarInjectorConfig `json:"sidecarInjectorConfig"`
-	SecurityConfig SecurityConfig `json:"securityConfig"`
+	CitadelConfig CitadelConfig `json:"citadelConfig"`
 	GatewaysConfig GatewaysConfig `json:"gatewaysConfig"`
 	MixerConfig MixerConfig `json:"mixerConfig"`
 	PilotConfig PilotConfig `json:"pilotConfig"`
@@ -139,7 +139,7 @@ type SidecarInjectorConfig struct {
 	EnableNamespacesByDefault bool //false
 }
 
-type SecurityConfig struct {
+type CitadelConfig struct {
 	Enabled bool //true
 	ReplicaCount int //1
 	Image string // citadel

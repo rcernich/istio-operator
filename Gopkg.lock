@@ -96,8 +96,11 @@
   digest = "1:6e73003ecd35f4487a5e88270d3ca0a81bc80dc88053ac7e4dcfec5fba30d918"
   name = "github.com/gogo/protobuf"
   packages = [
+    "gogoproto",
     "proto",
+    "protoc-gen-gogo/descriptor",
     "sortkeys",
+    "types",
   ]
   pruneopts = ""
   revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
@@ -467,6 +470,14 @@
   version = "v2.2.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:75acdd886eb4e137c6bac421d84e6b718a0554a01000cb7249059a38293f6d79"
+  name = "istio.io/api"
+  packages = ["networking/v1alpha3"]
+  pruneopts = ""
+  revision = "056eb85d96f09441775d79283c149d93fcbd0982"
+
+[[projects]]
   branch = "origin-3.10-kubernetes-1.10.2"
   digest = "1:4b830f80d5b862f39ca166abdda7edb76cc2f24271a01bfea6cd8f2e0811205d"
   name = "k8s.io/api"
@@ -511,6 +522,9 @@
   packages = [
     "pkg/apis/apiextensions",
     "pkg/apis/apiextensions/v1beta1",
+    "pkg/client/clientset/clientset",
+    "pkg/client/clientset/clientset/scheme",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
   ]
   pruneopts = ""
   revision = "f584b16eb23bd2a3fd292a027d698d95db427c5d"
@@ -711,15 +725,21 @@
     "github.com/operator-framework/operator-sdk/pkg/util/k8sutil",
     "github.com/operator-framework/operator-sdk/version",
     "github.com/sirupsen/logrus",
-    "k8s.io/api/apps/v1",
+    "istio.io/api/networking/v1alpha3",
+    "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/batch/v1",
     "k8s.io/api/core/v1",
     "k8s.io/api/rbac/v1",
+    "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
+    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset",
+    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/labels",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
+    "k8s.io/apimachinery/pkg/runtime/serializer",
+    "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/code-generator/cmd/client-gen",
     "k8s.io/code-generator/cmd/conversion-gen",

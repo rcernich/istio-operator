@@ -37,6 +37,8 @@ func TemplatesInstance() *common.Templates {
 	return _singleton
 }
 
+// XXX: ignoring mesh expansion for now
+
 const serviceYamlTemplate = `
 apiVersion: v1
 kind: Service

@@ -45,3 +45,7 @@ required = [
 [[constraint]]
   branch = "release-3.11"
   name = "github.com/openshift/library-go"
+
+[[constraint]]
+  branch = "master"
+  name = "istio.io/api"
