@@ -40,12 +40,11 @@ func Templates() *common.Templates {
 
 // used by galley, injector and pilot deployments
 const meshConfigMapYamlTemplate = `
-{{- if .Values.pilot.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: istio
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Namespace }}
   labels:
     app: istio
 data:
@@ -192,5 +191,4 @@ data:
   {{- else }}
     networks: {}
   {{- end }}
-{{- end }}
 `

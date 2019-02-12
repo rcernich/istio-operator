@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/dynamic"
 
-	istioopv1alpha1 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
+	istioopv1alpha2 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha2"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	resourceread "github.com/openshift/library-go/pkg/operator/resource/resourcecread"
 	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
@@ -38,7 +38,7 @@ func init() {
 	dynamicScheme.AddKnownTypeWithName(meshPolicyGVK, &unstructured.Unstructured{})
 }
 
-func Sync(config *istioopv1alpha1.IstioOperatorConfig, component string, templates *Templates, templateParams interface{}) []error {
+func Sync(config *istioopv1alpha2.IstioOperatorConfig, component string, templates *Templates, templateParams interface{}) []error {
 
 	kubeClient := k8sclient.GetKubeClient()
 	errors := []error{}
@@ -186,9 +186,8 @@ func applyDynamicObject(client dynamic.DynamicInterface, gvr schema.GroupVersion
 		actual, err := resourceInterface.Create(required)
 		return actual, true, err
 	}
-	if err != nil {
-		return nil, false, err
-	}
+	// TODO: merge objects
+	existing, err = resourceInterface.Update(required)
 
 	return existing, false, err
 }

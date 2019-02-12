@@ -7,12 +7,15 @@ import (
 	"github.com/maistra/istio-operator/pkg/components/common"
 )
 
+// TODO: resources, nodeaffinity
 type templateParams struct {
 	common.TemplateParams
 	PriorityClassName           string
 	MonitoringPort              int
 	ControlPlaneSecurityEnabled bool
 	ConfigureValidation         bool
+  Resources                   string // TODO
+  NodeAffinity                string // TODO
 }
 
 var (
@@ -87,8 +90,8 @@ spec:
 {{- end }}
       containers:
         - name: galley
-          image: "{{ .Values.global.hub }}/{{ .Values.image }}:{{ .Values.global.tag }}"
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          image: "{{ .Image }}"
+          imagePullPolicy: {{ .ImagePullPolicy }}
           ports:
           - name: https-validation
             containerPort: 443
@@ -106,7 +109,7 @@ spec:
           - --livenessProbePath=/healthliveness
           - --readinessProbePath=/healthready
           - --readinessProbeInterval=1s
-{{- if $.ControlPlaneSecurityEnabled}}
+{{- if .ControlPlaneSecurityEnabled}}
           - --insecure=false
 {{- else }}
           - --insecure=true
@@ -166,7 +169,7 @@ const clusterRoleYamlTemplate = `
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: istio-galley-{{ .Namespace }}
+  name: {{ .ClusterRoleName }}
   labels:
     app: galley
 rules:

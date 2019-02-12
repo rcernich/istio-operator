@@ -5,6 +5,7 @@ import (
     "text/template"
 )
 
+// TODO: image pull secrets, 
 type TemplateParams struct {
     Namespace string
     Image string
@@ -20,6 +21,7 @@ type TemplateParams struct {
         Max int
         TargetAverageCPUUtilization int32
     }
+    ImagePullSecrets string // TODO
 }
 
 type Templates struct {
@@ -85,8 +87,8 @@ metadata:
   labels:
     app: istio
 spec:
-  maxReplicas: {{ .Values.autoscaleMax }}
-  minReplicas: {{ .Values.autoscaleMin }}
+  maxReplicas: {{ .Autoscaler.Max }}
+  minReplicas: {{ .Autoscaler.Min }}
   scaleTargetRef:
     apiVersion: apps/v1beta1
     kind: Deployment
@@ -95,5 +97,5 @@ spec:
   - type: Resource
     resource:
       name: cpu
-      targetAverageUtilization: {{ .Values.cpu.targetAverageUtilization }}
+      targetAverageUtilization: {{ .Autoscaler.TargetAverageCPUUtilization }}
 `

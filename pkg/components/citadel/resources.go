@@ -7,14 +7,17 @@ import (
 	"github.com/maistra/istio-operator/pkg/components/common"
 )
 
+// TODO: resources, nodeaffinity
 type templateParams struct {
 	common.TemplateParams
 	PriorityClassName           string
 	MonitoringPort              int
 	ControlPlaneSecurityEnabled bool
 	ConfigureValidation         bool
-	SelfSigned                  bool
-	Resources                   string
+  SelfSigned                  bool
+  TrustDomain                 string
+  Resources                   string // TODO
+  NodeAffinity                string // TODO
 }
 
 type templates struct {

@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	admissionregistrationclientv1beta1 "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
 
-	istioopv1alpha1 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
+	istioopv1alpha2 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha2"
 	"github.com/maistra/istio-operator/pkg/components/common"
 	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
 )
@@ -27,7 +27,7 @@ func init() {
 	}
 }
 
-func Sync(config *istioopv1alpha1.IstioOperatorConfig) []error {
+func Sync(config *istioopv1alpha2.IstioOperatorConfig) []error {
 
 	templateParams := TemplateParams{
 		TemplateParams: common.TemplateParams{

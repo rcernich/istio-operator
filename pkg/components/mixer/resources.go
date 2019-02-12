@@ -5,6 +5,8 @@ import (
 	"text/template"
 
 	"github.com/maistra/istio-operator/pkg/components/common"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 type templateParams struct {
@@ -13,6 +15,14 @@ type templateParams struct {
 	MonitoringPort              int
 	ControlPlaneSecurityEnabled bool
 	ConfigureValidation         bool
+	PodAnnotations              string          // TODO
+	UseMCP                      bool            // TODO?
+	ZipkinAddress               string          // TODO, default to zipkin:9411
+	Resources                   string          // TODO
+	NodeSelector                string          // TODO
+  Env                         []corev1.EnvVar // TODO
+  ProxyDomain                 string
+  ProxyImage                  string
 }
 
 type mixerTemplates struct {
@@ -48,20 +58,20 @@ func TemplatesInstance() *templates {
 				DestinationRule: template.New("PolicyDestinationRule.yaml"),
 			},
 			Telemetry: mixerTemplates{
-        Templates: common.Templates{
-  				ServiceTemplate:    template.New("TelemetryService.yaml"),
-	  			DeploymentTemplate: template.New("TelemetryDeployment.yaml"),
-        },
+				Templates: common.Templates{
+					ServiceTemplate:    template.New("TelemetryService.yaml"),
+					DeploymentTemplate: template.New("TelemetryDeployment.yaml"),
+				},
 				DestinationRule: template.New("TelemetryDestinationRule.yaml"),
 			},
 		}
 		_singleton.ClusterRoleTemplate.Parse(clusterRoleYamlTemplate)
 		_singleton.Policy.ServiceTemplate.Parse(policyServiceYamlTemplate)
 		_singleton.Policy.DeploymentTemplate.Parse(policyDeploymentYamlTemplate)
-    _singleton.Policy.DestinationRule.Parse(policyDestinationRuleYamlTemplate)
+		_singleton.Policy.DestinationRule.Parse(policyDestinationRuleYamlTemplate)
 		_singleton.Policy.ServiceTemplate.Parse(telemetryServiceYamlTemplate)
 		_singleton.Policy.DeploymentTemplate.Parse(telemetryDeploymentYamlTemplate)
-    _singleton.Telemetry.DestinationRule.Parse(telemetryDestinationRuleYamlTemplate)
+		_singleton.Telemetry.DestinationRule.Parse(telemetryDestinationRuleYamlTemplate)
 	})
 	return _singleton
 }
@@ -73,7 +83,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-policy
-  namespace: {{ $.Release.Namespace }}
+  namespace: {{ .Namespace }}
   labels:
     app: mixer
     istio: mixer
@@ -84,7 +94,7 @@ spec:
   - name: grpc-mixer-mtls
     port: 15004
   - name: http-monitoring
-    port: {{ $.Values.global.monitoringPort }}
+    port: {{ .MonitoringPort }}
   selector:
     istio: mixer
     istio-mixer-type: policy
@@ -95,13 +105,13 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: istio-policy
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Namespace }}
   labels:
     app: mixer
 spec:
-  host: istio-policy.{{ .Release.Namespace }}.svc.cluster.local
+  host: istio-policy.{{ .Namespace }}.svc.cluster.local
   trafficPolicy:
-    {{- if .Values.global.controlPlaneSecurityEnabled }}
+    {{- if .ControlPlaneSecurityEnabled }}
     portLevelSettings:
     - port:
         number: 15004
@@ -118,50 +128,38 @@ const policyDeploymentYamlTemplate = `
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: istio-{{ $key }}
-  namespace: {{ $.Release.Namespace }}
+  name: istio-mixer-policy
+  namespace: {{ .Namespace }}
   labels:
     app: istio-mixer
-    chart: {{ template "mixer.chart" $ }}
-    heritage: {{ $.Release.Service }}
-    release: {{ $.Release.Name }}
-    version: {{ $.Chart.Version }}
     istio: mixer
 spec:
-  replicas: {{ $spec.replicaCount }}
+  replicas: {{ .ReplicaCount }}
   strategy:
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: {{ $key }}
-      chart: {{ template "mixer.chart" $ }}
-      heritage: {{ $.Release.Service }}
-      release: {{ $.Release.Name }}
-      version: {{ $.Chart.Version }}
+      app: istio-mixer-policy
       istio: mixer
-      istio-mixer-type: {{ $key }}
+      istio-mixer-type: policy
   template:
     metadata:
       labels:
-        app: {{ $key }}
-        chart: {{ template "mixer.chart" $ }}
-        heritage: {{ $.Release.Service }}
-        release: {{ $.Release.Name }}
-        version: {{ $.Chart.Version }}
+        app: istio-mixer-policy
         istio: mixer
-        istio-mixer-type: {{ $key }}
+        istio-mixer-type: policy
       annotations:
         sidecar.istio.io/inject: "false"
         scheduler.alpha.kubernetes.io/critical-pod: ""
-{{- with $.Values.podAnnotations }}
+{{- with .PodAnnotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
       serviceAccountName: istio-mixer-service-account
-{{- if $.Values.global.priorityClassName }}
-      priorityClassName: "{{ $.Values.global.priorityClassName }}"
+{{- if .PriorityClassName }}
+      priorityClassName: "{{ .PriorityClassName }}"
 {{- end }}
       volumes:
       - name: istio-certs
@@ -174,34 +172,30 @@ spec:
       {{- include "nodeaffinity" . | indent 6 }}
       containers:
       - name: mixer
-{{- if contains "/" .Values.image }}
-        image: "{{ .Values.image }}"
-{{- else }}
-        image: "{{ $.Values.global.hub }}/{{ $.Values.image }}:{{ $.Values.global.tag }}"
-{{- end }}
-        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        image: "{{ .Image }}"
+        imagePullPolicy: {{ .ImagePullPolicy }}
         ports:
-        - containerPort: {{ .Values.global.monitoringPort }}
+        - containerPort: {{ .MonitoringPort }}
         - containerPort: 42422
         args:
-          - --monitoringPort={{ .Values.global.monitoringPort }}
+          - --monitoringPort={{ .MonitoringPort }}
           - --address
           - unix:///sock/mixer.socket
-{{- if $.Values.global.useMCP }}
-    {{- if $.Values.global.controlPlaneSecurityEnabled}}
-          - --configStoreURL=mcps://istio-galley.{{ $.Release.Namespace }}.svc:9901
+{{- if .UseMCP }}
+    {{- if .ControlPlaneSecurityEnabled }}
+          - --configStoreURL=mcps://istio-galley.{{ .Namespace }}.svc:9901
           - --certFile=/etc/certs/cert-chain.pem
           - --keyFile=/etc/certs/key.pem
           - --caCertFile=/etc/certs/root-cert.pem
     {{- else }}
-          - --configStoreURL=mcp://istio-galley.{{ $.Release.Namespace }}.svc:9901
+          - --configStoreURL=mcp://istio-galley.{{ .Namespace }}.svc:9901
     {{- end }}
 {{- else }}
           - --configStoreURL=k8s://
 {{- end }}
-          - --configDefaultNamespace={{ $.Release.Namespace }}
-          {{- if $.Values.global.tracer.zipkin.address }}
-          - --trace_zipkin_url=http://{{- $.Values.global.tracer.zipkin.address }}/api/v1/spans
+          - --configDefaultNamespace={{ .Namespace }}
+          {{- if .ZipkinAddress }}
+          - --trace_zipkin_url=http://{{- .ZipkinAddress }}/api/v1/spans
           {{- else }}
           - --trace_zipkin_url=http://zipkin:9411/api/v1/spans
           {{- end }}
@@ -219,7 +213,7 @@ spec:
 {{ toYaml .Values.global.defaultResources | indent 10 }}
 {{- end }}
         volumeMounts:
-{{- if $.Values.global.useMCP }}
+{{- if .UseMCP }}
         - name: istio-certs
           mountPath: /etc/certs
           readOnly: true
@@ -229,16 +223,12 @@ spec:
         livenessProbe:
           httpGet:
             path: /version
-            port: {{ .Values.global.monitoringPort }}
+            port: {{ .MonitoringPort }}
           initialDelaySeconds: 5
           periodSeconds: 5
       - name: istio-proxy
-{{- if contains "/" $.Values.global.proxy.image }}
-        image: "{{ $.Values.global.proxy.image }}"
-{{- else }}
-        image: "{{ $.Values.global.hub }}/{{ $.Values.global.proxy.image }}:{{ $.Values.global.tag }}"
-{{- end }}
-        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        image: "{{ .ProxyImage }}"
+        imagePullPolicy: {{ .ImagePullPolicy }}
         ports:
         - containerPort: 9091
         - containerPort: 15004
@@ -251,7 +241,7 @@ spec:
         - istio-policy
         - --templateFile
         - /etc/istio/proxy/envoy_policy.yaml.tmpl
-      {{- if $.Values.global.controlPlaneSecurityEnabled }}
+      {{- if .ControlPlaneSecurityEnabled }}
         - --controlPlaneAuthPolicy
         - MUTUAL_TLS
       {{- else }}
@@ -293,7 +283,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-telemetry
-  namespace: {{ $.Release.Namespace }}
+  namespace: {{ .Namespace }}
   labels:
     app: mixer
     istio: mixer
@@ -304,7 +294,7 @@ spec:
   - name: grpc-mixer-mtls
     port: 15004
   - name: http-monitoring
-    port: {{ $.Values.global.monitoringPort }}
+    port: {{ .MonitoringPort }}
   - name: prometheus
     port: 42422
   selector:
@@ -317,13 +307,13 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: istio-telemetry
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Namespace }}
   labels:
     app: mixer
 spec:
-  host: istio-telemetry.{{ .Release.Namespace }}.svc.cluster.local
+  host: istio-telemetry.{{ .Namespace }}.svc.cluster.local
   trafficPolicy:
-    {{- if .Values.global.controlPlaneSecurityEnabled }}
+    {{- if .ControlPlaneSecurityEnabled }}
     portLevelSettings:
     - port:
         number: 15004
@@ -340,44 +330,32 @@ const telemetryDeploymentYamlTemplate = `
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: istio-{{ $key }}
-  namespace: {{ $.Release.Namespace }}
+  name: istio-mixer-telemetry
+  namespace: {{ .Namespace }}
   labels:
-    app: istio-mixer
-    chart: {{ template "mixer.chart" $ }}
-    heritage: {{ $.Release.Service }}
-    release: {{ $.Release.Name }}
-    version: {{ $.Chart.Version }}
+    app: istio-mixer-telemetry
     istio: mixer
 spec:
-  replicas: {{ $spec.replicaCount }}
+  replicas: {{ .ReplicaCount }}
   strategy:
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: {{ $key }}
-      chart: {{ template "mixer.chart" $ }}
-      heritage: {{ $.Release.Service }}
-      release: {{ $.Release.Name }}
-      version: {{ $.Chart.Version }}
+      app: istio-mixer-telemetry
       istio: mixer
-      istio-mixer-type: {{ $key }}
+      istio-mixer-type: telemetry
   template:
     metadata:
       labels:
-        app: {{ $key }}
-        chart: {{ template "mixer.chart" $ }}
-        heritage: {{ $.Release.Service }}
-        release: {{ $.Release.Name }}
-        version: {{ $.Chart.Version }}
+        app: istio-mixer-telemetry
         istio: mixer
-        istio-mixer-type: {{ $key }}
+        istio-mixer-type: telemetry
       annotations:
         sidecar.istio.io/inject: "false"
         scheduler.alpha.kubernetes.io/critical-pod: ""
-{{- with $.Values.podAnnotations }}
+{{- with .PodAnnotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
@@ -395,12 +373,8 @@ spec:
     {{- end }}
       containers:
       - name: mixer
-{{- if contains "/" .Values.image }}
-        image: "{{ .Values.image }}"
-{{- else }}
-        image: "{{ $.Values.global.hub }}/{{ $.Values.image }}:{{ $.Values.global.tag }}"
-{{- end }}
-        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        image: "{{ .Image }}"
+        imagePullPolicy: {{ .ImagePullPolicy }}
         ports:
         - containerPort: {{ .Values.global.monitoringPort }}
         - containerPort: 42422
@@ -408,8 +382,8 @@ spec:
           - --monitoringPort={{ .Values.global.monitoringPort }}
           - --address
           - unix:///sock/mixer.socket
-{{- if $.Values.global.useMCP }}
-    {{- if $.Values.global.controlPlaneSecurityEnabled}}
+{{- if .UseMCP }}
+    {{- if .ControlPlaneSecurityEnabled}}
           - --configStoreURL=mcps://istio-galley.{{ $.Release.Namespace }}.svc:9901
           - --certFile=/etc/certs/cert-chain.pem
           - --keyFile=/etc/certs/key.pem
@@ -420,15 +394,15 @@ spec:
 {{- else }}
           - --configStoreURL=k8s://
 {{- end }}
-          - --configDefaultNamespace={{ $.Release.Namespace }}
-          {{- if $.Values.global.tracer.zipkin.address }}
-          - --trace_zipkin_url=http://{{- $.Values.global.tracer.zipkin.address }}/api/v1/spans
+          - --configDefaultNamespace={{ .Namespace }}
+          {{- if .ZipkinAddress }}
+          - --trace_zipkin_url=http://{{- .ZipkinAddress }}/api/v1/spans
           {{- else }}
           - --trace_zipkin_url=http://zipkin:9411/api/v1/spans
           {{- end }}
-        {{- if .Values.env }}
+        {{- if .Env }}
         env:
-        {{- range $key, $val := .Values.env }}
+        {{- range $key, $val := .Env }}
         - name: {{ $key }}
           value: "{{ $val }}"
         {{- end }}
@@ -440,7 +414,7 @@ spec:
 {{ toYaml .Values.global.defaultResources | indent 10 }}
 {{- end }}
         volumeMounts:
-{{- if $.Values.global.useMCP }}
+{{- if .UseMCP }}
         - name: istio-certs
           mountPath: /etc/certs
           readOnly: true
@@ -450,16 +424,12 @@ spec:
         livenessProbe:
           httpGet:
             path: /version
-            port: {{ .Values.global.monitoringPort }}
+            port: {{ .MonitoringPort }}
           initialDelaySeconds: 5
           periodSeconds: 5
       - name: istio-proxy
-{{- if contains "/" $.Values.global.proxy.image }}
-        image: "{{ $.Values.global.proxy.image }}"
-{{- else }}
-        image: "{{ $.Values.global.hub }}/{{ $.Values.global.proxy.image }}:{{ $.Values.global.tag }}"
-{{- end }}
-        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        image: "{{ .Image }}"
+        imagePullPolicy: {{ .ImagePullPolicy }}
         ports:
         - containerPort: 9091
         - containerPort: 15004
@@ -468,15 +438,15 @@ spec:
           name: http-envoy-prom
         args:
         - proxy
-{{- if $.Values.global.proxy.proxyDomain }}
+{{- if .ProxyDomain }}
         - --domain
-        - {{ $.Values.global.proxy.proxyDomain }}
+        - {{ .ProxyDomain }}
 {{- end }}
         - --serviceCluster
         - istio-telemetry
         - --templateFile
         - /etc/istio/proxy/envoy_telemetry.yaml.tmpl
-      {{- if $.Values.global.controlPlaneSecurityEnabled }}
+      {{- if .ControlPlaneSecurityEnabled }}
         - --controlPlaneAuthPolicy
         - MUTUAL_TLS
       {{- else }}
@@ -517,7 +487,7 @@ const clusterRoleYamlTemplate = `
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: istio-mixer-{{ .Release.Namespace }}
+  name: {{ .ClusterRoleName }}
   labels:
     app: mixer
 rules:

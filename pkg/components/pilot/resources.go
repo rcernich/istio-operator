@@ -5,6 +5,8 @@ import (
 	"text/template"
 
 	"github.com/maistra/istio-operator/pkg/components/common"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 type templateParams struct {
@@ -13,6 +15,15 @@ type templateParams struct {
 	MonitoringPort              int
 	ControlPlaneSecurityEnabled bool
 	ConfigureValidation         bool
+	DiscoveryDomain             string
+	Sidecar                     bool
+	UseMCP                      bool
+  Env                         []corev1.EnvVar
+  TraceSampling               string // TODO
+  Resources                   string // TODO
+  ProxyImage                  string
+  ProxyDomain                 string
+  NodeAffinity                string // TODO
 }
 
 var (
@@ -44,7 +55,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-pilot
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Namespace }}
   labels:
     app: pilot
     istio: pilot
@@ -56,7 +67,7 @@ spec:
     name: https-xds # mTLS
   - port: 8080
     name: http-legacy-discovery # direct
-  - port: {{ .Values.global.monitoringPort }}
+  - port: {{ .MonitoringPort }}
     name: http-monitoring
   selector:
     istio: pilot
@@ -67,7 +78,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: istio-pilot
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Namespace }}
   # TODO: default template doesn't have this, which one is right ?
   labels:
     app: pilot
@@ -75,7 +86,7 @@ metadata:
   annotations:
     checksum/config-volume: {{ template "istio.configmap.checksum" . }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .ReplicaCount }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -90,40 +101,36 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
       serviceAccountName: istio-pilot-service-account
-{{- if .Values.global.priorityClassName }}
-      priorityClassName: "{{ .Values.global.priorityClassName }}"
+{{- if .PriorityClassName }}
+      priorityClassName: "{{ .PriorityClassName }}"
 {{- end }}
       containers:
         - name: discovery
-{{- if contains "/" .Values.image }}
-          image: "{{ .Values.image }}"
-{{- else }}
-          image: "{{ .Values.global.hub }}/{{ .Values.image }}:{{ .Values.global.tag }}"
-{{- end }}
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
-          args:
+        image: "{{ .Image }}"
+        imagePullPolicy: {{ .ImagePullPolicy }}
+        args:
           - "discovery"
-          - --monitoringAddr=:{{ .Values.global.monitoringPort }}
-{{- if $.Values.global.proxy.discoveryDomain }}
+          - --monitoringAddr=:{{ .MonitoringPort }}
+{{- if .DiscoveryDomain }}
           - --domain
-          - {{ $.Values.global.proxy.discoveryDomain }}
+          - {{ .DiscoveryDomain }}
 {{- end }}
 {{- if .Values.global.oneNamespace }}
           - "-a"
           - {{ .Release.Namespace }}
 {{- end }}
-{{- if not .Values.sidecar }}
+{{- if not .Sidecar }}
           - --secureGrpcAddr
           - ":15011"
 {{- end }}
-{{- if $.Values.global.useMCP }}
-    {{- if $.Values.global.controlPlaneSecurityEnabled}}
-          - --mcpServerAddrs=mcps://istio-galley.{{ $.Release.Namespace }}.svc:9901
+{{- if .UseMCP }}
+    {{- if .ControlPlaneSecurityEnabled}}
+          - --mcpServerAddrs=mcps://istio-galley.{{ .Namespace }}.svc:9901
           - --certFile=/etc/certs/cert-chain.pem
           - --keyFile=/etc/certs/key.pem
           - --caCertFile=/etc/certs/root-cert.pem
     {{- else }}
-          - --mcpServerAddrs=mcp://istio-galley.{{ $.Release.Namespace }}.svc:9901
+          - --mcpServerAddrs=mcp://istio-galley.{{ .Namespace }}.svc:9901
     {{- end }}
 {{- end }}
           ports:
@@ -150,15 +157,15 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
-          {{- if .Values.env }}
-          {{- range $key, $val := .Values.env }}
+          {{- if .Env }}
+          {{- range $key, $val := .Env }}
           - name: {{ $key }}
             value: "{{ $val }}"
           {{- end }}
           {{- end }}
-{{- if .Values.traceSampling }}
+{{- if .TraceSampling }}
           - name: PILOT_TRACE_SAMPLING
-            value: "{{ .Values.traceSampling }}"
+            value: "{{ .TraceSampling }}"
 {{- end }}
           resources:
 {{- if .Values.resources }}
@@ -172,14 +179,10 @@ spec:
           - name: istio-certs
             mountPath: /etc/certs
             readOnly: true
-{{- if .Values.sidecar }}
+{{- if .Sidecar }}
         - name: istio-proxy
-{{- if contains "/" .Values.global.proxy.image }}
-          image: "{{ .Values.global.proxy.image }}"
-{{- else }}
-          image: "{{ .Values.global.hub }}/{{ .Values.global.proxy.image }}:{{ .Values.global.tag }}"
-{{- end }}
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          image: "{{ .ProxyImage }}"
+          imagePullPolicy: {{ .ImagePullPolicy }}
           ports:
           - containerPort: 15003
           - containerPort: 15005
@@ -187,15 +190,15 @@ spec:
           - containerPort: 15011
           args:
           - proxy
-{{- if $.Values.global.proxy.proxyDomain }}
+{{- if .ProxyDomain }}
           - --domain
-          - {{ $.Values.global.proxy.proxyDomain }}
+          - {{ .ProxyDomain }}
 {{- end }}
           - --serviceCluster
           - istio-pilot
           - --templateFile
           - /etc/istio/proxy/envoy_pilot.yaml.tmpl
-        {{- if $.Values.global.controlPlaneSecurityEnabled}}
+        {{- if $.ControlPlaneSecurityEnabled }}
           - --controlPlaneAuthPolicy
           - MUTUAL_TLS
         {{- else }}
@@ -245,7 +248,7 @@ const clusterRoleYamlTemplate = `
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: istio-pilot-{{ .Release.Namespace }}
+  name: {{ .ClusterRoleName }}
   labels:
     app: pilot
 rules:

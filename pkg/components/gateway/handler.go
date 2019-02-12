@@ -1,11 +1,11 @@
-package pilot
+package gateway
 
 import (
-	istioopv1alpha1 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
+	istioopv1alpha2 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha2"
 	"github.com/maistra/istio-operator/pkg/components/common"
 )
 
-func Sync(config *istioopv1alpha1.IstioOperatorConfig) []error {
+func Sync(config *istioopv1alpha2.IstioOperatorConfig) []error {
 
 	templateParams := templateParams{
 		TemplateParams: common.TemplateParams{
@@ -18,12 +18,12 @@ func Sync(config *istioopv1alpha1.IstioOperatorConfig) []error {
 	}
 
 	templates := TemplatesInstance()
-	errors := common.Sync(config, "Gateways: Ingress", templates, templateParams)
+	errors := common.Sync(config, "Gateways: Ingress", &templates.Ingress, templateParams)
 
 	templateParams.ServiceAccountName = "istio-egressgateway-service-account"
 	templateParams.ClusterRoleName = "istio-egressgateway-" + config.Namespace
 	templateParams.ClusterRoleBindingName = "istio-egressgateway-" + config.Namespace
-	errors = append(errors, common.Sync(config, "Gateways: Egress", templates, templateParams)...)
+	errors = append(errors, common.Sync(config, "Gateways: Egress", &templates.Egress, templateParams)...)
 
 	return errors
 }

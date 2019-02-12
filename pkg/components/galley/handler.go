@@ -1,11 +1,11 @@
 package galley
 
 import (
-	istioopv1alpha1 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
+	istioopv1alpha2 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha2"
 	"github.com/maistra/istio-operator/pkg/components/common"
 )
 
-func Sync(config *istioopv1alpha1.IstioOperatorConfig) []error {
+func Sync(config *istioopv1alpha2.IstioOperatorConfig) []error {
 
 	templateParams := templateParams{
 		TemplateParams: common.TemplateParams{
