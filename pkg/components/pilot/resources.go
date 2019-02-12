@@ -55,7 +55,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-pilot
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: pilot
     istio: pilot
@@ -67,7 +67,7 @@ spec:
     name: https-xds # mTLS
   - port: 8080
     name: http-legacy-discovery # direct
-  - port: {{ .MonitoringPort }}
+  - port: {{ .Config.Spec.Monitoring.Port }}
     name: http-monitoring
   selector:
     istio: pilot
@@ -78,7 +78,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: istio-pilot
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   # TODO: default template doesn't have this, which one is right ?
   labels:
     app: pilot
@@ -86,7 +86,7 @@ metadata:
   annotations:
     checksum/config-volume: {{ template "istio.configmap.checksum" . }}
 spec:
-  replicas: {{ .ReplicaCount }}
+  replicas: {{ .Config.Spec.Pilot.ReplicaCount }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -101,42 +101,44 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
       serviceAccountName: istio-pilot-service-account
-{{- if .PriorityClassName }}
-      priorityClassName: "{{ .PriorityClassName }}"
+{{- if .Config.Spec.General.PriorityClassName }}
+      priorityClassName: "{{ .Config.Spec.General.PriorityClassName }}"
 {{- end }}
       containers:
         - name: discovery
-        image: "{{ .Image }}"
-        imagePullPolicy: {{ .ImagePullPolicy }}
+        image: "{{ .Config.Spec.Pilot.Image }}"
+        imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
         args:
           - "discovery"
-          - --monitoringAddr=:{{ .MonitoringPort }}
-{{- if .DiscoveryDomain }}
+          - --monitoringAddr=:{{ .Config.Spec.Monitoring.Port }}
+{{- if .Config.Spec.Proxy.DiscoveryDomain }}
           - --domain
-          - {{ .DiscoveryDomain }}
+          - {{ .Config.Spec.Proxy.DiscoveryDomain }}
 {{- end }}
-{{- if .Values.global.oneNamespace }}
+{{- if .Config.Spec.Pilot.WatchedNamespaces }}
+          {{- range $namespace := .Config.Spec.Pilot.WatchedNamespaces }}
           - "-a"
-          - {{ .Release.Namespace }}
+          - {{ $namespace }}
+          {{- end }}
 {{- end }}
 {{- if not .Sidecar }}
           - --secureGrpcAddr
           - ":15011"
 {{- end }}
 {{- if .UseMCP }}
-    {{- if .ControlPlaneSecurityEnabled}}
-          - --mcpServerAddrs=mcps://istio-galley.{{ .Namespace }}.svc:9901
+    {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled}}
+          - --mcpServerAddrs=mcps://istio-galley.{{ .Config.Namespace }}.svc:9901
           - --certFile=/etc/certs/cert-chain.pem
           - --keyFile=/etc/certs/key.pem
           - --caCertFile=/etc/certs/root-cert.pem
     {{- else }}
-          - --mcpServerAddrs=mcp://istio-galley.{{ .Namespace }}.svc:9901
+          - --mcpServerAddrs=mcp://istio-galley.{{ .Config.Namespace }}.svc:9901
     {{- end }}
 {{- end }}
           ports:
           - containerPort: 8080
           - containerPort: 15010
-{{- if not .Values.sidecar }}
+{{- if not .Config.Spec.Pilot.Sidecar }}
           - containerPort: 15011
 {{- end }}
           readinessProbe:
@@ -157,32 +159,25 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
-          {{- if .Env }}
-          {{- range $key, $val := .Env }}
-          - name: {{ $key }}
-            value: "{{ $val }}"
+          {{- if .Config.Spec.Pilot.PushThrottleCount }}
+          - name: PILOT_PUSH_THROTTLE_COUNT
+            value: "{{ Config.Spec.Pilot.PushThrottleCount }}"
           {{- end }}
-          {{- end }}
-{{- if .TraceSampling }}
+{{- if .Config.Spec.Pilot.RandomTraceSampling }}
           - name: PILOT_TRACE_SAMPLING
-            value: "{{ .TraceSampling }}"
+            value: "{{ .Config.Spec.Pilot.RandomTraceSampling }}"
 {{- end }}
           resources:
-{{- if .Values.resources }}
-{{ toYaml .Values.resources | indent 12 }}
-{{- else }}
-{{ toYaml .Values.global.defaultResources | indent 12 }}
-{{- end }}
           volumeMounts:
           - name: config-volume
             mountPath: /etc/istio/config
           - name: istio-certs
             mountPath: /etc/certs
             readOnly: true
-{{- if .Sidecar }}
+{{- if .Config.Spec.Pilot.Sidecar }}
         - name: istio-proxy
-          image: "{{ .ProxyImage }}"
-          imagePullPolicy: {{ .ImagePullPolicy }}
+          image: "{{ .Config.Spec.Proxy.Image }}"
+          imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
           ports:
           - containerPort: 15003
           - containerPort: 15005
@@ -190,15 +185,15 @@ spec:
           - containerPort: 15011
           args:
           - proxy
-{{- if .ProxyDomain }}
+{{- if .Config.Spec.Proxy.ProxyDomain }}
           - --domain
-          - {{ .ProxyDomain }}
+          - {{ .Config.Spec.Proxy.ProxyDomain }}
 {{- end }}
           - --serviceCluster
           - istio-pilot
           - --templateFile
           - /etc/istio/proxy/envoy_pilot.yaml.tmpl
-        {{- if $.ControlPlaneSecurityEnabled }}
+        {{- if $.Config.Spec.SecurityControlPlaneSecurityEnabled }}
           - --controlPlaneAuthPolicy
           - MUTUAL_TLS
         {{- else }}
@@ -222,11 +217,6 @@ spec:
                 apiVersion: v1
                 fieldPath: status.podIP
           resources:
-{{- if .Values.global.proxy.resources }}
-{{ toYaml .Values.global.proxy.resources | indent 12 }}
-{{- else }}
-{{ toYaml .Values.global.defaultResources | indent 12 }}
-{{- end }}
           volumeMounts:
           - name: istio-certs
             mountPath: /etc/certs
@@ -241,7 +231,6 @@ spec:
           secretName: istio.istio-pilot-service-account
           optional: true
       affinity:
-      {{- include "nodeaffinity" . | indent 6 }}
 `
 
 const clusterRoleYamlTemplate = `

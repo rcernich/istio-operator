@@ -11,20 +11,15 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
 )
 
-func Sync(config *istioopv1alpha2.IstioOperatorConfig) []error {
+func Sync(config *istioopv1alpha2.IstioControlPlane) []error {
 
 	templateParams := templateParams{
 		TemplateParams: common.TemplateParams{
-			Namespace:              config.Namespace,
-			ReplicaCount:           *config.Spec.GalleyConfig.ReplicaCount,
+			Config: config,
 			ServiceAccountName:     "istio-citadel-service-account",
 			ClusterRoleName:        "istio-citadel-" + config.Namespace,
 			ClusterRoleBindingName: "istio-citadel-admin-role-binding-" + config.Namespace,
 		},
-		ConfigureValidation:         config.Spec.GeneralConfig.ConfigValidation,
-		ControlPlaneSecurityEnabled: config.Spec.GeneralConfig.ControlPlaneSecurityEnabled,
-		MonitoringPort:              *config.Spec.GeneralConfig.MonitoringPort,
-		PriorityClassName:           *config.Spec.GeneralConfig.PriorityClassName,
 	}
 
 	templates := TemplatesInstance()

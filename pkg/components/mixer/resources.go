@@ -83,7 +83,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-policy
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: mixer
     istio: mixer
@@ -94,7 +94,7 @@ spec:
   - name: grpc-mixer-mtls
     port: 15004
   - name: http-monitoring
-    port: {{ .MonitoringPort }}
+    port: {{ .Config.Spec.Monitoring.Port }}
   selector:
     istio: mixer
     istio-mixer-type: policy
@@ -105,13 +105,13 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: istio-policy
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: mixer
 spec:
-  host: istio-policy.{{ .Namespace }}.svc.cluster.local
+  host: istio-policy.{{ .Config.Namespace }}.svc.cluster.local
   trafficPolicy:
-    {{- if .ControlPlaneSecurityEnabled }}
+    {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled }}
     portLevelSettings:
     - port:
         number: 15004
@@ -129,12 +129,12 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: istio-mixer-policy
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio-mixer
     istio: mixer
 spec:
-  replicas: {{ .ReplicaCount }}
+  replicas: {{ .Config.Spec.Mixer.Policy.ReplicaCount }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -153,13 +153,10 @@ spec:
       annotations:
         sidecar.istio.io/inject: "false"
         scheduler.alpha.kubernetes.io/critical-pod: ""
-{{- with .PodAnnotations }}
-{{ toYaml . | indent 8 }}
-{{- end }}
     spec:
       serviceAccountName: istio-mixer-service-account
-{{- if .PriorityClassName }}
-      priorityClassName: "{{ .PriorityClassName }}"
+{{- if .Config.Spec.General.PriorityClassName }}
+      priorityClassName: "{{ .Config.Spec.General.PriorityClassName }}"
 {{- end }}
       volumes:
       - name: istio-certs
@@ -169,49 +166,36 @@ spec:
       - name: uds-socket
         emptyDir: {}
       affinity:
-      {{- include "nodeaffinity" . | indent 6 }}
       containers:
       - name: mixer
-        image: "{{ .Image }}"
-        imagePullPolicy: {{ .ImagePullPolicy }}
+        image: "{{ .Config.Spec.Mixer.Policy.Image }}"
+        imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
         ports:
-        - containerPort: {{ .MonitoringPort }}
+        - containerPort: {{ .Config.Spec.Monitoring.Port }}
         - containerPort: 42422
         args:
-          - --monitoringPort={{ .MonitoringPort }}
+          - --monitoringPort={{ .Config.Spec.Monitoring.Port }}
           - --address
           - unix:///sock/mixer.socket
 {{- if .UseMCP }}
-    {{- if .ControlPlaneSecurityEnabled }}
-          - --configStoreURL=mcps://istio-galley.{{ .Namespace }}.svc:9901
+    {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled }}
+          - --configStoreURL=mcps://istio-galley.{{ .Config.Namespace }}.svc:9901
           - --certFile=/etc/certs/cert-chain.pem
           - --keyFile=/etc/certs/key.pem
           - --caCertFile=/etc/certs/root-cert.pem
     {{- else }}
-          - --configStoreURL=mcp://istio-galley.{{ .Namespace }}.svc:9901
+          - --configStoreURL=mcp://istio-galley.{{ .Config.Namespace }}.svc:9901
     {{- end }}
 {{- else }}
           - --configStoreURL=k8s://
 {{- end }}
-          - --configDefaultNamespace={{ .Namespace }}
-          {{- if .ZipkinAddress }}
-          - --trace_zipkin_url=http://{{- .ZipkinAddress }}/api/v1/spans
+          - --configDefaultNamespace={{ .Config.Namespace }}
+          {{- if eq .Config.Spec.Monitoring.Tracer.Type "zipkin" }}
+          - --trace_zipkin_url=http://{{- .Config.Spec.Monitoring.Tracer.Zipkin.Address }}/api/v1/spans
           {{- else }}
           - --trace_zipkin_url=http://zipkin:9411/api/v1/spans
           {{- end }}
-        {{- if .Values.env }}
-        env:
-        {{- range $key, $val := .Values.env }}
-        - name: {{ $key }}
-          value: "{{ $val }}"
-        {{- end }}
-        {{- end }}
         resources:
-{{- if .Values.resources }}
-{{ toYaml .Values.resources | indent 10 }}
-{{- else }}
-{{ toYaml .Values.global.defaultResources | indent 10 }}
-{{- end }}
         volumeMounts:
 {{- if .UseMCP }}
         - name: istio-certs
@@ -223,12 +207,12 @@ spec:
         livenessProbe:
           httpGet:
             path: /version
-            port: {{ .MonitoringPort }}
+            port: {{ .Config.Spec.Monitoring.Port }}
           initialDelaySeconds: 5
           periodSeconds: 5
       - name: istio-proxy
-        image: "{{ .ProxyImage }}"
-        imagePullPolicy: {{ .ImagePullPolicy }}
+        image: "{{ .Config.Spec.Proxy.Image }}"
+        imagePullPolicy: {{ .Config.Spec.Genral.PullPolicy }}
         ports:
         - containerPort: 9091
         - containerPort: 15004
@@ -241,7 +225,7 @@ spec:
         - istio-policy
         - --templateFile
         - /etc/istio/proxy/envoy_policy.yaml.tmpl
-      {{- if .ControlPlaneSecurityEnabled }}
+      {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled }}
         - --controlPlaneAuthPolicy
         - MUTUAL_TLS
       {{- else }}
@@ -265,11 +249,6 @@ spec:
               apiVersion: v1
               fieldPath: status.podIP
         resources:
-{{- if $.Values.global.proxy.resources }}
-{{ toYaml $.Values.global.proxy.resources | indent 10 }}
-{{- else }}
-{{ toYaml .Values.global.defaultResources | indent 10 }}
-{{- end }}
         volumeMounts:
         - name: istio-certs
           mountPath: /etc/certs
@@ -283,7 +262,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-telemetry
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: mixer
     istio: mixer
@@ -294,7 +273,7 @@ spec:
   - name: grpc-mixer-mtls
     port: 15004
   - name: http-monitoring
-    port: {{ .MonitoringPort }}
+    port: {{ .Config.Spec.Monitoring.Port }}
   - name: prometheus
     port: 42422
   selector:
@@ -307,13 +286,13 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: istio-telemetry
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: mixer
 spec:
-  host: istio-telemetry.{{ .Namespace }}.svc.cluster.local
+  host: istio-telemetry.{{ .Config.Namespace }}.svc.cluster.local
   trafficPolicy:
-    {{- if .ControlPlaneSecurityEnabled }}
+    {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled }}
     portLevelSettings:
     - port:
         number: 15004
@@ -331,12 +310,12 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: istio-mixer-telemetry
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio-mixer-telemetry
     istio: mixer
 spec:
-  replicas: {{ .ReplicaCount }}
+  replicas: {{ .Config.Sepc.Mixer.Telemetry.ReplicaCount }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -355,9 +334,6 @@ spec:
       annotations:
         sidecar.istio.io/inject: "false"
         scheduler.alpha.kubernetes.io/critical-pod: ""
-{{- with .PodAnnotations }}
-{{ toYaml . | indent 8 }}
-{{- end }}
     spec:
       serviceAccountName: istio-mixer-service-account
       volumes:
@@ -367,52 +343,36 @@ spec:
           optional: true
       - name: uds-socket
         emptyDir: {}
-    {{- if $.Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml $.Values.nodeSelector | indent 8 }}
-    {{- end }}
       containers:
       - name: mixer
-        image: "{{ .Image }}"
-        imagePullPolicy: {{ .ImagePullPolicy }}
+        image: "{{ .Config.Spec.Mixer.Telemetry.Image }}"
+        imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
         ports:
-        - containerPort: {{ .Values.global.monitoringPort }}
+        - containerPort: {{ .Config.Spec.Monitoring.Port }}
         - containerPort: 42422
         args:
-          - --monitoringPort={{ .Values.global.monitoringPort }}
+          - --monitoringPort={{ .Config.Spec.Monitoring.Port }}
           - --address
           - unix:///sock/mixer.socket
 {{- if .UseMCP }}
-    {{- if .ControlPlaneSecurityEnabled}}
-          - --configStoreURL=mcps://istio-galley.{{ $.Release.Namespace }}.svc:9901
+    {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled}}
+          - --configStoreURL=mcps://istio-galley.{{ $.Config.Namespace }}.svc:9901
           - --certFile=/etc/certs/cert-chain.pem
           - --keyFile=/etc/certs/key.pem
           - --caCertFile=/etc/certs/root-cert.pem
     {{- else }}
-          - --configStoreURL=mcp://istio-galley.{{ $.Release.Namespace }}.svc:9901
+          - --configStoreURL=mcp://istio-galley.{{ $.Config.Namespace }}.svc:9901
     {{- end }}
 {{- else }}
           - --configStoreURL=k8s://
 {{- end }}
-          - --configDefaultNamespace={{ .Namespace }}
-          {{- if .ZipkinAddress }}
-          - --trace_zipkin_url=http://{{- .ZipkinAddress }}/api/v1/spans
+          - --configDefaultNamespace={{ .Config.Namespace }}
+          {{- if eq .Config.Spec.Monitoring.Tracer.Type "zipkin" }}
+          - --trace_zipkin_url=http://{{- .Config.Spec.Monitoring.Tracer.Zipkin.Address }}/api/v1/spans
           {{- else }}
           - --trace_zipkin_url=http://zipkin:9411/api/v1/spans
           {{- end }}
-        {{- if .Env }}
-        env:
-        {{- range $key, $val := .Env }}
-        - name: {{ $key }}
-          value: "{{ $val }}"
-        {{- end }}
-        {{- end }}
         resources:
-{{- if .Values.resources }}
-{{ toYaml .Values.resources | indent 10 }}
-{{- else }}
-{{ toYaml .Values.global.defaultResources | indent 10 }}
-{{- end }}
         volumeMounts:
 {{- if .UseMCP }}
         - name: istio-certs
@@ -438,15 +398,15 @@ spec:
           name: http-envoy-prom
         args:
         - proxy
-{{- if .ProxyDomain }}
+{{- if .Config.Spec.Proxy.ProxyDomain }}
         - --domain
-        - {{ .ProxyDomain }}
+        - {{ .Config.Spec.Proxy.ProxyDomain }}
 {{- end }}
         - --serviceCluster
         - istio-telemetry
         - --templateFile
         - /etc/istio/proxy/envoy_telemetry.yaml.tmpl
-      {{- if .ControlPlaneSecurityEnabled }}
+      {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled }}
         - --controlPlaneAuthPolicy
         - MUTUAL_TLS
       {{- else }}
@@ -470,11 +430,6 @@ spec:
               apiVersion: v1
               fieldPath: status.podIP
         resources:
-{{- if $.Values.global.proxy.resources }}
-{{ toYaml $.Values.global.proxy.resources | indent 10 }}
-{{- else }}
-{{ toYaml .Values.global.defaultResources | indent 10 }}
-{{- end }}
         volumeMounts:
         - name: istio-certs
           mountPath: /etc/certs

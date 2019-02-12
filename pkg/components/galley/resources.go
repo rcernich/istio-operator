@@ -47,14 +47,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-galley
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     istio: galley
 spec:
   ports:
   - port: 443
     name: https-validation
-  - port: {{ .MonitoringPort }}
+  - port: {{ .Config.Spec.Monitoring.Port }}
     name: http-monitoring
   - port: 9901
     name: grpc-mcp
@@ -67,11 +67,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: istio-galley
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     istio: galley
 spec:
-  replicas: {{ .ReplicaCount }}
+  replicas: {{ .Config.Spec.Galley.ReplicaCount }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -85,18 +85,18 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
       serviceAccountName: {{ .ServiceAccountName }}
-{{- if .PriorityClassName }}
-      priorityClassName: "{{ .PriorityClassName }}"
+{{- if .Config.Spec.General.PriorityClassName }}
+      priorityClassName: "{{ .Config.Spec.General.PriorityClassName }}"
 {{- end }}
       containers:
         - name: galley
           image: "{{ .Image }}"
-          imagePullPolicy: {{ .ImagePullPolicy }}
+          imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
           ports:
           - name: https-validation
             containerPort: 443
           - name: http-monitoring
-            containerPort: {{ .MonitoringPort }}
+            containerPort: {{ .Config.Spec.Monitoring.Port }}
           - name: grpc-mcp
             containerPort: 9901
           command:
@@ -109,14 +109,14 @@ spec:
           - --livenessProbePath=/healthliveness
           - --readinessProbePath=/healthready
           - --readinessProbeInterval=1s
-{{- if .ControlPlaneSecurityEnabled}}
+{{- if .Config.Spec.Security.ControlPlaneSecurityEnabled}}
           - --insecure=false
 {{- else }}
           - --insecure=true
 {{- end }}
           - --validation-webhook-config-file
           - /etc/istio/config/validatingwebhookconfiguration.yaml
-          - --monitoringPort={{ .MonitoringPort }}
+          - --monitoringPort={{ .Config.Spec.Monitoring.Port }}
           volumeMounts:
           - name: certs
             mountPath: /etc/istio/certs
@@ -146,11 +146,6 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
           resources:
-{{- if .Values.resources }}
-{{ toYaml .Values.resources | indent 12 }}
-{{- else }}
-{{ toYaml .Values.global.defaultResources | indent 12 }}
-{{- end }}
       volumes:
       - name: certs
         secret:
@@ -162,7 +157,6 @@ spec:
         configMap:
           name: istio
       affinity:
-      {{- include "nodeaffinity" . | indent 6 }}
 `
 
 const clusterRoleYamlTemplate = `
@@ -205,7 +199,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: istio-galley-configuration
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     istio: galley
 data:
@@ -214,7 +208,7 @@ data:
     kind: ValidatingWebhookConfiguration
     metadata:
       name: istio-galley
-      namespace: {{ .Namespace }}
+      namespace: {{ .Config.Namespace }}
       labels:
         istio: galley
     webhooks:
@@ -223,7 +217,7 @@ data:
         clientConfig:
           service:
             name: istio-galley
-            namespace: {{ .Namespace }}
+            namespace: {{ .Config.Namespace }}
             path: "/admitpilot"
           caBundle: ""
         rules:
@@ -275,7 +269,7 @@ data:
         clientConfig:
           service:
             name: istio-galley
-            namespace: {{ .Namespace }}
+            namespace: {{ .Config.Namespace }}
             path: "/admitmixer"
           caBundle: ""
         rules:
@@ -321,6 +315,6 @@ data:
     {{- end }}
   accesslist.yaml: |-
     allowed:
-        - spiffe://cluster.local/ns/{{ .Namespace }}/sa/istio-mixer-service-account
-        - spiffe://cluster.local/ns/{{ .Namespace }}/sa/istio-pilot-service-account
+        - spiffe://cluster.local/ns/{{ .Config.Namespace }}/sa/istio-mixer-service-account
+        - spiffe://cluster.local/ns/{{ .Config.Namespace }}/sa/istio-pilot-service-account
 `

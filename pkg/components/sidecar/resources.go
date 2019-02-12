@@ -97,7 +97,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-sidecar-injector
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio
     istio: sidecar-injector
@@ -130,7 +130,7 @@ apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
   name: istio-sidecar-injector
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: sidecarinjectorWebhook
 webhooks:
@@ -138,7 +138,7 @@ webhooks:
     clientConfig:
       service:
         name: istio-sidecar-injector
-        namespace: {{ .Namespace }}
+        namespace: {{ .Config.Namespace }}
         path: "/inject"
       caBundle: ""
     rules:
@@ -148,7 +148,7 @@ webhooks:
         resources: ["pods"]
     failurePolicy: Fail
     namespaceSelector:
-{{- if .EnableNamespacesByDefault }}
+{{- if .Config.Spec.SidecarInjector.EnableNamespacesByDefault }}
       matchExpressions:
       - key: istio-injection
         operator: NotIn
@@ -166,12 +166,12 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: istio-sidecar-injector
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: sidecarinjectorWebhook
     istio: sidecar-injector
 spec:
-  replicas: {{ .ReplicaCount }}
+  replicas: {{ .Config.Spec.SidecarInjector.ReplicaCount }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -186,13 +186,13 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
       serviceAccountName: istio-sidecar-injector-service-account
- {{- if .PriorityClassName }}
-      priorityClassName: "{{ .PriorityClassName }}"
+ {{- if .Config.Spec.General.PriorityClassName }}
+      priorityClassName: "{{ .Config.Spec.General.PriorityClassName }}"
 {{- end }}
       containers:
         - name: sidecar-injector-webhook
-          image: "{{ .Image }}"
-          imagePullPolicy: {{ .ImagePullPolicy }}
+          image: "{{ .Config.Spec.SidecarInjector.Image }}"
+          imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
           args:
             - --caCertFile=/etc/istio/certs/root-cert.pem
             - --tlsCertFile=/etc/istio/certs/cert-chain.pem
@@ -230,9 +230,6 @@ spec:
             initialDelaySeconds: 4
             periodSeconds: 4
           resources:
-{{- if .Resources }}
-{{ toYaml .Resources | indent 12 }}
-{{- end }}
       volumes:
       - name: config-volume
         configMap:
@@ -247,24 +244,23 @@ spec:
           - key: config
             path: config
       affinity:
-      {{- include "nodeaffinity" . | indent 6 }}
 `
 
 // This should always be installed for istio control plane
 const configMapYaml = `
-[[- $statusPort := annotation .ObjectMeta "status.sidecar.istio.io/port" "{{ .StatusPort }}" ]]
+[[- $statusPort := annotation .ObjectMeta "status.sidecar.istio.io/port" "{{ .Config.Spec.Status.Port }}" ]]
 [[- $interceptionMode :=  annotation .ObjectMeta "sidecar.istio.io/interceptionMode" .ProxyConfig.InterceptionMode ]]
-[[- $includeOutboundIPRanges := annotation .ObjectMeta "traffic.sidecar.istio.io/includeOutboundIPRanges" "{{ .IncludeIPRanges }}" ]]
-[[- $excludeOutboundIPRanges := annotation .ObjectMeta "traffic.sidecar.istio.io/excludeOutboundIPRanges" "{{ .ExcludeIPRanges }}" ]]
+[[- $includeOutboundIPRanges := annotation .ObjectMeta "traffic.sidecar.istio.io/includeOutboundIPRanges" "{{ .Config.Spec.Proxy.EgressWhiteList.IncludeIPRanges }}" ]]
+[[- $excludeOutboundIPRanges := annotation .ObjectMeta "traffic.sidecar.istio.io/excludeOutboundIPRanges" "{{ .Config.Spec.Proxy.EgressWhiteList.ExcludeIPRanges }}" ]]
 [[- $includeInboundPorts := annotation .ObjectMeta "traffic.sidecar.istio.io/includeInboundPorts" (includeInboundPorts .Spec.Containers) ]]
-[[- $excludeInboundPorts := excludeInboundPort ($statusPort) (annotation .ObjectMeta "traffic.sidecar.istio.io/excludeInboundPorts" "{{ .ExcludeInboundPorts }}") ]]
-[[- $proxyImage := annotation .ObjectMeta "sidecar.istio.io/proxyImage" "{{ .ProxyImage }}" ]]
+[[- $excludeInboundPorts := excludeInboundPort ($statusPort) (annotation .ObjectMeta "traffic.sidecar.istio.io/excludeInboundPorts" "{{ .Config.Spec.Proxy.IngressWhiteList.ExcludeInboundPorts }}") ]]
+[[- $proxyImage := annotation .ObjectMeta "sidecar.istio.io/proxyImage" "{{ .Config.Spec.Proxy.Image }}" ]]
 [[- $discoveryAddress := annotation .ObjectMeta "sidecar.istio.io/discoveryAddress" .ProxyConfig.DiscoveryAddress ]]
 [[- $controlPlaneAuthPolicy := annotation .ObjectMeta "sidecar.istio.io/controlPlaneAuthPolicy" .ProxyConfig.ControlPlaneAuthPolicy ]]
 [[- $applicationPorts := annotation .ObjectMeta "readiness.status.sidecar.istio.io/applicationPorts" (applicationPorts .Spec.Containers) ]]
-[[- $initialDelaySeconds := annotation .ObjectMeta "readiness.status.sidecar.istio.io/initialDelaySeconds" "{{ .ReadinessInitialDelaySeconds }}" ]]
-[[- $periodSeconds := annotation .ObjectMeta "readiness.status.sidecar.istio.io/periodSeconds" "{{ .ReadinessPeriodSeconds }}" ]]
-[[- $failureThreshold := annotation .ObjectMeta "readiness.status.sidecar.istio.io/failureThreshold" "{{ .ReadinessFailureThreshold }}" ]]
+[[- $initialDelaySeconds := annotation .ObjectMeta "readiness.status.sidecar.istio.io/initialDelaySeconds" "{{ .Config.Spec.Status.InitialDelaySeconds }}" ]]
+[[- $periodSeconds := annotation .ObjectMeta "readiness.status.sidecar.istio.io/periodSeconds" "{{ .Config.Spec.Status.PeriodSeconds }}" ]]
+[[- $failureThreshold := annotation .ObjectMeta "readiness.status.sidecar.istio.io/failureThreshold" "{{ .Config.Spec.Status.FailureThreshold }}" ]]
 [[- $proxyCPU := index .ObjectMeta.Annotations "sidecar.istio.io/proxyCPU" ]]
 [[- $proxyMemory: = index .ObjectMeta.Annotations "sidecar.istio.io/proxyMemory" ]]
 
@@ -272,17 +268,17 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: istio-sidecar-injector
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio
     istio: sidecar-injector
 data:
   config: |-
-    policy: {{ .AutoInject }}
+    policy: {{ .Config.Spec.Proxy.AutoInject }}
     template: |-
       initContainers:
       - name: istio-init
-        image: "{{ .InitImage }}"
+        image: "{{ .Config.Spec.Proxy.InitImage }}"
         args:
         - "-p"
         - "[[ .MeshConfig.ProxyListenPort ]]"
@@ -298,7 +294,7 @@ data:
         - "[[ $includeInboundPorts ]]"
         - "-d"
         - "[[ $excludeInboundPorts ]]"
-        imagePullPolicy: {{ .ImagePullPolicy }}
+        imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
         resources:
           requests:
             cpu: 10m
@@ -310,18 +306,18 @@ data:
           capabilities:
             add:
             - NET_ADMIN
-          {{- if .Privileged }}
+          {{- if .Config.Spec.Proxy.Privileged }}
           privileged: true
           {{- end }}
         restartPolicy: Always
-      {{- if eq .EnableCoreDump true }}
+      {{- if eq .Config.Spec.General.Debug.EnableCoreDump true }}
       - name: enable-core-dump
         args:
         - -c
         - sysctl -w kernel.core_pattern=/var/lib/istio/core.proxy && ulimit -c unlimited
         command:
           - /bin/sh
-        image: "{{ .InitImage }}"
+        image: "{{ .Config.Spec.Proxy.InitImage }}"
         imagePullPolicy: IfNotPresent
         resources: {}
         securityContext:
@@ -338,9 +334,9 @@ data:
         args:
         - proxy
         - sidecar
-{{- if .ProxyDomain }}
+{{- if .Config.Spec.Proxy.ProxyDomain }}
         - --domain
-        - {{ .ProxyDomain }}
+        - {{ .Config.Spec.Proxy.ProxyDomain }}
 {{- end }}
         - --configPath
         - {{ "[[ .ProxyConfig.ConfigPath ]]" }}
@@ -358,7 +354,7 @@ data:
         - {{ "[[ formatDuration .ProxyConfig.ParentShutdownDuration ]]" }}
         - --discoveryAddress
         - "[[ $discoveryAddress ]]"
-      {{- if eq .Tracer.Type "lightstep" }}
+      {{- if eq .Config.Spec.Monitoring.Tracer.Type "lightstep" }}
         - --lightstepAddress
         - {{ "[[ .ProxyConfig.GetTracing.GetLightstep.GetAddress ]]" }}
         - --lightstepAccessToken
@@ -366,13 +362,13 @@ data:
         - --lightstepSecure={{ "[[ .ProxyConfig.GetTracing.GetLightstep.GetSecure ]]" }}
         - --lightstepCacertPath
         - {{ "[[ .ProxyConfig.GetTracing.GetLightstep.GetCacertPath ]]" }}
-      {{- else if eq .Tracer.Type "zipkin" }}
+      {{- else if eq .Config.Spec.Monitoring.Tracer.Type "zipkin" }}
         - --zipkinAddress
         - {{ "[[ .ProxyConfig.GetTracing.GetZipkin.GetAddress ]]" }}
       {{- end }}
         - --connectTimeout
         - {{ "[[ formatDuration .ProxyConfig.ConnectTimeout ]]" }}
-      {{- if .EnvoyStatsdEnabled }}
+      {{- if .Values.global.proxy.envoyStatsd.enabled }}
         - --statsdUdpAddress
         - {{ "[[ .ProxyConfig.StatsdUdpAddress ]]" }}
       {{- end }}
@@ -413,9 +409,9 @@ data:
               fieldPath: metadata.namespace
         - name: ISTIO_META_INTERCEPTION_MODE
           value: "[[ $interceptionMode ]]"
-        {{- if .Network }}
+        {{- if .Values.global.network }}
         - name: ISTIO_META_NETWORK
-          value: "{{ .Network }}"
+          value: "{{ .Values.global.network }}"
         {{- end }}
         [[ if .ObjectMeta.Annotations ]]
         - name: ISTIO_METAJSON_ANNOTATIONS
@@ -427,7 +423,7 @@ data:
           value: |
                  "[[ toJSON .ObjectMeta.Labels ]]"
         [[ end ]]
-        imagePullPolicy: {{ .ImagePullPolicy }}
+        imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
         [[ if (ne $statusPort "0") ]]
         readinessProbe:
           httpGet:
@@ -438,10 +434,10 @@ data:
           failureThreshold: "[[ $failureThreshold ]]"
         [[ end -]]
         securityContext:
-          {{- if .Privileged }}
+          {{- if .Config.Spec.Proxy.Privileged }}
           privileged: true
           {{- end }}
-          {{- if ne .EnableCoreDump true }}
+          {{- if ne .Config.Spec.General.Debug.EnableCoreDump true }}
           readOnlyRootFilesystem: true
           {{- end }}
           [[ if eq $interceptionMode "TPROXY" -]]
@@ -458,9 +454,6 @@ data:
             cpu: "[[ $proxyCPU ]]"
             memory: "[[ $proxyMemory ]]"
           [[ else -]]
-{{- if .Resources }}
-{{ toYaml .Resources | indent 10 }}
-{{- end }}
         {{ "[[ end -]]" }}
         volumeMounts:
         - mountPath: /etc/istio/proxy
@@ -468,35 +461,35 @@ data:
         - mountPath: /etc/certs/
           name: istio-certs
           readOnly: true
-        {{- if .SDSEnabled }}
+        {{- if .Values.global.sds.enabled }}
         - mountPath: /var/run/sds
           name: sds-uds-path
-        {{- if .SDSTokenMountEnabled }}
+        {{- if .Values.global.sds.enableTokenMount }}
         - mountPath: /var/run/secrets/tokens
           name: istio-token
         {{- end }}
         {{- end }}
-        {{- if and (eq .Tracer.Type "lightstep") .Tracer.LightStep.CACertPath }}
+        {{- if and (eq .Config.Spec.Monitoring.Tracer.Type "lightstep") .Config.Spec.Monitoring.Tracer.LightStep.CACertPath }}
         - mountPath: {{ "[[ directory .ProxyConfig.GetTracing.GetLightstep.GetCacertPath ]]" }}
           name: lightstep-certs
           readOnly: true
         {{- end }}
       volumes:
-      {{- if .SDSEnabled }}
+      {{- if .Values.global.sds.enabled }}
       - name: sds-uds-path
         hostPath:
           path: /var/run/sds
-      {{- if .SDSTokenMountEnabled }}
+      {{- if .Values.global.sds.enableTokenMount }}
       - name: istio-token
         projected:
           sources:
           - serviceAccountToken:
               path: istio-token
               expirationSeconds: 43200
-              audience: {{ .TrustDomain }}
+              audience: {{ .Config.Spec.Security.TrustDomain }}
       {{- end }}
       {{- end }}
-      {{- if and (eq .Tracer.Type "lightstep") .Tracer.LightStep.CACertPath }}
+      {{- if and (eq .Config.Spec.Monitoring.Tracer.Type "lightstep") .Config.Spec.Monitoring.Tracer.LightStep.CACertPath }}
       - name: lightstep-certs
         secret:
           optional: true
@@ -514,10 +507,10 @@ data:
           secretName: {{ "[[ printf \"istio.%s\" .Spec.ServiceAccountName ]]"  }}
           {{ "[[ end -]]" }}
 {{- end }}
-{{- if .PodDNSSearchNamespaces }}
+{{- if .Values.global.podDNSSearchNamespaces }}
       dnsConfig:
         searches:
-          {{- range .PodDNSSearchNamespaces }}
+          {{- range .Values.global.podDNSSearchNamespaces }}
           - {{ . }}
           {{- end }}
 `

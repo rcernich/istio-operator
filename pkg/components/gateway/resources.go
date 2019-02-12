@@ -62,7 +62,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-ingressgateway
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio-ingressgateway
     istio: istio-ingressgateway
@@ -108,12 +108,12 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: istio-ingressgateway
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio-ingressgateway
     istio: istio-ingressgateway
 spec:
-  replicas: {{ .ReplicaCount }}
+  replicas: {{ .Config.Spec.Gateways.IngressGateway.ReplicaCount }}
   template:
     metadata:
       labels:
@@ -124,13 +124,13 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
       serviceAccountName: istio-ingressgateway-service-account
-{{- if .PriorityClassName }}
-      priorityClassName: "{{ .PriorityClassName }}"
+{{- if .Config.Spec.General.PriorityClassName }}
+      priorityClassName: "{{ .Config.Spec.General.PriorityClassName }}"
 {{- end }}
-{{- if .EnableCoreDump }}
+{{- if .Config.Spec.General.Debug.EnableCoreDump }}
       initContainers:
         - name: enable-core-dump
-          image: "{{ .InitImage }}"
+          image: "{{ .Config.Spec.Proxy.InitImage }}"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -142,8 +142,8 @@ spec:
 {{- end }}
       containers:
         - name: istio-proxy
-          image: "{{ .ProxyImage }}"
-          imagePullPolicy: {{ .ImagePullPolicy }}
+          image: "{{ .Config.Spec.Proxy.Image }}"
+          imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
           ports:
           - containerPort: 80
             name: http2
@@ -173,7 +173,7 @@ spec:
           - router
 {{- if .ProxyDomain }}
           - --domain
-          - {{ .ProxyDomain }}
+          - {{ .Config.Spec.Proxy.ProxyDomain }}
 {{- end }}
           - --log_output_level
           - 'info'
@@ -185,17 +185,17 @@ spec:
           - '10s' #connectTimeout
           - --serviceCluster
           - istio-ingressgateway
-        {{- if eq .Tracer.Type "lightstep" }}
+        {{- if eq .Config.Spec.Monitoring.Tracer.Type "lightstep" }}
           - --lightstepAddress
-          - {{ .Tracer.LightStep.Address }}
+          - {{ .Config.Spec.Monitoring.Tracer.LightStep.Address }}
           - --lightstepAccessToken
-          - {{ .Tracer.LightStep.AccessToken }}
-          - --lightstepSecure={{ .Tracer.LightStep.Secure }}
+          - {{ .Config.Spec.Monitoring.Tracer.LightStep.AccessToken }}
+          - --lightstepSecure={{ .Config.Spec.Monitoring.Tracer.LightStep.Secure }}
           - --lightstepCacertPath
-          - {{ .Tracer.LightStep.CACertPath }}
-        {{- else if eq .Tracer.Type "zipkin" }}
+          - {{ .Config.Spec.Monitoring.Tracer.LightStep.CACertPath }}
+        {{- else if eq .Config.Spec.Monitoring.Tracer.Type "zipkin" }}
           - --zipkinAddress
-          - {{ .Tracer.Zipkin.Address }}
+          - {{ .Config.Spec.Monitoring.Tracer.Zipkin.Address }}
         {{- end }}
         {{- if $.Values.global.proxy.envoyStatsd.enabled }}
           - --statsdUdpAddress
@@ -203,7 +203,7 @@ spec:
         {{- end }}
           - --proxyAdminPort
           - "15000"
-        {{- if $.ControlPlaneSecurityEnabled }}
+        {{- if $.Config.Spec.Security.ControlPlaneSecurityEnabled }}
           - --controlPlaneAuthPolicy
           - MUTUAL_TLS
           - --discoveryAddress
@@ -215,11 +215,6 @@ spec:
           - istio-pilot:15010
         {{- end }}
           resources:
-{{- if $spec.resources }}
-{{ toYaml $spec.resources | indent 12 }}
-{{- else }}
-{{ toYaml $.Values.global.defaultResources | indent 12 }}
-{{- end }}
           env:
           - name: NODE_NAME
             valueFrom:
@@ -285,7 +280,6 @@ spec:
           secretName: istio-ingressgateway-ca-certs
           optional: true
       affinity:
-      {{- include "nodeaffinity" $ | indent 6 }}
 `
 
 const ingressClusterRoleYamlTemplate = `
@@ -307,7 +301,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-egressgateway
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio-egressgateway
     istio: istio-egressgateway
@@ -332,12 +326,12 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: istio-egressgateway
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio-egressgateway
     istio: istio-egressgateway
 spec:
-  replicas: {{ .ReplicaCount }}
+  replicas: {{ .Config.Spec.Gateways.EgressGateway.ReplicaCount }}
   template:
     metadata:
       labels:
@@ -348,10 +342,10 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
       serviceAccountName: istio-egressgateway-service-account
-{{- if .PriorityClassName }}
-      priorityClassName: "{{ .PriorityClassName }}"
+{{- if .Config.Spec.General.PriorityClassName }}
+      priorityClassName: "{{ .Config.Spec.General.PriorityClassName }}"
 {{- end }}
-{{- if .EnableCoreDump }}
+{{- if .Config.Spec.General.Debug.EnableCoreDump }}
       initContainers:
         - name: enable-core-dump
           image: "{{ .InitImage }}"
@@ -379,9 +373,9 @@ spec:
           args:
           - proxy
           - router
-{{- if .ProxyDomain }}
+{{- if .Config.Spec.Proxy.ProxyDomain }}
           - --domain
-          - {{ .ProxyDomain }}
+          - {{ .Config.Spec.Proxy.ProxyDomain }}
 {{- end }}
           - --log_output_level
           - 'info'
@@ -393,17 +387,17 @@ spec:
           - '10s' #connectTimeout
           - --serviceCluster
           - istio-egressgateway
-        {{- if eq .Tracer.Type "lightstep" }}
+        {{- if eq .Config.Spec.Monitoring.Tracer.Type "lightstep" }}
           - --lightstepAddress
-          - {{ .Tracer.LightStep.Address }}
+          - {{ .Config.Spec.Monitoring.Tracer.LightStep.Address }}
           - --lightstepAccessToken
-          - {{ .Tracer.LightStep.AccessToken }}
-          - --lightstepSecure={{ .Tracer.LightStep.Secure }}
+          - {{ .Config.Spec.Monitoring.Tracer.LightStep.AccessToken }}
+          - --lightstepSecure={{ .Config.Spec.Monitoring.Tracer.LightStep.Secure }}
           - --lightstepCacertPath
-          - {{ .Tracer.LightStep.CACertPath }}
-        {{- else if eq .Tracer.Type "zipkin" }}
+          - {{ .Config.Spec.Monitoring.Tracer.LightStep.CACertPath }}
+        {{- else if eq .Config.Spec.Monitoring.Tracer.Type "zipkin" }}
           - --zipkinAddress
-          - {{ .Tracer.Zipkin.Address }}
+          - {{ .Config.Spec.Monitoring.Tracer.Zipkin.Address }}
         {{- end }}
         {{- if $.Values.global.proxy.envoyStatsd.enabled }}
           - --statsdUdpAddress
@@ -411,7 +405,7 @@ spec:
         {{- end }}
           - --proxyAdminPort
           - "15000"
-        {{- if $.ControlPlaneSecurityEnabled }}
+        {{- if $.Config.Spec.Security.ControlPlaneSecurityEnabled }}
           - --controlPlaneAuthPolicy
           - MUTUAL_TLS
           - --discoveryAddress
@@ -423,11 +417,6 @@ spec:
           - istio-pilot:15010
         {{- end }}
           resources:
-{{- if $spec.resources }}
-{{ toYaml $spec.resources | indent 12 }}
-{{- else }}
-{{ toYaml $.Values.global.defaultResources | indent 12 }}
-{{- end }}
           env:
           - name: NODE_NAME
             valueFrom:
@@ -493,7 +482,6 @@ spec:
           secretName: istio-egressgateway-ca-certs
           optional: true
       affinity:
-      {{- include "nodeaffinity" $ | indent 6 }}
 `
 
 const egressClusterRoleYamlTemplate = `

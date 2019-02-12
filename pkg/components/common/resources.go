@@ -1,52 +1,49 @@
 package common
 
 import (
-    "sync"
-    "text/template"
+	"sync"
+	"text/template"
+
+	istioopv1alpha2 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha2"
 )
 
-// TODO: image pull secrets, 
 type TemplateParams struct {
-    Namespace string
-    Image string
-    ImagePullPolicy string
-    ReplicaCount int
-    ServiceAccountName string
-    ClusterRoleName string
-    ClusterRoleBindingName string
-    Autoscaler struct {
-        Name string
-        Deployment string
-        Min int
-        Max int
-        TargetAverageCPUUtilization int32
-    }
-    ImagePullSecrets string // TODO
+	Config                 *istioopv1alpha2.IstioControlPlane
+	ServiceAccountName     string
+	ClusterRoleName        string
+	ClusterRoleBindingName string
+	Autoscaler             AutoscalerParams
+}
+
+type AutoscalerParams struct {
+	istioopv1alpha2.AutoscalerConfig
+	Deployment string
 }
 
 type Templates struct {
 	ClusterRoleTemplate        *template.Template
-    ServiceAccountTemplate *template.Template
-    ClusterRoleBindingTemplate *template.Template
+	ServiceAccountTemplate     *template.Template
+	ClusterRoleBindingTemplate *template.Template
 	ServiceTemplate            *template.Template
 	DeploymentTemplate         *template.Template
 	ConfigMapTemplate          *template.Template
 }
 
 var (
-    _singleton *Templates
-    _init sync.Once
+	_singleton *Templates
+	_init      sync.Once
 )
+
 func TemplatesInstance() *Templates {
-    _init.Do(func() {
-        _singleton = &Templates{
-            ServiceAccountTemplate: template.New("ServiceAccount.yaml"),
-            ClusterRoleBindingTemplate: template.New("ClusterRoleBinding.yaml"),
-        }
-        _singleton.ServiceAccountTemplate.Parse(serviceAccountYamlTemplate)
-        _singleton.ClusterRoleBindingTemplate.Parse(clusterRoleBindingYamlTemplate)
-    })
-    return _singleton
+	_init.Do(func() {
+		_singleton = &Templates{
+			ServiceAccountTemplate:     template.New("ServiceAccount.yaml"),
+			ClusterRoleBindingTemplate: template.New("ClusterRoleBinding.yaml"),
+		}
+		_singleton.ServiceAccountTemplate.Parse(serviceAccountYamlTemplate)
+		_singleton.ClusterRoleBindingTemplate.Parse(clusterRoleBindingYamlTemplate)
+	})
+	return _singleton
 }
 
 const serviceAccountYamlTemplate = `
@@ -60,7 +57,7 @@ imagePullSecrets:
 {{- end }}
 metadata:
   name: {{ .ServiceAccountName }}
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
 `
 
 const clusterRoleBindingYamlTemplate = `
@@ -75,15 +72,15 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ .ServiceAccountName }}
-    namespace: {{ .Namespace }}
+    namespace: {{ .Config.Namespace }}
 `
 
 const horizontalAutoscalerYamlTemplate = `
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {.Autoscaler.Name}
-  namespace: {{ .Namespace }}
+  name: {.Autoscaler.Deployment}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio
 spec:

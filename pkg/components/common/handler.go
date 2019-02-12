@@ -38,7 +38,7 @@ func init() {
 	dynamicScheme.AddKnownTypeWithName(meshPolicyGVK, &unstructured.Unstructured{})
 }
 
-func Sync(config *istioopv1alpha2.IstioOperatorConfig, component string, templates *Templates, templateParams interface{}) []error {
+func Sync(config *istioopv1alpha2.IstioControlPlane, component string, templates *Templates, templateParams interface{}) []error {
 
 	kubeClient := k8sclient.GetKubeClient()
 	errors := []error{}

@@ -44,39 +44,37 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: istio
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: istio
 data:
   mesh: |-
     # Set the following variable to true to disable policy checks by the Mixer.
     # Note that metrics will still be reported to the Mixer.
-    disablePolicyChecks: {{ .Values.global.disablePolicyChecks }}
+    disablePolicyChecks: {{ .Config.Spec.Security.DisablePolicyChecks }}
 
     # Set enableTracing to false to disable request tracing.
-    enableTracing: {{ .Values.global.enableTracing }}
+    enableTracing: {{ .Config.Spec.Monitoring.EnableTracing }}
 
     # Set accessLogFile to empty string to disable access log.
-    accessLogFile: "{{ .Values.global.proxy.accessLogFile }}"
+    accessLogFile: "{{ .Config.Spec.Monitoring.AccessLogFile }}"
 
     # Set accessLogEncoding to JSON or TEXT to configure sidecar access log
-    accessLogEncoding: {{ .Values.global.proxy.accessLogEncoding }}
+    accessLogEncoding: {{ .Config.Spec.Monitoring.AccessLogEncoding }}
 
     #
     # Deprecated: mixer is using EDS
-    {{- if or .Values.mixer.policy.enabled .Values.mixer.telemetry.enabled }}
-    {{- if .Values.global.controlPlaneSecurityEnabled }}
-    mixerCheckServer: istio-policy.{{ .Release.Namespace }}.svc.cluster.local:15004
-    mixerReportServer: istio-telemetry.{{ .Release.Namespace }}.svc.cluster.local:15004
+    {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled }}
+    mixerCheckServer: istio-policy.{{ .Config.Namespace }}.svc.cluster.local:15004
+    mixerReportServer: istio-telemetry.{{ .Config.Namespace }}.svc.cluster.local:15004
     {{- else }}
-    mixerCheckServer: istio-policy.{{ .Release.Namespace }}.svc.cluster.local:9091
-    mixerReportServer: istio-telemetry.{{ .Release.Namespace }}.svc.cluster.local:9091
+    mixerCheckServer: istio-policy.{{ .Config.Namespace }}.svc.cluster.local:9091
+    mixerReportServer: istio-telemetry.{{ .Config.Namespace }}.svc.cluster.local:9091
     {{- end }}
 
     # policyCheckFailOpen allows traffic in cases when the mixer policy service cannot be reached.
     # Default is false which means the traffic is denied when the client is unable to connect to Mixer.
-    policyCheckFailOpen: {{ .Values.global.policyCheckFailOpen }}
-    {{- end }}
+    policyCheckFailOpen: {{ .Config.Spec.Security.PolicyCheckFailOpen }}
 
     {{- if .Values.ingress.enabled }}
     # This is the k8s ingress service name, update if you used a different name
@@ -95,7 +93,7 @@ data:
 
     # The trust domain corresponds to the trust root of a system.
     # Refer to https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md#21-trust-domain
-    trustDomain: {{ .Values.global.trustDomain }}
+    trustDomain: {{ .Config.Spec.Security.TrustDomain }}
 
     #
     defaultConfig:
@@ -137,50 +135,46 @@ data:
       #
       # Set concurrency to a specific number to control the number of Proxy worker threads.
       # If set to 0 (default), then start worker thread for each CPU thread/core.
-      concurrency: {{ .Values.global.proxy.concurrency }}
+      concurrency: {{ .Config.Spec.Proxy.Concurrency }}
       #
-      {{- if eq .Values.global.proxy.tracer "lightstep" }}
+      {{- if eq .Config.Spec.Monitoring.Tracer.Type "lightstep" }}
       tracing:
         lightstep:
           # Address of the LightStep Satellite pool
-          address: {{ .Values.global.tracer.lightstep.address }}
+          address: {{ .Config.Spec.Monitoring.Tracer.LightStep.Address }}
           # Access Token used to communicate with the Satellite pool
-          accessToken: {{ .Values.global.tracer.lightstep.accessToken }}
+          accessToken: {{ .Config.Spec.Monitoring.Tracer.LightStep.AccessToken }}
           # Whether communication with the Satellite pool should be secure
-          secure: {{ .Values.global.tracer.lightstep.secure }}
+          secure: {{ .Config.Spec.Monitoring.Tracer.LightStep.Secure }}
           # Path to the file containing the cacert to use when verifying TLS
-          cacertPath: {{ .Values.global.tracer.lightstep.cacertPath }}
-      {{- else if eq .Values.global.proxy.tracer "zipkin" }}
+          cacertPath: {{ .Config.Spec.Monitoring.Tracer.LightStep.CACertPath }}
+      {{- else if eq .Config.Spec.Monitoring.Tracer.Type "zipkin" }}
       tracing:
         zipkin:
           # Address of the Zipkin collector
-        {{- if .Values.global.tracer.zipkin.address }}
-          address: {{ .Values.global.tracer.zipkin.address }}
-        {{- else }}
-          address: zipkin.{{ .Release.Namespace }}:9411
-        {{- end }}
+          address: {{ .Config.Spec.Monitoring.Tracer.Zipkin.Address }}
       {{- end }}
 
     {{- if .Values.global.proxy.envoyStatsd.enabled }}
       #
       # Statsd metrics collector converts statsd metrics into Prometheus metrics.
-      statsdUdpAddress: {{ .Values.global.proxy.envoyStatsd.host }}.{{ .Release.Namespace }}:{{ .Values.global.proxy.envoyStatsd.port }}
+      statsdUdpAddress: {{ .Values.global.proxy.envoyStatsd.host }}.{{ .Config.Namespace }}:{{ .Values.global.proxy.envoyStatsd.port }}
     {{- end }}
 
-    {{- if .Values.global.controlPlaneSecurityEnabled }}
+    {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled }}
       #
       # Mutual TLS authentication between sidecars and istio control plane.
       controlPlaneAuthPolicy: MUTUAL_TLS
       #
       # Address where istio Pilot service is running
-      discoveryAddress: istio-pilot.{{ .Release.Namespace }}:15011
+      discoveryAddress: istio-pilot.{{ .Config.Namespace }}:15011
     {{- else }}
       #
       # Mutual TLS authentication between sidecars and istio control plane.
       controlPlaneAuthPolicy: NONE
       #
       # Address where istio Pilot service is running
-      discoveryAddress: istio-pilot.{{ .Release.Namespace }}:15010
+      discoveryAddress: istio-pilot.{{ .Config.Namespace }}:15010
     {{- end }}
   
   # Configuration file for the mesh networks to be used by the Split Horizon EDS.

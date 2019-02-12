@@ -27,11 +27,11 @@ func init() {
 	}
 }
 
-func Sync(config *istioopv1alpha2.IstioOperatorConfig) []error {
+func Sync(config *istioopv1alpha2.IstioControlPlane) []error {
 
 	templateParams := TemplateParams{
 		TemplateParams: common.TemplateParams{
-			Namespace:              config.Namespace,
+			Config:                 config,
 			ServiceAccountName:     "istio-sidecar-injector-service-account",
 			ClusterRoleName:        "istio-sidecar-injector-" + config.Namespace,
 			ClusterRoleBindingName: "istio-sidecar-injector-admin-role-binding-" + config.Namespace,

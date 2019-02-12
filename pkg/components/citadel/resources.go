@@ -62,7 +62,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: istio-citadel
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: security
     istio: citadel
@@ -84,12 +84,12 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: istio-citadel
-  namespace: {{ .Namespace }}
+  namespace: {{ .Config.Namespace }}
   labels:
     app: security
     istio: citadel
 spec:
-  replicas: {{ .ReplicaCount }}
+  replicas: {{ .Config.Spec.Security.Citadel.ReplicaCount }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -104,20 +104,20 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
       serviceAccountName: istio-citadel-service-account
-{{- if .PriorityClassName }}
-      priorityClassName: "{{ .PriorityClassName }}"
+{{- if .Config.Spec.General.PriorityClassName }}
+      priorityClassName: "{{ .Config.Spec.General.PriorityClassName }}"
 {{- end }}
       containers:
         - name: citadel
-          image: "{{ .Image }}"
-          imagePullPolicy: {{ .ImagePullPolicy }}
+          image: "{{ imageName .Config.Spec.Security.Citadel.Image .Config.Spec.General.DeploymentDefaults.Image }}"
+          imagePullPolicy: {{ .Config.Spec.General.PullPolicy }}
           args:
             - --append-dns-names=true
             - --grpc-port=8060
             - --grpc-hostname=citadel
             - --citadel-storage-namespace={{ .Namespace }}
             - --custom-dns-names=istio-pilot-service-account.{{ .Namespace }}:istio-pilot.{{ .Namespace }}
-          {{- if .SelfSigned }}
+          {{- if .Config.Spec.Security.Citadel.SelfSigned }}
             - --self-signed-ca=true
           {{- else }}
             - --self-signed-ca=false
@@ -126,14 +126,11 @@ spec:
             - --root-cert=/etc/cacerts/root-cert.pem
             - --cert-chain=/etc/cacerts/cert-chain.pem
           {{- end }}
-          {{- if .TrustDomain }}
-            - --trust-domain={{ .TrustDomain }}
+          {{- if .Config.Spec.Security.TrustDomain }}
+            - --trust-domain={{ .Config.Spec.Security.TrustDomain }}
           {{- end }}
           resources:
-{{- if .Resources }}
-{{ toYaml .Resources | indent 12 }}
-{{- end }}
-{{- if not .SelfSigned }}
+{{- if not .Config.Spec.Security.Citadel.SelfSigned }}
           volumeMounts:
           - name: cacerts
             mountPath: /etc/cacerts
@@ -145,7 +142,6 @@ spec:
          optional: true
 {{- end }}
       affinity:
-      {{- include "nodeaffinity" . | indent 6 }}
 `
 
 const clusterRoleYamlTemplate = `
