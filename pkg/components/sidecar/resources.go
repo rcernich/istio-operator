@@ -7,58 +7,6 @@ import (
 	"github.com/maistra/istio-operator/pkg/components/common"
 )
 
-type TemplateParams struct {
-  common.TemplateParams
-  EnableNamespacesByDefault    bool
-	StatusPort                   string
-	IncludeIPRanges              string
-	ExcludeIPRanges              string
-	ExcludeInboundPorts          string
-  ProxyImage                   string
-	Image                        string
-	ReadinessInitialDelaySeconds string
-	ReadinessPeriodSeconds       string
-	ReadinessFailureThreashold   string
-	AutoInject                   string
-	EnableCoreDump               bool
-	InitImage                    string
-	Privileged                   bool
-	ProxyDomain                  string
-	EnvoyStatsdEnabled           bool
-	MetaNetwork                  string
-  Resources                    string // TODO
-  NodeAffinity                 string // TODO
-	SDSEnabled                   bool
-	SDSTokenMountEnabled         bool
-	TrustDomain                  string
-	PodDNSSearchNamespaces       []string
-	Network                      string
-  PriorityClassName            string
-  Tracer                       Tracer
-}
-
-type TracerType string
-const (
-  LightStepType TracerType = "lightstep"
-  ZipkinType TracerType = "zipkin"
-)
-type Tracer struct {
-  Type TracerType
-  LightStep *LightStepTracer
-  Zipkin *ZipkinTracer
-}
-
-type LightStepTracer struct {
-  Address string
-  AccessToken string
-  CACertPath string
-  Secure bool
-}
-
-type ZipkinTracer struct {
-  Address string
-}
-
 type templates struct {
 	common.Templates
 	MutatingWebHookTemplate *template.Template
@@ -87,7 +35,7 @@ func TemplatesInstance() *templates {
 		_singleton.DeploymentTemplate.Parse(deploymentYamlTemplate)
 		_singleton.ClusterRoleTemplate.Parse(clusterRoleYamlTemplate)
 		_singleton.ConfigMapTemplate.Parse(configMapYaml)
-		_singleton.MutatingWebHookTemplate.Parse(mutatingWebHookYamlTemplate)
+		_singleton.MutatingWebHookTemplate.Parse(mutatingWebhookYamlTemplate)
 	})
 	return _singleton
 }
@@ -125,7 +73,7 @@ rules:
   verbs: ["get", "list", "watch", "patch"]
 `
 
-const mutatingWebHookYamlTemplate = `
+const mutatingWebhookYamlTemplate = `
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:

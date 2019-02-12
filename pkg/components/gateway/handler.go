@@ -7,13 +7,11 @@ import (
 
 func Sync(config *istioopv1alpha2.IstioControlPlane) []error {
 
-	templateParams := templateParams{
-		TemplateParams: common.TemplateParams{
-			Config:                 config,
-			ServiceAccountName:     "istio-ingressgateway-service-account",
-			ClusterRoleName:        "istio-ingressgateway-" + config.Namespace,
-			ClusterRoleBindingName: "istio-ingressgateway-" + config.Namespace,
-		},
+	templateParams := common.TemplateParams{
+		Config:                 config,
+		ServiceAccountName:     "istio-ingressgateway-service-account",
+		ClusterRoleName:        "istio-ingressgateway-" + config.Namespace,
+		ClusterRoleBindingName: "istio-ingressgateway-" + config.Namespace,
 	}
 
 	templates := TemplatesInstance()

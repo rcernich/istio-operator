@@ -7,15 +7,6 @@ import (
 	"github.com/maistra/istio-operator/pkg/components/common"
 )
 
-type templateParams struct {
-	common.TemplateParams
-	EnableCoreDump              bool
-	InitImage                   string // Proxy Init Image
-	ProxyImage                  string
-	ProxyDomain                 string
-	ControlPlaneSecurityEnabled bool
-}
-
 type gatewayTemplates struct {
 	Ingress common.Templates
 	Egress  common.Templates

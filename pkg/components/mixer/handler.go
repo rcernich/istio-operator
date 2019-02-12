@@ -12,13 +12,11 @@ import (
 
 func Sync(config *istioopv1alpha2.IstioControlPlane) []error {
 
-	templateParams := templateParams{
-		TemplateParams: common.TemplateParams{
-			Config:                 config,
-			ServiceAccountName:     "istio-mixer-service-account",
-			ClusterRoleName:        "istio-mixer-" + config.Namespace,
-			ClusterRoleBindingName: "istio-mixer-" + config.Namespace,
-		},
+	templateParams := common.TemplateParams{
+		Config:                 config,
+		ServiceAccountName:     "istio-mixer-service-account",
+		ClusterRoleName:        "istio-mixer-" + config.Namespace,
+		ClusterRoleBindingName: "istio-mixer-" + config.Namespace,
 	}
 
 	var err error

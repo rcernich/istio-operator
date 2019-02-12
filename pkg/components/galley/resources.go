@@ -7,17 +7,6 @@ import (
 	"github.com/maistra/istio-operator/pkg/components/common"
 )
 
-// TODO: resources, nodeaffinity
-type templateParams struct {
-	common.TemplateParams
-	PriorityClassName           string
-	MonitoringPort              int
-	ControlPlaneSecurityEnabled bool
-	ConfigureValidation         bool
-  Resources                   string // TODO
-  NodeAffinity                string // TODO
-}
-
 var (
 	_singleton *common.Templates
 	_init      sync.Once
@@ -212,7 +201,7 @@ data:
       labels:
         istio: galley
     webhooks:
-    {{- if .ConfigureValidation }}
+    {{- if .Config.Spec.General.ConfigValidation }}
       - name: pilot.validation.istio.io
         clientConfig:
           service:

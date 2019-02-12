@@ -5,26 +5,7 @@ import (
 	"text/template"
 
 	"github.com/maistra/istio-operator/pkg/components/common"
-
-	corev1 "k8s.io/api/core/v1"
 )
-
-type templateParams struct {
-	common.TemplateParams
-	PriorityClassName           string
-	MonitoringPort              int
-	ControlPlaneSecurityEnabled bool
-	ConfigureValidation         bool
-	DiscoveryDomain             string
-	Sidecar                     bool
-	UseMCP                      bool
-  Env                         []corev1.EnvVar
-  TraceSampling               string // TODO
-  Resources                   string // TODO
-  ProxyImage                  string
-  ProxyDomain                 string
-  NodeAffinity                string // TODO
-}
 
 var (
 	_singleton *common.Templates
@@ -125,7 +106,6 @@ spec:
           - --secureGrpcAddr
           - ":15011"
 {{- end }}
-{{- if .UseMCP }}
     {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled}}
           - --mcpServerAddrs=mcps://istio-galley.{{ .Config.Namespace }}.svc:9901
           - --certFile=/etc/certs/cert-chain.pem
@@ -134,7 +114,6 @@ spec:
     {{- else }}
           - --mcpServerAddrs=mcp://istio-galley.{{ .Config.Namespace }}.svc:9901
     {{- end }}
-{{- end }}
           ports:
           - containerPort: 8080
           - containerPort: 15010

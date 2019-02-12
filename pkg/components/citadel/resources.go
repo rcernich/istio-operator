@@ -7,23 +7,10 @@ import (
 	"github.com/maistra/istio-operator/pkg/components/common"
 )
 
-// TODO: resources, nodeaffinity
-type templateParams struct {
-	common.TemplateParams
-	PriorityClassName           string
-	MonitoringPort              int
-	ControlPlaneSecurityEnabled bool
-	ConfigureValidation         bool
-  SelfSigned                  bool
-  TrustDomain                 string
-  Resources                   string // TODO
-  NodeAffinity                string // TODO
-}
-
 type templates struct {
 	common.Templates
-	MtlsDestinationRuleListTemplate *template.Template
-	MtlsMeshPolicyTemplate          *template.Template
+	MTLSDestinationRuleListTemplate *template.Template
+	MTLSMeshPolicyTemplate          *template.Template
 	PermissiveMeshPolicyTemplate    *template.Template
 }
 
@@ -43,15 +30,15 @@ func TemplatesInstance() *templates {
 				DeploymentTemplate:         template.New("Deployment.yaml"),
 				ClusterRoleTemplate:        template.New("ClusterRole.yaml"),
 			},
-			MtlsDestinationRuleListTemplate: template.New("MtlsDestinationRules.yaml"),
-			MtlsMeshPolicyTemplate:          template.New("MtlsMeshPolicy.yaml"),
+			MTLSDestinationRuleListTemplate: template.New("MtlsDestinationRules.yaml"),
+			MTLSMeshPolicyTemplate:          template.New("MtlsMeshPolicy.yaml"),
 			PermissiveMeshPolicyTemplate:    template.New("PermissiveMeshPolicy.yaml"),
 		}
 		_singleton.ServiceTemplate.Parse(serviceYamlTemplate)
 		_singleton.DeploymentTemplate.Parse(deploymentYamlTemplate)
 		_singleton.ClusterRoleTemplate.Parse(clusterRoleYamlTemplate)
-		_singleton.MtlsDestinationRuleListTemplate.Parse(mtlsMeshDestinationRuleListYamlTemplate)
-		_singleton.MtlsMeshPolicyTemplate.Parse(mtlsMeshPolicyYamlTemplate)
+		_singleton.MTLSDestinationRuleListTemplate.Parse(mtlsMeshDestinationRuleListYamlTemplate)
+		_singleton.MTLSMeshPolicyTemplate.Parse(mtlsMeshPolicyYamlTemplate)
 		_singleton.PermissiveMeshPolicyTemplate.Parse(permissiveMeshPolicyYamlTemplate)
 	})
 	return _singleton

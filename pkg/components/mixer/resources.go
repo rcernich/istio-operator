@@ -5,25 +5,7 @@ import (
 	"text/template"
 
 	"github.com/maistra/istio-operator/pkg/components/common"
-
-	corev1 "k8s.io/api/core/v1"
 )
-
-type templateParams struct {
-	common.TemplateParams
-	PriorityClassName           string
-	MonitoringPort              int
-	ControlPlaneSecurityEnabled bool
-	ConfigureValidation         bool
-	PodAnnotations              string          // TODO
-	UseMCP                      bool            // TODO?
-	ZipkinAddress               string          // TODO, default to zipkin:9411
-	Resources                   string          // TODO
-	NodeSelector                string          // TODO
-  Env                         []corev1.EnvVar // TODO
-  ProxyDomain                 string
-  ProxyImage                  string
-}
 
 type mixerTemplates struct {
 	common.Templates
@@ -177,7 +159,6 @@ spec:
           - --monitoringPort={{ .Config.Spec.Monitoring.Port }}
           - --address
           - unix:///sock/mixer.socket
-{{- if .UseMCP }}
     {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled }}
           - --configStoreURL=mcps://istio-galley.{{ .Config.Namespace }}.svc:9901
           - --certFile=/etc/certs/cert-chain.pem
@@ -186,9 +167,6 @@ spec:
     {{- else }}
           - --configStoreURL=mcp://istio-galley.{{ .Config.Namespace }}.svc:9901
     {{- end }}
-{{- else }}
-          - --configStoreURL=k8s://
-{{- end }}
           - --configDefaultNamespace={{ .Config.Namespace }}
           {{- if eq .Config.Spec.Monitoring.Tracer.Type "zipkin" }}
           - --trace_zipkin_url=http://{{- .Config.Spec.Monitoring.Tracer.Zipkin.Address }}/api/v1/spans
@@ -197,11 +175,9 @@ spec:
           {{- end }}
         resources:
         volumeMounts:
-{{- if .UseMCP }}
         - name: istio-certs
           mountPath: /etc/certs
           readOnly: true
-{{- end }}
         - name: uds-socket
           mountPath: /sock
         livenessProbe:
@@ -354,7 +330,6 @@ spec:
           - --monitoringPort={{ .Config.Spec.Monitoring.Port }}
           - --address
           - unix:///sock/mixer.socket
-{{- if .UseMCP }}
     {{- if .Config.Spec.Security.ControlPlaneSecurityEnabled}}
           - --configStoreURL=mcps://istio-galley.{{ $.Config.Namespace }}.svc:9901
           - --certFile=/etc/certs/cert-chain.pem
@@ -363,9 +338,6 @@ spec:
     {{- else }}
           - --configStoreURL=mcp://istio-galley.{{ $.Config.Namespace }}.svc:9901
     {{- end }}
-{{- else }}
-          - --configStoreURL=k8s://
-{{- end }}
           - --configDefaultNamespace={{ .Config.Namespace }}
           {{- if eq .Config.Spec.Monitoring.Tracer.Type "zipkin" }}
           - --trace_zipkin_url=http://{{- .Config.Spec.Monitoring.Tracer.Zipkin.Address }}/api/v1/spans
@@ -374,11 +346,9 @@ spec:
           {{- end }}
         resources:
         volumeMounts:
-{{- if .UseMCP }}
         - name: istio-certs
           mountPath: /etc/certs
           readOnly: true
-{{- end }}
         - name: uds-socket
           mountPath: /sock
         livenessProbe:

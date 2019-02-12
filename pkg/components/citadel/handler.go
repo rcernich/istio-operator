@@ -13,13 +13,11 @@ import (
 
 func Sync(config *istioopv1alpha2.IstioControlPlane) []error {
 
-	templateParams := templateParams{
-		TemplateParams: common.TemplateParams{
-			Config: config,
-			ServiceAccountName:     "istio-citadel-service-account",
-			ClusterRoleName:        "istio-citadel-" + config.Namespace,
-			ClusterRoleBindingName: "istio-citadel-admin-role-binding-" + config.Namespace,
-		},
+	templateParams := common.TemplateParams{
+		Config:                 config,
+		ServiceAccountName:     "istio-citadel-service-account",
+		ClusterRoleName:        "istio-citadel-" + config.Namespace,
+		ClusterRoleBindingName: "istio-citadel-admin-role-binding-" + config.Namespace,
 	}
 
 	templates := TemplatesInstance()
@@ -37,8 +35,8 @@ func Sync(config *istioopv1alpha2.IstioControlPlane) []error {
 	dynamicInterface, err := dynamic.NewForConfig(k8sclient.GetKubeConfig())
 
 	// XXX: distinguish between Policy and MeshPolicy for cluster vs namespaced installations
-	if config.Spec.GeneralConfig.MTlsEnabled {
-		data, err = common.ProcessTemplate(templates.MtlsMeshPolicyTemplate, &templateParams)
+	if config.Spec.Security.MTLSEnabled {
+		data, err = common.ProcessTemplate(templates.MTLSMeshPolicyTemplate, &templateParams)
 		if err == nil {
 			meshPolicy := common.ReadMeshPolicyV1Alpha1OrDie(data.Bytes())
 			_, _, err = common.ApplyMeshPolicy(dynamicInterface, meshPolicy)
@@ -47,7 +45,7 @@ func Sync(config *istioopv1alpha2.IstioControlPlane) []error {
 			errors = append(errors, fmt.Errorf("Citadel: MeshPolicy: %v", err))
 		}
 
-		data, err = common.ProcessTemplate(templates.MtlsDestinationRuleListTemplate, &templateParams)
+		data, err = common.ProcessTemplate(templates.MTLSDestinationRuleListTemplate, &templateParams)
 		if err == nil {
 			destinationRules := common.ReadDestinationRuleListV1Alpha3OrDie(data.Bytes())
 			for _, dr := range destinationRules.Items {
