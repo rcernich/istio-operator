@@ -10,6 +10,7 @@ required = [
   "k8s.io/code-generator/cmd/informer-gen",
   "k8s.io/code-generator/cmd/openapi-gen",
   "k8s.io/gengo/args",
+  "k8s.io/helm/cmd/helm",
 ]
 
 [[override]]
@@ -19,22 +20,22 @@ required = [
 [[override]]
   name = "k8s.io/code-generator"
   source = "https://github.com/openshift/kubernetes-code-generator.git"
-  branch = "origin-3.10-kubernetes-1.10.2"
+  branch = "origin-3.11-kubernetes-1.11.1"
 
 [[override]]
   name = "k8s.io/api"
   source = "https://github.com/openshift/kubernetes-api.git"
-  branch = "origin-3.10-kubernetes-1.10.2"
+  branch = "origin-3.11-kubernetes-1.11.1"
 
 [[override]]
   name = "k8s.io/apimachinery"
   source = "https://github.com/openshift/kubernetes-apimachinery.git"
-  branch = "origin-3.10-kubernetes-1.10.2"
+  branch = "origin-3.11-kubernetes-1.11.1"
 
 [[override]]
   name = "k8s.io/client-go"
   source = "https://github.com/openshift/kubernetes-client-go.git"
-  branch = "origin-3.10-kubernetes-1.10.2"
+  branch = "origin-3.11-kubernetes-1.11.1"
 
 [[constraint]]
   name = "github.com/operator-framework/operator-sdk"
@@ -47,5 +48,15 @@ required = [
   name = "github.com/openshift/library-go"
 
 [[constraint]]
-  branch = "master"
+  name = "k8s.io/helm"
+  version = "v2.11.0"
+
+[[constraint]]
   name = "istio.io/api"
+  branch = "release-1.1"
+
+[prune]
+  [[prune.project]]
+    name = "k8s.io/helm"
+    non-go = false
+    unused-packages = false
