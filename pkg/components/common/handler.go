@@ -16,7 +16,6 @@ import (
 	istioopv1alpha2 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha2"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	resourceread "github.com/openshift/library-go/pkg/operator/resource/resourcecread"
-	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
 )
 
 var (

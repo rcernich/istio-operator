@@ -13,7 +13,6 @@ import (
 
 	istioopv1alpha2 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha2"
 	"github.com/maistra/istio-operator/pkg/components/common"
-	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
 )
 
 var (

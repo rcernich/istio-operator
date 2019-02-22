@@ -37,11 +37,23 @@ required = [
   source = "https://github.com/openshift/kubernetes-client-go.git"
   branch = "origin-3.11-kubernetes-1.11.1"
 
+[[override]]
+  name = "sigs.k8s.io/controller-runtime"
+  version = "=v0.1.4"
+
+[[override]]
+  name = "github.com/coreos/prometheus-operator"
+  version = "=v0.24.0"
+
+[[override]]
+  name = "github.com/go-openapi/spec"
+  version = "^v0.15.0"
+
 [[constraint]]
   name = "github.com/operator-framework/operator-sdk"
   # The version rule is used for a specific release and the master branch for in between releases.
-  branch = "master"
-  # version = "=v0.0.5"
+  #branch = "master"
+  version = "=v0.2.1"
 
 [[constraint]]
   branch = "release-3.11"
