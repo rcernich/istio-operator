@@ -10,8 +10,8 @@ import (
 
 // StatusType represents the status for a control plane, component, or resource
 type StatusType struct {
-	ObservedGeneration int64
-	Conditions []Condition
+	ObservedGeneration int64       `json:"observedGeneration,omitempty"`
+	Conditions         []Condition `json:"conditions,omitempty"`
 }
 
 // NewStatus returns a new StatusType object
@@ -22,7 +22,7 @@ func NewStatus() StatusType {
 // ComponentStatus represents the status for a component
 type ComponentStatus struct {
 	StatusType     `json:",inline"`
-	ResourceStatus map[ResourceKey]StatusType
+	ResourceStatus map[ResourceKey]StatusType `json:"resourceStatus,omitempty"`
 }
 
 // NewComponentStatus returns a new ComponentStatus object
@@ -92,11 +92,11 @@ const (
 
 // Condition represents a specific condition on a resource
 type Condition struct {
-	Type               ConditionType
-	Status             ConditionStatus
-	Reason             ConditionReason
-	Message            string
-	LastTransitionTime metav1.Time
+	Type               ConditionType   `json:"type,omitempty"`
+	Status             ConditionStatus `json:"status,omitempty"`
+	Reason             ConditionReason `json:"reason,omitempty"`
+	Message            string          `json:"message,omitempty"`
+	LastTransitionTime metav1.Time     `json:"lastTransitionTime,omitempty"`
 }
 
 // GetCondition removes a condition for the list of conditions
@@ -110,7 +110,7 @@ func (s *StatusType) GetCondition(conditionType ConditionType) Condition {
 			return s.Conditions[i]
 		}
 	}
-    return Condition{Type: conditionType, Status: ConditionStatusUnknown}
+	return Condition{Type: conditionType, Status: ConditionStatusUnknown}
 }
 
 // SetCondition sets a specific condition in the list of conditions

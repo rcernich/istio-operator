@@ -100,9 +100,3 @@ required = [
 [[constraint]]
   name = "istio.io/api"
   branch = "release-1.1"
-
-[prune]
-  [[prune.project]]
-    name = "k8s.io/helm"
-    non-go = false
-    unused-packages = false
