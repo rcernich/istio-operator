@@ -10,14 +10,6 @@
   version = "v0.26.0"
 
 [[projects]]
-  digest = "1:e1b859e3d9e90007d5fbf25edf57733b224f1857f6592636130afab3af8cfae7"
-  name = "contrib.go.opencensus.io/exporter/ocagent"
-  packages = ["."]
-  pruneopts = ""
-  revision = "00af367e65149ff1f2f4b93bbfbb84fd9297170d"
-  version = "v0.2.0"
-
-[[projects]]
   branch = "master"
   digest = "1:6978a38432a017763a148afbc7ce6491734b54292af7d3e969d84d2e9dd242e2"
   name = "github.com/Azure/go-ansiterm"
@@ -29,19 +21,16 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
-  digest = "1:f24d900a7aeff07f60d783a3e1c394e494ab119ab66278c69da9848b40626734"
+  digest = "1:d62e9a41f2e45c103f6c15ffabb3466b3548db41b8cc135a4669794033ee761f"
   name = "github.com/Azure/go-autorest"
   packages = [
     "autorest",
     "autorest/adal",
     "autorest/azure",
     "autorest/date",
-    "logger",
-    "tracing",
   ]
   pruneopts = ""
-  revision = "f4369d4c79bf40df5e86def1e0f54c7ef261a51c"
-  version = "v11.5.0"
+  revision = "1ff28809256a84bb6966640ff3d0371af82ccba4"
 
 [[projects]]
   digest = "1:e4b30804a381d7603b8a344009987c1ba351c26043501b23b8c7ce21f0b67474"
@@ -122,19 +111,6 @@
   packages = ["quantile"]
   pruneopts = ""
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
-
-[[projects]]
-  digest = "1:0b2d5839372f6dc106fcaa70b6bd5832789a633c4e470540f76c2ec6c560e1c1"
-  name = "github.com/census-instrumentation/opencensus-proto"
-  packages = [
-    "gen-go/agent/common/v1",
-    "gen-go/agent/trace/v1",
-    "gen-go/resource/v1",
-    "gen-go/trace/v1",
-  ]
-  pruneopts = ""
-  revision = "7f2434bc10da710debe5c4315ed6d4df454b4024"
-  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
@@ -396,7 +372,6 @@
     "ptypes/any",
     "ptypes/duration",
     "ptypes/timestamp",
-    "ptypes/wrappers",
   ]
   pruneopts = ""
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
@@ -611,26 +586,9 @@
   branch = "release-3.11"
   digest = "1:bd1c931a49e99acf1bcb34ef6ed5dd14a3a7d16c693cdd5ac2b0ff38c16ef726"
   name = "github.com/openshift/api"
-  packages = [
-    "config/v1",
-    "operator/v1alpha1",
-    "security/v1",
-  ]
+  packages = ["security/v1"]
   pruneopts = ""
   revision = "5ad8479f64f1b60ee9c62ce8ef1fe6638838725e"
-
-[[projects]]
-  branch = "release-3.11"
-  digest = "1:bacfd95f75c5d0fd05e65d6fb197f93059b06f8a48953a7603fb7f9cf0a80bf5"
-  name = "github.com/openshift/library-go"
-  packages = [
-    "pkg/operator/resource/resourceapply",
-    "pkg/operator/resource/resourcecread",
-    "pkg/operator/resource/resourcemerge",
-    "pkg/operator/v1alpha1helpers",
-  ]
-  pruneopts = ""
-  revision = "0b8367a4679859036c27a30dbe010d76409e7075"
 
 [[projects]]
   digest = "1:048039ddb7577054e6c4a5f2c128b32b31f37e6bfdb57181fab35a7594bb85b9"
@@ -766,30 +724,6 @@
   version = "0.2.0"
 
 [[projects]]
-  digest = "1:ad67dfd3799a2c58f6c65871dd141d8b53f61f600aec48ce8d7fa16a4d5476f8"
-  name = "go.opencensus.io"
-  packages = [
-    ".",
-    "exemplar",
-    "internal",
-    "internal/tagencoding",
-    "plugin/ochttp",
-    "plugin/ochttp/propagation/b3",
-    "plugin/ochttp/propagation/tracecontext",
-    "stats",
-    "stats/internal",
-    "stats/view",
-    "tag",
-    "trace",
-    "trace/internal",
-    "trace/propagation",
-    "trace/tracestate",
-  ]
-  pruneopts = ""
-  revision = "b7bf3cdb64150a8c8c53b769fdeb2ba581bd4d4b"
-  version = "v0.18.0"
-
-[[projects]]
   digest = "1:74f86c458e82e1c4efbab95233e0cf51b7cc02dc03193be9f62cd81224e10401"
   name = "go.uber.org/atomic"
   packages = ["."]
@@ -875,14 +809,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:814474ab808c5e04b9334d046f8a0060fc1724c2c02acfd00a7cc0008d675455"
-  name = "golang.org/x/sync"
-  packages = ["semaphore"]
-  pruneopts = ""
-  revision = "37e7f081c4d4c64e13b10787722085407fe5d15f"
-
-[[projects]]
-  branch = "master"
   digest = "1:00355c1b032fcd05c29dad217f43f38f7f46d691a519d86416edaf345e677c21"
   name = "golang.org/x/sys"
   packages = [
@@ -941,14 +867,6 @@
   ]
   pruneopts = ""
   revision = "ca6481ae56504398949d597084558e50ad07117a"
-
-[[projects]]
-  digest = "1:1ef3746d0b0a2ab4147e9fe251202756ff89d181c3c3cc67abdf40e375243cbc"
-  name = "google.golang.org/api"
-  packages = ["support/bundler"]
-  pruneopts = ""
-  revision = "19e022d8cf43ce81f046bae8cc18c5397cc7732f"
-  version = "v0.1.0"
 
 [[projects]]
   digest = "1:c1771ca6060335f9768dff6558108bc5ef6c58506821ad43377ee23ff059e472"
@@ -1103,14 +1021,7 @@
   branch = "origin-3.11-kubernetes-1.11.1"
   digest = "1:c3127ff5966112b6c2d25fec9dbc109c7fa7ffb62ea5664de948cb6471dd3b4a"
   name = "k8s.io/apiextensions-apiserver"
-  packages = [
-    "pkg/apis/apiextensions",
-    "pkg/apis/apiextensions/v1beta1",
-    "pkg/client/clientset/clientset",
-    "pkg/client/clientset/clientset/scheme",
-    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
-    "pkg/features",
-  ]
+  packages = ["pkg/features"]
   pruneopts = ""
   revision = "45cb0b8537cf79d23914721e0bf41a3479769b22"
   source = "https://github.com/openshift/kubernetes-apiextensions-apiserver.git"
@@ -1582,7 +1493,6 @@
     "pkg/client/apiutil",
     "pkg/client/config",
     "pkg/controller",
-    "pkg/controller/controllerutil",
     "pkg/event",
     "pkg/handler",
     "pkg/internal/controller",
@@ -1622,10 +1532,7 @@
     "github.com/ghodss/yaml",
     "github.com/go-logr/logr",
     "github.com/gogo/protobuf/jsonpb",
-    "github.com/openshift/api/operator/v1alpha1",
     "github.com/openshift/api/security/v1",
-    "github.com/openshift/library-go/pkg/operator/resource/resourceapply",
-    "github.com/openshift/library-go/pkg/operator/resource/resourcecread",
     "github.com/operator-framework/operator-sdk/pkg/k8sutil",
     "github.com/operator-framework/operator-sdk/pkg/leader",
     "github.com/operator-framework/operator-sdk/pkg/metrics",
@@ -1633,26 +1540,18 @@
     "github.com/operator-framework/operator-sdk/version",
     "github.com/sirupsen/logrus",
     "istio.io/api/mesh/v1alpha1",
-    "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/batch/v1",
     "k8s.io/api/core/v1",
     "k8s.io/api/extensions/v1beta1",
     "k8s.io/api/policy/v1beta1",
     "k8s.io/api/rbac/v1",
-    "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
-    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset",
-    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
     "k8s.io/apimachinery/pkg/api/errors",
-    "k8s.io/apimachinery/pkg/api/resource",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured",
     "k8s.io/apimachinery/pkg/labels",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
-    "k8s.io/apimachinery/pkg/runtime/serializer",
-    "k8s.io/apimachinery/pkg/types",
-    "k8s.io/client-go/dynamic",
-    "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1",
+    "k8s.io/apimachinery/pkg/util/errors",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/code-generator/cmd/client-gen",
     "k8s.io/code-generator/cmd/conversion-gen",
@@ -1666,13 +1565,14 @@
     "k8s.io/helm/pkg/chartutil",
     "k8s.io/helm/pkg/manifest",
     "k8s.io/helm/pkg/proto/hapi/chart",
+    "k8s.io/helm/pkg/proto/hapi/release",
+    "k8s.io/helm/pkg/releaseutil",
     "k8s.io/helm/pkg/renderutil",
     "k8s.io/helm/pkg/tiller",
     "k8s.io/helm/pkg/timeconv",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/controller",
-    "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil",
     "sigs.k8s.io/controller-runtime/pkg/handler",
     "sigs.k8s.io/controller-runtime/pkg/manager",
     "sigs.k8s.io/controller-runtime/pkg/reconcile",

@@ -79,15 +79,16 @@ required = [
   name = "github.com/russross/blackfriday"
   version = "v1.4"
 
+# matching client-go kubernetes-1.11
+[[override]]
+  name = "github.com/Azure/go-autorest"
+  revision = "1ff28809256a84bb6966640ff3d0371af82ccba4"
+
 [[constraint]]
   name = "github.com/operator-framework/operator-sdk"
   # The version rule is used for a specific release and the master branch for in between releases.
   #branch = "master"
   version = "=v0.2.1"
-
-[[constraint]]
-  branch = "release-3.11"
-  name = "github.com/openshift/library-go"
 
 [[constraint]]
   branch = "release-3.11"
