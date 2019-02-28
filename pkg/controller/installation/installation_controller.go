@@ -6,7 +6,6 @@ import (
 
 	istiov1alpha1 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -53,13 +52,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// TODO(user): Modify this to be the types you create that are owned by the primary resource
 	// Watch for changes to secondary resource Pods and requeue the owner Installation
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &istiov1alpha1.Installation{},
-	})
-	if err != nil {
-		return err
-	}
+	// err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
+	// 	IsController: true,
+	// 	OwnerType:    &istiov1alpha1.Installation{},
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -76,7 +75,7 @@ type ReconcileInstallation struct {
 }
 
 const (
-	finalizer = "uninstall-istio"
+	finalizer = "istio-operator:Installation"
 )
 
 // Reconcile reads that state of the cluster for a Installation object and makes changes based on the state read
@@ -110,8 +109,22 @@ func (r *ReconcileInstallation) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	deleted := instance.GetDeletionTimestamp() != nil
+	finalizers := instance.GetFinalizers()
+	finalizerIndex := indexOf(finalizers, finalizer)
+	if !deleted && finalizerIndex < 0 {
+		reqLogger.V(1).Info("Adding finalizer", "finalizer", finalizer)
+		finalizers = append(finalizers, finalizer)
+		instance.SetFinalizers(finalizers)
+		err = r.client.Update(context.TODO(), instance)
+		return reconcile.Result{Requeue: true}, err
+	}
 
 	if deleted {
+		if finalizerIndex < 0 {
+			// already deleted ourselves
+			return reconcile.Result{}, nil
+		}
+
 		reqLogger.Info("Removing the Istio installation")
 		if err := r.ensureProjectAndServiceAccount(); err != nil {
 			return reconcile.Result{}, err
@@ -123,51 +136,63 @@ func (r *ReconcileInstallation) Reconcile(request reconcile.Request) (reconcile.
 		items := r.newRemovalJobItems(instance)
 		if err := r.createItems(items); err != nil {
 			reqLogger.Error(err, "Failed to create the istio removal job")
-			return reconcile.Result{}, err
+			return reconcile.Result{Requeue: true}, err
+		}
+		finalizers = append(finalizers[:finalizerIndex], finalizers[finalizerIndex+1:]...)
+		instance.SetFinalizers(finalizers)
+		err = r.client.Update(context.TODO(), instance)
+		return reconcile.Result{Requeue: true}, err
+	}
+	if instance.Status != nil && instance.Status.State != nil {
+		if *instance.Status.State == istioInstalledState {
+			if reflect.DeepEqual(instance.Spec, instance.Status.Spec) {
+				reqLogger.V(2).Info("Ignoring installed state for %v %v", instance.Kind, instance.Name)
+				return reconcile.Result{}, nil
+			}
+		} else {
+			reqLogger.Info("Reinstalling istio for %v %v", instance.Kind, instance.Name)
 		}
 	} else {
-		if instance.Status != nil && instance.Status.State != nil {
-			if *instance.Status.State == istioInstalledState {
-				if reflect.DeepEqual(instance.Spec, instance.Status.Spec) {
-					reqLogger.V(2).Info("Ignoring installed state for %v %v", instance.Kind, instance.Name)
-					return reconcile.Result{}, nil
-				}
-			} else {
-				reqLogger.Info("Reinstalling istio for %v %v", instance.Kind, instance.Name)
-			}
-		} else {
-			reqLogger.Info("Installing istio for %v %v", instance.Kind, instance.Name)
-		}
+		reqLogger.Info("Installing istio for %v %v", instance.Kind, instance.Name)
+	}
 
-		if err := r.ensureProjectAndServiceAccount(); err != nil {
-			return reconcile.Result{}, err
-		}
+	if err := r.ensureProjectAndServiceAccount(); err != nil {
+		return reconcile.Result{}, err
+	}
 
-		installerJob := r.getInstallerJob(instance)
-		r.deleteJob(installerJob)
-		removalJob := r.getRemovalJob(instance)
-		r.deleteJob(removalJob)
-		items := r.newInstallerJobItems(instance)
-		if err := r.createItems(items); err != nil {
-			reqLogger.Error(err, "Failed to create the istio installer job")
-			// XXX: do we need to do something in the result?
-			return reconcile.Result{}, err
+	installerJob := r.getInstallerJob(instance)
+	r.deleteJob(installerJob)
+	removalJob := r.getRemovalJob(instance)
+	r.deleteJob(removalJob)
+	items := r.newInstallerJobItems(instance)
+	if err := r.createItems(items); err != nil {
+		reqLogger.Error(err, "Failed to create the istio installer job")
+		// XXX: do we need to do something in the result?
+		return reconcile.Result{}, err
+	}
+	state := istioInstalledState
+	if instance.Status == nil {
+		instance.Status = &istiov1alpha1.InstallationStatus{
+			State: &state,
+			Spec:  instance.Spec.DeepCopy(),
 		}
-		state := istioInstalledState
-		if instance.Status == nil {
-			instance.Status = &istiov1alpha1.InstallationStatus{
-				State: &state,
-				Spec:  instance.Spec.DeepCopy(),
-			}
-		} else {
-			instance.Status.State = &state
-			instance.Status.Spec = instance.Spec.DeepCopy()
-		}
-		if err := r.client.Update(context.TODO(), instance); err != nil {
-			reqLogger.Error(err, "Failed to update the installation state in the resource")
-			// XXX: do we need to do something in the result?
-			return reconcile.Result{}, err
-		}
+	} else {
+		instance.Status.State = &state
+		instance.Status.Spec = instance.Spec.DeepCopy()
+	}
+	if err := r.client.Update(context.TODO(), instance); err != nil {
+		reqLogger.Error(err, "Failed to update the installation state in the resource")
+		// XXX: do we need to do something in the result?
+		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
+}
+
+func indexOf(l []string, s string) int {
+	for i, elem := range l {
+		if elem == s {
+			return i
+		}
+	}
+	return -1
 }

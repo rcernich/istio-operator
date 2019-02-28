@@ -35,16 +35,20 @@ func printVersion() {
 }
 
 func main() {
+	// Installation
 	handler := &installation.Handler{}
+	installation.RegisterHandler(handler)
+
 	flag.StringVar(&handler.OpenShiftRelease, "release", "v3.10", "The OpenShift release")
 	flag.StringVar(&handler.MasterPublicURL, "masterPublicURL", "", "The public URL of the master when using Launcher")
 	flag.StringVar(&handler.IstioPrefix, "istioPrefix", "", "The default istio prefix for images")
 	flag.StringVar(&handler.IstioVersion, "istioVersion", "", "The default istio version for images")
 	flag.StringVar(&handler.DeploymentType, "deploymentType", "", "The default deployment type")
-	flag.StringVar(&controlplane.ChartPath, "chartPath", "/etc/istio-operator/helm", "The location of the Helm charts.  The charts will be rendered using $chartPath/istio (similar layout to istio.io/istio/install/kubernetes/helm).")
-	flag.Parse()
 
-	installation.RegisterHandler(handler)
+	// ControlPlane
+	flag.StringVar(&controlplane.ChartPath, "chartPath", "/etc/istio-operator/helm", "The location of the Helm charts.  The charts will be rendered using $chartPath/istio (similar layout to istio.io/istio/install/kubernetes/helm).")
+
+	flag.Parse()
 
 	// The logger instantiated here can be changed to any logger
 	// implementing the logr.Logger interface. This logger will
