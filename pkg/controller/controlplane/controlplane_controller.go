@@ -1,4 +1,4 @@
-package istiocontrolplane
+package controlplane
 
 import (
 	"context"
@@ -25,7 +25,7 @@ var log = logf.Log.WithName("controller_istiocontrolplane")
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new IstioControlPlane Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new ControlPlane Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -33,7 +33,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileIstioControlPlane{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileControlPlane{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -44,17 +44,17 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to primary resource IstioControlPlane
-	err = c.Watch(&source.Kind{Type: &istiov1alpha3.IstioControlPlane{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource ControlPlane
+	err = c.Watch(&source.Kind{Type: &istiov1alpha3.ControlPlane{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner IstioControlPlane
+	// Watch for changes to secondary resource Pods and requeue the owner ControlPlane
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &istiov1alpha3.IstioControlPlane{},
+		OwnerType:    &istiov1alpha3.ControlPlane{},
 	})
 	if err != nil {
 		return err
@@ -63,10 +63,10 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileIstioControlPlane{}
+var _ reconcile.Reconciler = &ReconcileControlPlane{}
 
-// ReconcileIstioControlPlane reconciles a IstioControlPlane object
-type ReconcileIstioControlPlane struct {
+// ReconcileControlPlane reconciles a ControlPlane object
+type ReconcileControlPlane struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
@@ -77,19 +77,19 @@ const (
 	finalizer = "istio-operator"
 )
 
-// Reconcile reads that state of the cluster for a IstioControlPlane object and makes changes based on the state read
-// and what is in the IstioControlPlane.Spec
+// Reconcile reads that state of the cluster for a ControlPlane object and makes changes based on the state read
+// and what is in the ControlPlane.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
 // a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileIstioControlPlane) Reconcile(request reconcile.Request) (result reconcile.Result, err error) {
+func (r *ReconcileControlPlane) Reconcile(request reconcile.Request) (result reconcile.Result, err error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling IstioControlPlane")
+	reqLogger.Info("Reconciling ControlPlane")
 
-	// Fetch the IstioControlPlane instance
-	instance := &istiov1alpha3.IstioControlPlane{}
+	// Fetch the ControlPlane instance
+	instance := &istiov1alpha3.ControlPlane{}
 	err = r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -108,7 +108,7 @@ func (r *ReconcileIstioControlPlane) Reconcile(request reconcile.Request) (resul
 		reqLogger.V(1).Info("Adding finalizer", "finalizer", finalizer)
 		finalizers = append(finalizers, finalizer)
 		instance.SetFinalizers(finalizers)
-		err := r.client.Update(context.TODO(), instance)
+		err := r.client.Status().Update(context.TODO(), instance)
 		return reconcile.Result{Requeue: true}, err
 	}
 
@@ -116,11 +116,12 @@ func (r *ReconcileIstioControlPlane) Reconcile(request reconcile.Request) (resul
 		// deleter := controlPlaneDeleter
 	} else {
 		reconciler := controlPlaneReconciler{
-			ReconcileIstioControlPlane: r,
+			ReconcileControlPlane: r,
 			instance:                   instance,
 			log:                        reqLogger,
-			status: istiov1alpha3.IstioControlPlaneStatus{
-				ResourceConditions: make(map[istiov1alpha3.ResourceKey]*istiov1alpha3.Condition),
+			status: istiov1alpha3.ControlPlaneStatus{
+				StatusType: istiov1alpha3.NewStatus(),
+				ComponentStatus: map[string]istiov1alpha3.ComponentStatus{},
 			},
 		}
 

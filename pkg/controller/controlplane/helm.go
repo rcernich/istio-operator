@@ -1,6 +1,7 @@
-package istiocontrolplane
+package controlplane
 
 import (
+	"encoding/json"
 	"k8s.io/helm/pkg/proto/hapi/release"
 	"k8s.io/helm/pkg/tiller"
 	"fmt"
@@ -26,7 +27,7 @@ var (
 // key names represent the chart from which the template was processed.  Subcharts
 // will be keyed as <root-name>/charts/<subchart-name>, e.g. istio/charts/galley.
 // The root chart would be simply, istio.
-func RenderHelmChart(chartPath string, icp *v1alpha3.IstioControlPlane) (map[string][]manifest.Manifest, *release.Release, error) {
+func RenderHelmChart(chartPath string, icp *v1alpha3.ControlPlane) (map[string][]manifest.Manifest, map[string]interface{}, error) {
 	rawVals, err := yaml.Marshal(icp.Spec)
 	config := &chart.Config{Raw: string(rawVals), Values: map[string]*chart.Value{}}
 
@@ -60,7 +61,12 @@ func RenderHelmChart(chartPath string, icp *v1alpha3.IstioControlPlane) (map[str
 		Info:      &release.Info{LastDeployed: renderOpts.ReleaseOptions.Time},
 	}
 
-	return sortManifestsByChart(manifest.SplitManifests(renderedTemplates)), rel, nil
+	var rawRel map[string]interface{}
+	data, err := json.Marshal(rel)
+	if err == nil {
+		err = json.Unmarshal(data, rawRel)
+	}
+	return sortManifestsByChart(manifest.SplitManifests(renderedTemplates)), rawRel, err
 }
 
 // sortManifestsByChart returns a map of chart->[]manifest.  names for subcharts

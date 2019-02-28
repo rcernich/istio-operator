@@ -9,8 +9,8 @@ import (
 
 	"github.com/maistra/istio-operator/pkg/apis"
 	"github.com/maistra/istio-operator/pkg/controller"
+	"github.com/maistra/istio-operator/pkg/controller/controlplane"
 	"github.com/maistra/istio-operator/pkg/controller/installation"
-	"github.com/maistra/istio-operator/pkg/controller/istiocontrolplane"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -41,7 +41,7 @@ func main() {
 	flag.StringVar(&handler.IstioPrefix, "istioPrefix", "", "The default istio prefix for images")
 	flag.StringVar(&handler.IstioVersion, "istioVersion", "", "The default istio version for images")
 	flag.StringVar(&handler.DeploymentType, "deploymentType", "", "The default deployment type")
-	flag.StringVar(&istiocontrolplane.ChartPath, "chartPath", "/etc/istio-operator/helm", "The location of the Helm charts.  The charts will be rendered using $chartPath/istio (similar layout to istio.io/istio/install/kubernetes/helm).")
+	flag.StringVar(&controlplane.ChartPath, "chartPath", "/etc/istio-operator/helm", "The location of the Helm charts.  The charts will be rendered using $chartPath/istio (similar layout to istio.io/istio/install/kubernetes/helm).")
 	flag.Parse()
 
 	installation.RegisterHandler(handler)

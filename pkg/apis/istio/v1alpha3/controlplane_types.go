@@ -1,94 +1,58 @@
 package v1alpha3
 
 import (
-	"fmt"
-	"strings"
-
 	meshv1alpha1 "istio.io/api/mesh/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/helm/pkg/proto/hapi/release"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 func init() {
-	SchemeBuilder.Register(&IstioControlPlane{}, &IstioControlPlaneList{})
+	SchemeBuilder.Register(&ControlPlane{}, &ControlPlaneList{})
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// IstioControlPlane is the Schema for the istiocontrolplanes API
+// ControlPlane is the Schema for the controlplanes API
 // +k8s:openapi-gen=true
-type IstioControlPlane struct {
+type ControlPlane struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   IstioControlPlaneSpec   `json:"spec,omitempty"`
-	Status IstioControlPlaneStatus `json:"status,omitempty"`
+	Spec   ControlPlaneSpec   `json:"spec,omitempty"`
+	Status ControlPlaneStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// IstioControlPlaneList contains a list of IstioControlPlane
-type IstioControlPlaneList struct {
+// ControlPlaneList contains a list of ControlPlane
+type ControlPlaneList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []IstioControlPlane `json:"items"`
+	Items           []ControlPlane `json:"items"`
 }
 
-// ResourceKey is a typedef for key used in ManagedGenerations.  It is a string
-// with the format: namespace/name=group/version/kind
-type ResourceKey string
-
-// NewResourceKey for the object and type
-func NewResourceKey(o metav1.Object, t metav1.Type) ResourceKey {
-	return ResourceKey(fmt.Sprintf("%s/%s=%s,%s", o.GetNamespace(), o.GetName(), t.GetAPIVersion(), t.GetKind()))
-}
-
-// ToUnstructured returns a an Unstructured object initialized with Namespace,
-// Name, APIVersion, and Kind fields from the ResourceKey
-func (key ResourceKey) ToUnstructured() *unstructured.Unstructured {
-	retval := &unstructured.Unstructured{}
-	parts := strings.SplitN(string(key), "=", 2)
-	nn := strings.SplitN(parts[0], "/", 2)
-	gvk := strings.SplitN(parts[1], "/", 2)
-	retval.SetNamespace(nn[0])
-	retval.SetName(nn[1])
-	retval.SetAPIVersion(gvk[0])
-	retval.SetKind(gvk[1])
-	return retval
-}
-
-// IstioControlPlaneStatus defines the observed state of IstioControlPlane
-type IstioControlPlaneStatus struct {
+// ControlPlaneStatus defines the observed state of ControlPlane
+type ControlPlaneStatus struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-
-	// ResourceConditions represents the condition of each resource managed by
-	// the operator.  The keys uniquely identify each object
-	ResourceConditions map[ResourceKey]*Condition
-	// Condition is the overall condition of the control plane
-	Condition Condition
+	StatusType `json:",inline"`
+	// ComponentStatus represents the current status of the components
+	ComponentStatus map[string]ComponentStatus `json:"componentStatus,omitempty"`
 	// Helm release information
-	Release *release.Release
+	ReleaseInfo ReleaseInfoType `json:"releaseInfo,omitempty"`
 }
 
-type Condition struct {
-	Type       string
-	Status     string
-	Reason     string
-	Message    string
-	Generation int64
-}
+// ReleaseInfoType is typedef for helm release.Release
+type ReleaseInfoType map[string]interface{}
 
-// IstioControlPlaneSpec defines the desired state of IstioControlPlane
-type IstioControlPlaneSpec struct {
+// ControlPlaneSpec defines the desired state of ControlPlane
+type ControlPlaneSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 

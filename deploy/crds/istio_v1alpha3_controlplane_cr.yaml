@@ -1,7 +1,7 @@
 apiVersion: istio.openshift.com/v1alpha3
-kind: IstioControlPlane
+kind: ControlPlane
 metadata:
-  name: example-istiocontrolplane
+  name: example-controlplane
 spec:
   # Add fields here
   size: 3
