@@ -46,7 +46,7 @@ func main() {
 	flag.StringVar(&handler.DeploymentType, "deploymentType", "", "The default deployment type")
 
 	// ControlPlane
-	flag.StringVar(&controlplane.ChartPath, "chartPath", "/etc/istio-operator/helm", "The location of the Helm charts.  The charts will be rendered using $chartPath/istio (similar layout to istio.io/istio/install/kubernetes/helm).")
+	flag.StringVar(&controlplane.ChartPath, "chartPath", "/etc/istio-operator/1.1.0/helm", "The location of the Helm charts.  The charts will be rendered using $chartPath/istio (similar layout to istio.io/istio/install/kubernetes/helm).")
 
 	flag.Parse()
 

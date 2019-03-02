@@ -11,7 +11,7 @@ fi
 
 BIN_DIR="$(pwd)/tmp/_output/bin"
 mkdir -p ${BIN_DIR}
-PROJECT_NAMES="istio-operator"
+PROJECT_NAME="istio-operator"
 REPO_PATH="github.com/maistra/istio-operator"
 BUILD_PATH="${REPO_PATH}/cmd/manager"
 echo "building "${PROJECT_NAME}"..."
