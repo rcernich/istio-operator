@@ -3,6 +3,7 @@ package installation
 import (
 	"context"
 	"reflect"
+	"time"
 
 	istiov1alpha1 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha1"
 
@@ -75,7 +76,7 @@ type ReconcileInstallation struct {
 }
 
 const (
-	finalizer = "istio-operator:Installation"
+	finalizer = "istio-operator-Installation"
 )
 
 // Reconcile reads that state of the cluster for a Installation object and makes changes based on the state read
@@ -99,8 +100,8 @@ func (r *ReconcileInstallation) Reconcile(request reconcile.Request) (reconcile.
 			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
-		return reconcile.Result{Requeue: true}, err
+		// Error reading the object
+		return reconcile.Result{}, err
 	}
 
 	if instance.Name != istioInstallerCRName {
@@ -116,7 +117,7 @@ func (r *ReconcileInstallation) Reconcile(request reconcile.Request) (reconcile.
 		finalizers = append(finalizers, finalizer)
 		instance.SetFinalizers(finalizers)
 		err = r.client.Update(context.TODO(), instance)
-		return reconcile.Result{Requeue: true}, err
+		return reconcile.Result{Requeue: err == nil}, err
 	}
 
 	if deleted {
@@ -136,12 +137,12 @@ func (r *ReconcileInstallation) Reconcile(request reconcile.Request) (reconcile.
 		items := r.newRemovalJobItems(instance)
 		if err := r.createItems(items); err != nil {
 			reqLogger.Error(err, "Failed to create the istio removal job")
-			return reconcile.Result{Requeue: true}, err
+			return reconcile.Result{RequeueAfter: 1 * time.Minute}, err
 		}
 		finalizers = append(finalizers[:finalizerIndex], finalizers[finalizerIndex+1:]...)
 		instance.SetFinalizers(finalizers)
 		err = r.client.Update(context.TODO(), instance)
-		return reconcile.Result{Requeue: true}, err
+		return reconcile.Result{Requeue: err == nil}, err
 	}
 	if instance.Status != nil && instance.Status.State != nil {
 		if *instance.Status.State == istioInstalledState {
@@ -180,7 +181,7 @@ func (r *ReconcileInstallation) Reconcile(request reconcile.Request) (reconcile.
 		instance.Status.State = &state
 		instance.Status.Spec = instance.Spec.DeepCopy()
 	}
-	if err := r.client.Update(context.TODO(), instance); err != nil {
+	if err := r.client.Status().Update(context.TODO(), instance); err != nil {
 		reqLogger.Error(err, "Failed to update the installation state in the resource")
 		// XXX: do we need to do something in the result?
 		return reconcile.Result{}, err

@@ -61,10 +61,10 @@ func RenderHelmChart(chartPath string, icp *v1alpha3.ControlPlane) (map[string][
 		Info:      &release.Info{LastDeployed: renderOpts.ReleaseOptions.Time},
 	}
 
-	var rawRel map[string]interface{}
+	rawRel := map[string]interface{}{}
 	data, err := json.Marshal(rel)
 	if err == nil {
-		err = json.Unmarshal(data, rawRel)
+		err = json.Unmarshal(data, &rawRel)
 	}
 	return sortManifestsByChart(manifest.SplitManifests(renderedTemplates)), rawRel, err
 }
@@ -82,12 +82,10 @@ func sortManifestsByChart(manifests []manifest.Manifest) map[string][]manifest.M
 			// subcharts will have names like <root-name>/charts/<subchart-name>/...
 			chartName = strings.Join(pathSegments[:3], "/")
 		}
-		chartManifests, ok := manifestsByChart[chartName]
-		if !ok {
-			chartManifests = make([]manifest.Manifest, 0, 10)
-			manifestsByChart[chartName] = chartManifests
+		if _, ok := manifestsByChart[chartName]; !ok {
+			manifestsByChart[chartName] = make([]manifest.Manifest, 0, 10)
 		}
-		chartManifests = append(chartManifests, chartManifest)
+		manifestsByChart[chartName] = append(manifestsByChart[chartName], chartManifest)
 	}
 	for key, value := range manifestsByChart {
 		manifestsByChart[key] = tiller.SortByKind(value)

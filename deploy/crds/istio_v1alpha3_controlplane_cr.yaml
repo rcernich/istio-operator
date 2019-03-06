@@ -1,7 +1,51 @@
 apiVersion: istio.openshift.com/v1alpha3
 kind: ControlPlane
 metadata:
-  name: example-controlplane
+  name: default-controlplane
 spec:
-  # Add fields here
-  size: 3
+  global:
+    proxy:
+      autoInject: disabled
+      privileged: false
+    multiCluster:
+      enabled: false
+
+  security:
+    enabled: true
+    cleanUpOldCA: false
+
+  ingress:
+    autoscaleMin: 0
+    autoscaleMax: 0
+  ingressgateway:
+    autoscaleMin: 0
+    autoscaleMax: 0
+  egressgateway:
+    autoscaleMin: 0
+    autoscaleMax: 0
+
+  gateways:
+    istio-egressgateway:
+      enabled: true
+      autoscaleMin: 0
+      autoscaleMax: 0
+    istio-ingressgateway:
+      autoscaleMin: 0
+      autoscaleMax: 0
+
+  mixer:
+    autoscaleMin: 0
+    autoscaleMax: 0
+
+    policy:
+      enabled: true
+      autoscaleEnabled: false
+
+    telemetry:
+      enabled: true
+      autoscaleEnabled: false
+
+  pilot:
+    autoscaleMin: 0
+    autoscaleMax: 0
+    traceSampling: 100.0

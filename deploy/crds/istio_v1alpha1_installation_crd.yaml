@@ -9,4 +9,6 @@ spec:
     plural: installations
     singular: installation
   scope: Namespaced
+  subresources:
+    status: {}
   version: v1alpha1

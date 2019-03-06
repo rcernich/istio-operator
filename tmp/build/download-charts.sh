@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 DIR=$(pwd)/tmp/_output/helm
 
-ISTIO_VERSION=1.1.0-rc.1
+ISTIO_VERSION=1.1.0-rc.2
 #ISTIO_BRANCH=release-1.1
 
 RELEASES_DIR=${DIR}/istio-releases
@@ -26,6 +26,8 @@ ISTIO_NAME=${ISTIO_NAME//./-}
 HELM_DIR=${RELEASE_DIR}
 
 PATCH_1_0=$(echo "${ISTIO_VERSION}" | grep "^1\.0\..*")
+
+COMMUNITY=${COMMUNITY:-true}
 
 function retrieveIstioRelease() {
   if [ -d "${RELEASE_DIR}" ] ; then
@@ -130,14 +132,18 @@ function patchTemplates() {
 \1  targetPort: webhook/' ${HELM_DIR}/istio/charts/sidecarInjectorWebhook/templates/service.yaml
 
   # - switch webhook ports to 8443
-  # change the location of the healthCheckFile from /health to /tmp/health
   # add webhook port
-  sed -i -e 's/\/health/\/tmp\/health/' \
-         -e 's/^\(.*\)\(volumeMounts:.*\)$/\1  - --port=8443\
+  sed -i -e 's/^\(.*\)\(volumeMounts:.*\)$/\1  - --port=8443\
 \1ports:\
 \1- name: webhook\
 \1  containerPort: 8443\
 \1\2/' ${HELM_DIR}/istio/charts/sidecarInjectorWebhook/templates/deployment.yaml
+
+  # change the location of the healthCheckFile from /health to /tmp/health
+  if [[ "${COMMUNITY,,}" != "true" ]]; then
+    sed -i -e 's/\/health/\/tmp\/health/' ${HELM_DIR}/istio/charts/sidecarInjectorWebhook/templates/deployment.yaml
+  fi
+
 }
 
 # The following modifications are made to the generated helm template to extract the CRDs

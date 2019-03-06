@@ -42,7 +42,7 @@ func (in ReleaseInfoType) DeepCopyInto(out *ReleaseInfoType) {
         // panic ???
         return
     }
-    err = json.Unmarshal(data, *out)
+    err = json.Unmarshal(data, out)
     if err != nil {
         // panic ???
         return

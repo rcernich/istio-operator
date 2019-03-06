@@ -22,12 +22,12 @@ func NewStatus() StatusType {
 // ComponentStatus represents the status for a component
 type ComponentStatus struct {
 	StatusType     `json:",inline"`
-	ResourceStatus map[ResourceKey]StatusType `json:"resourceStatus,omitempty"`
+	ResourceStatus map[ResourceKey]*StatusType `json:"resourceStatus,omitempty"`
 }
 
 // NewComponentStatus returns a new ComponentStatus object
-func NewComponentStatus() ComponentStatus {
-	return ComponentStatus{StatusType: NewStatus(), ResourceStatus: map[ResourceKey]StatusType{}}
+func NewComponentStatus() *ComponentStatus {
+	return &ComponentStatus{StatusType: NewStatus(), ResourceStatus: map[ResourceKey]*StatusType{}}
 }
 
 // ConditionType represents the type of the condition.  Condition stages are:
@@ -106,7 +106,6 @@ func (s *StatusType) GetCondition(conditionType ConditionType) Condition {
 	}
 	for i := range s.Conditions {
 		if s.Conditions[i].Type == conditionType {
-			s.Conditions = append(s.Conditions[:i], s.Conditions[i+1:]...)
 			return s.Conditions[i]
 		}
 	}
@@ -153,7 +152,7 @@ func (s *StatusType) RemoveCondition(conditionType ConditionType) *StatusType {
 }
 
 // ResourceKey is a typedef for key used in ManagedGenerations.  It is a string
-// with the format: namespace/name=group/version/kind
+// with the format: namespace/name=group/version,kind
 type ResourceKey string
 
 // NewResourceKey for the object and type
@@ -164,10 +163,12 @@ func NewResourceKey(o metav1.Object, t metav1.Type) ResourceKey {
 // ToUnstructured returns a an Unstructured object initialized with Namespace,
 // Name, APIVersion, and Kind fields from the ResourceKey
 func (key ResourceKey) ToUnstructured() *unstructured.Unstructured {
+	// ResourceKey is guaranteed to be at least "/=," meaning we are guaranteed
+	// to get two elements in all of the splits
 	retval := &unstructured.Unstructured{}
 	parts := strings.SplitN(string(key), "=", 2)
 	nn := strings.SplitN(parts[0], "/", 2)
-	gvk := strings.SplitN(parts[1], "/", 2)
+	gvk := strings.SplitN(parts[1], ",", 2)
 	retval.SetNamespace(nn[0])
 	retval.SetName(nn[1])
 	retval.SetAPIVersion(gvk[0])

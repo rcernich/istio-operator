@@ -43,7 +43,7 @@ type ControlPlaneStatus struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	StatusType `json:",inline"`
 	// ComponentStatus represents the current status of the components
-	ComponentStatus map[string]ComponentStatus `json:"componentStatus,omitempty"`
+	ComponentStatus map[string]*ComponentStatus `json:"componentStatus,omitempty"`
 	// Helm release information
 	ReleaseInfo ReleaseInfoType `json:"releaseInfo,omitempty"`
 }
@@ -56,15 +56,15 @@ type ControlPlaneSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 
-	Global          GlobalConfig          `json:"global,omitempty"`
-	Galley          GalleyConfig          `json:"galley,omitempty"`
-	Gateways        GatewaysConfig        `json:"gateways,omitempty"`
-	Mixer           MixerConfig           `json:"mixer,omitempty"`
-	Pilot           PilotConfig           `json:"pilot,omitempty"`
-	Prometheus      PrometheusConfig      `json:"prometheus,omitempty"`
-	Security        SecurityConfig        `json:"security,omitempty"`
-	SidecarInjector SidecarInjectorConfig `json:"sidecarInjectorWebhook,omitempty"`
-	Tracing         TracingConfig         `json:"tracing,omitempty"`
+	Global          *GlobalConfig          `json:"global,omitempty"`
+	Galley          *GalleyConfig          `json:"galley,omitempty"`
+	Gateways        *GatewaysConfig        `json:"gateways,omitempty"`
+	Mixer           *MixerConfig           `json:"mixer,omitempty"`
+	Pilot           *PilotConfig           `json:"pilot,omitempty"`
+	Prometheus      *PrometheusConfig      `json:"prometheus,omitempty"`
+	Security        *SecurityConfig        `json:"security,omitempty"`
+	SidecarInjector *SidecarInjectorConfig `json:"sidecarInjectorWebhook,omitempty"`
+	Tracing         *TracingConfig         `json:"tracing,omitempty"`
 }
 
 // Globals
@@ -119,11 +119,11 @@ type GlobalConfig struct {
 
 	// DefaultPodDisruptionBudget represents the PodDisruptionBudget to be
 	// applied for Istio pods.
-	DefaultPodDisruptionBudget PodDisruptionBudget `json:"defaultPodDisruptionBudget,omitempty"`
+	DefaultPodDisruptionBudget *PodDisruptionBudget `json:"defaultPodDisruptionBudget,omitempty"`
 
 	// DefaultResources are default resource requirements to be applied to Istio
 	// pods.
-	DefaultResources corev1.ResourceRequirements `json:"defaultResources,omitempty"`
+	DefaultResources *corev1.ResourceRequirements `json:"defaultResources,omitempty"`
 	// DisablePolicyChecks specifies whether or not Mixer policy checks should
 	// be enabled.  Defaults to false.
 	DisablePolicyChecks *bool `json:"disablePolicyChecks,omitempty"`
@@ -148,24 +148,24 @@ type GlobalConfig struct {
 	IstioNamespace string `json:"istioNamespace,omitempty"`
 
 	// KubernetesIngress represents the configuration for Kubernetes Ingress.
-	KubernetesIngress KubernetesIngressConfig `json:"k8sIngress,omitempty"`
+	KubernetesIngress *KubernetesIngressConfig `json:"k8sIngress,omitempty"`
 
 	// KubernetesIngressSelector is the name of the Istio ingress service.
 	// Defaults to istio-ingressgateway
 	KubernetesIngressSelector string `json:"k8sIngressSelector,omitempty"`
 
 	// MeshExpansion represents the configuration for mesh expansion.
-	MeshExpansion MeshExpansionConfig `json:"meshExpansion,omitempty"`
+	MeshExpansion *MeshExpansionConfig `json:"meshExpansion,omitempty"`
 
 	// MeshNetworks configures the mesh networks to be used by the Split Horizon EDS
 	MeshNetworks MeshNetworksType `json:"meshNetworks,omitempty"`
 	// MonitoringPort provided by Istio components.  Defaults to 15014
 	MonitoringPort *int32 `json:"monitoringPort,omitempty"`
 	// MTLS configures mTLS for the mesh.
-	MTLS MTLSConfig `json:"mtls,omitempty"`
+	MTLS *MTLSConfig `json:"mtls,omitempty"`
 
 	// MultiCluster configures multi-cluster.
-	MultiCluster MultiClusterConfig `json:"multiCluster,omitempty"`
+	MultiCluster *MultiClusterConfig `json:"multiCluster,omitempty"`
 
 	// Network is the network endpoint to which sidecar endpoints should be
 	// associated.  The ISTIO_META_NETWORK environment variable on the sidecars
@@ -180,7 +180,7 @@ type GlobalConfig struct {
 	OneNamespace *bool `json:"oneNamespace,omitempty"`
 
 	// OutboundTrafficPolicy for sidecars.
-	OutboundTrafficPolicy OutboundTrafficPolicyConfig `json:"outboundTrafficPolicy,omitempty"`
+	OutboundTrafficPolicy *OutboundTrafficPolicyConfig `json:"outboundTrafficPolicy,omitempty"`
 
 	// PodDNSSearchNamespaces is a list of DNS search suffixes to be applied to
 	// sidecars.
@@ -203,15 +203,15 @@ type GlobalConfig struct {
 	UseMCP *bool `json:"useMCP,omitempty"`
 
 	// Proxy configuration
-	Proxy ProxyConfig `json:"proxy,omitempty"`
+	Proxy *ProxyConfig `json:"proxy,omitempty"`
 	// ProxyInit configuration
-	ProxyInit ProxyConfig `json:"proxy_init,omitempty"`
+	ProxyInit *ProxyInitConfig `json:"proxy_init,omitempty"`
 
 	// SDS configuration
-	SDS SDSConfig `json:"sds,omitempty"`
+	SDS *SDSConfig `json:"sds,omitempty"`
 
 	// Tracer configuration
-	Tracer ProxyTracerConfig `json:"tracer,omitempty"`
+	Tracer *ProxyTracerConfig `json:"tracer,omitempty"`
 }
 
 // PodDisruptionBudget to apply to Istio pods.  Simply adds an "enabled" field
@@ -297,7 +297,7 @@ const (
 type ProxyConfig struct {
 	// AccessLogEncoding represents the encoding for the access log.  May be one
 	// of TEXT or JSON.  Defaults to TEXT
-	AccessLogEncoding string `AccessLogEncodingType:"accessLogEncoding,omitempty"`
+	AccessLogEncoding string `json:"accessLogEncoding,omitempty"`
 	// AccessLogFile sets the location to which log messages are sent.  An empty
 	// string disables logging.  Defaults to /dev/stdout
 	AccessLogFile string `json:"accessLogFile,omitempty"`
@@ -307,8 +307,8 @@ type ProxyConfig struct {
 	// JSON example: '{"start_time": "%START_TIME%", "req_method": "%REQ(:METHOD)%", "path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%" "protocol": "%PROTOCOL%"}'
 	AccessLogFormat string `json:"accessLogFormat,omitempty"`
 	// AutoInject specifies whether or not automatic injection of sidecars
-	// should be enabled.  Defaults to true
-	AutoInject *bool `json:"autoInject,omitempty"`
+	// should be enabled.  Defaults to enabled
+	AutoInject string `json:"autoInject,omitempty"`
 	// ClusterDomain is the domain for the cluster.  Defaults to cluster.local
 	ClusterDomain string `json:"clusterDomain,omitempty"`
 	// Concurrency controls the number of working threads used by the proxy container.
@@ -342,7 +342,7 @@ type ProxyConfig struct {
 	ReadinessPeriodSeconds *int32 `json:"readinessPeriodSeconds,omitempty"`
 	// Resources specifies the resource requirements for the proxy containers.
 	// Defaults to {requests: {cpu: 10m}}
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// StatusPort is the port number to use for health checks.  Defaults to 15020
 	StatusPort *int32 `json:"statusPort,omitempty"`
 	// Tracer represents the type of tracer to use.  Defaults to zipkin
@@ -350,7 +350,7 @@ type ProxyConfig struct {
 
 	// EnvoyStatsD represents the configuration to the statsd server for envoy
 	// Deprecated
-	EnvoyStatsD EnvoyStatsDConfig
+	EnvoyStatsD *EnvoyStatsDConfig `json:"envoyStatsd,omitempty"`
 }
 
 // ProxyInitConfig is the configuration for proxy_init
@@ -465,7 +465,7 @@ type GatewayConfig struct {
 	// for these, only the volumes themselves.
 	ConfigVolumes []ConfigMapVolume `json:"configVolumes,omitempty"`
 	// SDS controls SDS configuration for the gateway.
-	SDS SDSContainerConfig `json:"sds,omitempty"`
+	SDS *SDSContainerConfig `json:"sds,omitempty"`
 	// SecretVolumes are secret Volumes to be added to the gateway Deployment
 	SecretVolumes []SecretVolume `json:"secretVolumes,omitempty"`
 
@@ -543,12 +543,12 @@ type MixerConfig struct {
 
 	// Policy Deployment configuration.  Only Autoscaler and ReplicaCount fields
 	// are used.
-	Policy DeploymentFields `json:"policy,omitempty"`
+	Policy *DeploymentFields `json:"policy,omitempty"`
 	// Telemetry configuration.
-	Telemetry MixerTelemetryConfig `json:"telemetry,omitempty"`
+	Telemetry *MixerTelemetryConfig `json:"telemetry,omitempty"`
 
 	// Adapters is the configuration for Mixer adapters.
-	Adapters MixerAdaptersConfig `json:"adapters,omitempty"`
+	Adapters *MixerAdaptersConfig `json:"adapters,omitempty"`
 }
 
 // MixerTelemetryConfig is the configuration for Mixer's telemetry component
@@ -564,11 +564,11 @@ type MixerTelemetryConfig struct {
 // MixerAdaptersConfig is the configuration for the Mixer adapters
 type MixerAdaptersConfig struct {
 	// Kubernetesenv is the configuration for a kubernetes handler
-	KubernetesEnv KubernetesEnvMixerAdapterConfig `json:"kubernetesenv,omitempty"`
+	KubernetesEnv *KubernetesEnvMixerAdapterConfig `json:"kubernetesenv,omitempty"`
 	// Kubernetesenv is the configuration for a prometheus handler
-	Prometheus PrometheusMixerAdapterConfig `json:"prometheus,omitempty"`
+	Prometheus *PrometheusMixerAdapterConfig `json:"prometheus,omitempty"`
 	// Kubernetesenv is the configuration for a stdio handler
-	Stdio StdioMixerAdapterConfig `json:"stdio,omitempty"`
+	Stdio *StdioMixerAdapterConfig `json:"stdio,omitempty"`
 	// UseAdapterCRDs specifies whether or not CRDs are being used to configure
 	// adapters.
 	UseAdapterCRDs *bool `json:"useAdapterCRDs,omitempty"`
@@ -643,16 +643,16 @@ type PrometheusConfig struct {
 	ScrapeInterval string `json:"scrapeInterval,omitempty"`
 
 	// Gateway configuration for Prometheus component
-	Gateway PrometheusGatewayConfig `json:"gateway,omitempty"`
+	Gateway *PrometheusGatewayConfig `json:"gateway,omitempty"`
 
 	// Ingress configuration for Prometheus component
-	Ingress PrometheusIngressConfig `json:"ingress,omitempty"`
+	Ingress *PrometheusIngressConfig `json:"ingress,omitempty"`
 
 	// Security configuration for Prometheus component
-	Security PrometheusSecurityConfig `json:"security,omitempty"`
+	Security *PrometheusSecurityConfig `json:"security,omitempty"`
 
 	// Service configuration for Prometheus component
-	Service PrometheusServiceConfig `json:"service,omitempty"`
+	Service *PrometheusServiceConfig `json:"service,omitempty"`
 }
 
 // PrometheusGatewayConfig is the Gateway configuration for the Prometheus component
@@ -685,7 +685,7 @@ type PrometheusServiceConfig struct {
 	// Annotations to configure on the Service
 	Annotations AnnotationsType `json:"annotations,omitempty"`
 	// NodePort configuration for the service
-	NodePort PrometheusServiceNodePortConfig `json:"nodePort,omitempty"`
+	NodePort *PrometheusServiceNodePortConfig `json:"nodePort,omitempty"`
 }
 
 // PrometheusServiceNodePortConfig is the nodePort configuration for Prometheus Service
@@ -695,7 +695,7 @@ type PrometheusServiceNodePortConfig struct {
 	EnabledField `json:",inline"`
 	// Port value for the nodePort
 	// Defaults to 32090
-	Port int32 `json:"port,omitempty"`
+	Port *int32 `json:"port,omitempty"`
 }
 
 // Security component
@@ -750,19 +750,19 @@ type TracingConfig struct {
 	ContextPath string `json:"contextPath,omitempty"`
 
 	// Gateway configuration for tracing Gateway resource
-	Gateway TracingGatewayConfig `json:"gateway,omitempty"`
+	Gateway *TracingGatewayConfig `json:"gateway,omitempty"`
 
 	// Ingress configuration for tracing Ingress resource
-	Ingress TracingIngressConfig `json:"ingress,omitempty"`
+	Ingress *TracingIngressConfig `json:"ingress,omitempty"`
 
 	// Jaeger configuration
-	Jaeger TracingJaegerConfig `json:"jaeger,omitempty"`
+	Jaeger *TracingJaegerConfig `json:"jaeger,omitempty"`
 
 	// Service configuration for tracing Service resource
-	Service TracingServiceConfig `json:"service,omitempty"`
+	Service *TracingServiceConfig `json:"service,omitempty"`
 
 	// Zipkin configuration
-	Zipkin TracingZipkinConfig `json:"zipkin,omitempty"`
+	Zipkin *TracingZipkinConfig `json:"zipkin,omitempty"`
 }
 
 // TracingProviderType represents a tracing provider
@@ -800,9 +800,9 @@ type TracingJaegerConfig struct {
 	// ContextPath for the query service
 	ContextPath string `json:"contextPath,omitempty"`
 	// Memory configuration for Jaeger
-	Memory TracingJaegerMemoryConfig `json:"memory,omitempty"`
+	Memory *TracingJaegerMemoryConfig `json:"memory,omitempty"`
 	// Resources are ResourceRequirements to be specified on the Deployment.
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// Hub is the name of the image registry/namespace from which the image should be pulled.
 	// Defaults to docker.io/jaegertracing
 	Hub string `json:"hub,omitempty"`
@@ -822,7 +822,7 @@ type TracingServiceConfig struct {
 	// Annotations for the Service
 	Annotations AnnotationsType `json:"annotations,omitempty"`
 	// ExportPort is the Port for the Service.  Defaults to 9411.
-	ExternalPort int32 `json:"externalPort,omitempty"`
+	ExternalPort *int32 `json:"externalPort,omitempty"`
 	// Name for the Service Port.  Defaults to http.
 	Name string `json:"name,omitempty"`
 	// Type of Service.  Defaults to ClusterIP.
@@ -838,15 +838,15 @@ type TracingZipkinConfig struct {
 	// Defaults to 500000
 	MaxSpans string `json:"maxSpans,omitempty"`
 	// Node configuration
-	Node TracingZipkinNodeConfig `json:"node,omitempty"`
+	Node *TracingZipkinNodeConfig `json:"node,omitempty"`
 	// ProbeStartupDelay ...  Defaults to 200
-	ProbeStartupDelay int32 `json:"probeStartupDelay,omitempty"`
+	ProbeStartupDelay *int32 `json:"probeStartupDelay,omitempty"`
 	// QueryPort is the containerPort for the Zipkin Pod
 	// Defaults to 9411
-	QueryPort int32 `json:"queryPort,omitempty"`
+	QueryPort *int32 `json:"queryPort,omitempty"`
 	// Resources are ResourceRequirements to be specified on the Deployment.
 	// Defaults to: limits: { cpu: 300m, memory: 900Mi }, requests: { cpu: 150m, memory: 900Mi }
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// Hub is the name of the image registry/namespace from which the image should be pulled.
 	// Defaults to docker.io/openzipkin
 	Hub string `json:"hub,omitempty"`
@@ -870,7 +870,7 @@ type CommonComponentConfig struct {
 	NameOverrides `json:",inline"`
 
 	// Global specifies component specific overrides for global values
-	Global GlobalConfig `json:"global,omitempty"`
+	Global *GlobalConfig `json:"global,omitempty"`
 }
 
 // EnabledField is a helper for types which have an "enabled" field.
@@ -897,7 +897,7 @@ type DeploymentFields struct {
 	// and applicable to the component.  Defaults to 1.
 	ReplicaCount *int32 `json:"replicaCount,omitempty"`
 	// Resources are ResourceRequirements to be specified on the Deployment.
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// NodeSelector is a set of key/value pairs to be used as the node selector
 	// for the Pods.  If not specified, the DefaultNodeSelector is used.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
@@ -921,7 +921,7 @@ type HorizontalPodAutoscalerFields struct {
 	AutoscaleMin *int32 `json:"autoscaleMin,omitempty"`
 	// CPU metric setting used by the HorizontalPodAutoscaler.  TargetAverageUtilization
 	// defaults to 80.
-	CPU ResourceMetricCPU `json:"cpu,omitempty"`
+	CPU *ResourceMetricCPU `json:"cpu,omitempty"`
 }
 
 // ResourceMetricCPU wrapper for cpu field

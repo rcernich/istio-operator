@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/maistra/istio-operator/pkg/apis"
 	"github.com/maistra/istio-operator/pkg/controller"
@@ -82,8 +83,9 @@ func main() {
 	}
 	defer r.Unset()
 
+	syncPeriod := 5 * time.Minute
 	// Create a new Cmd to provide shared dependencies and start components
-	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
+	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace, SyncPeriod: &syncPeriod})
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)

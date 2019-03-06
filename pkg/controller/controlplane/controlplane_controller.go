@@ -78,7 +78,7 @@ type ReconcileControlPlane struct {
 }
 
 const (
-	finalizer = "istio-operator:ControlPlane"
+	finalizer = "istio-operator-ControlPlane"
 )
 
 // Reconcile reads that state of the cluster for a ControlPlane object and makes changes based on the state read
@@ -90,7 +90,7 @@ const (
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileControlPlane) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling ControlPlane")
+	reqLogger.Info("Processing ControlPlane")
 
 	// Fetch the ControlPlane instance
 	instance := &istiov1alpha3.ControlPlane{}
@@ -102,8 +102,13 @@ func (r *ReconcileControlPlane) Reconcile(request reconcile.Request) (reconcile.
 			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
-		return reconcile.Result{Requeue: true}, err
+		// Error reading the object
+		return reconcile.Result{}, err
+	}
+
+	if instance.GetGeneration() == instance.Status.ObservedGeneration {
+		reqLogger.Info("nothing to reconcile, generations match")
+		return reconcile.Result{}, nil
 	}
 
 	deleted := instance.GetDeletionTimestamp() != nil
@@ -114,30 +119,29 @@ func (r *ReconcileControlPlane) Reconcile(request reconcile.Request) (reconcile.
 		finalizers = append(finalizers, finalizer)
 		instance.SetFinalizers(finalizers)
 		err = r.client.Update(context.TODO(), instance)
-		return reconcile.Result{Requeue: true}, err
-	}
-
-	if deleted {
-		if finalizerIndex < 0 {
-			return reconcile.Result{}, nil
-		}
-		// deleter := controlPlaneDeleter
-		// XXX: for now, no specialized deletion
-		finalizers = append(finalizers[:finalizerIndex], finalizers[finalizerIndex+1:]...)
-		instance.SetFinalizers(finalizers)
-		err = r.client.Update(context.TODO(), instance)
-		return reconcile.Result{Requeue: true}, err
+		return reconcile.Result{Requeue: err == nil}, err
 	}
 
 	reconciler := controlPlaneReconciler{
 		ReconcileControlPlane: r,
 		instance:              instance,
 		log:                   reqLogger,
-		status: istiov1alpha3.ControlPlaneStatus{
-			StatusType:      istiov1alpha3.NewStatus(),
-			ComponentStatus: map[string]istiov1alpha3.ComponentStatus{},
-		},
 	}
+
+	if deleted {
+		if finalizerIndex < 0 {
+			return reconcile.Result{}, nil
+		}
+		reqLogger.Info("Deleting ControlPlane")
+		result, err := reconciler.Delete()
+		// XXX: for now, nuke the resources, regardless of errors
+		finalizers = append(finalizers[:finalizerIndex], finalizers[finalizerIndex+1:]...)
+		instance.SetFinalizers(finalizers)
+		_ = r.client.Update(context.TODO(), instance)
+		return result, err
+	}
+
+	reqLogger.Info("Reconciling ControlPlane")
 
 	return reconciler.Reconcile()
 }
