@@ -14,16 +14,6 @@ spec:
     enabled: true
     cleanUpOldCA: false
 
-  ingress:
-    autoscaleMin: 0
-    autoscaleMax: 0
-  ingressgateway:
-    autoscaleMin: 0
-    autoscaleMax: 0
-  egressgateway:
-    autoscaleMin: 0
-    autoscaleMax: 0
-
   gateways:
     istio-egressgateway:
       enabled: true
@@ -49,3 +39,8 @@ spec:
     autoscaleMin: 0
     autoscaleMax: 0
     traceSampling: 100.0
+
+  sidecarInjectorWebhook:
+    enabled: true
+    enableNamespacesByDefault: true
+

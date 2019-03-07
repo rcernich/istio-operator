@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/maistra/istio-operator/pkg/apis"
+	"github.com/maistra/istio-operator/pkg/bootstrap"
 	"github.com/maistra/istio-operator/pkg/controller"
 	"github.com/maistra/istio-operator/pkg/controller/controlplane"
 	"github.com/maistra/istio-operator/pkg/controller/installation"
@@ -107,6 +108,12 @@ func main() {
 
 	// Create Service object to expose the metrics port.
 	metrics.ExposeMetricsPort()
+
+	// Enusure CRDs are installed
+	if err := bootstrap.InstallCRDs(mgr.GetClient()); err != nil {
+		log.Error(err, "failed to install CRDs")
+		os.Exit(1)
+	}
 
 	log.Info("Starting the Cmd.")
 
