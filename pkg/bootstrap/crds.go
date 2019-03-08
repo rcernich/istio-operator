@@ -27,6 +27,7 @@ var log = logf.Log.WithName("bootstrap")
 // InstallCRDs makes sure all CRDs have been installed.  CRDs are located from
 // files in controller.ChartPath/istio-init/files
 func InstallCRDs(k8sClient client.Client) error {
+	log.Info("ensuring CRDs have been installed")
 	crdPath := path.Join(controlplane.ChartPath, "istio-init/files")
 	crdDir, err := os.Stat(crdPath)
 	if !crdDir.IsDir() {
@@ -77,16 +78,19 @@ func processCRDFile(k8sClient client.Client, fileName string) error {
 		err = k8sClient.Get(context.TODO(), client.ObjectKey{Name: obj.GetName()}, receiver)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				log.Info("creating CRD", "file", fileName, "index", index, "Name", obj.GetName())
+				log.Info("creating CRD", "file", fileName, "index", index, "CRD", obj.GetName())
 				err = k8sClient.Create(context.TODO(), obj)
 				if err != nil {
-					log.Error(err, "error creating CRD", fileName, "index", index, "Name", obj.GetName())
+					log.Error(err, "error creating CRD", fileName, "index", index, "CRD", obj.GetName())
 					allErrors = append(allErrors, err)
+					continue
 				}
 			} else {
 				allErrors = append(allErrors, err)
+				continue
 			}
 		}
+		log.Info("CRD installed", "file", fileName, "index", index, "CRD", obj.GetName())
 	}
 	return utilerrors.NewAggregate(allErrors)
 }

@@ -75,6 +75,7 @@ rules:
   # for galley, *: get, list, watch
   # for mixer, *: create, get, list, watch
   # for pilot, *: *
+  # for istio-authenticated, *: *
   - '*'
   - meshpolicies
   verbs:
@@ -84,6 +85,7 @@ rules:
   resources:
   # for galley, *: get, list, watch
   # for pilot, *: *
+  # for istio-authenticated, *: *
   - '*'
   - attributemanifests
   - handlers
@@ -98,6 +100,7 @@ rules:
   resources:
   # for galley, *: get, list, watch
   # for pilot, *: *
+  # for istio-authenticated, *: *
   - '*'
   - gateways
   - destinationrules
@@ -118,6 +121,12 @@ rules:
   - '*'
   - istiocontrolplanes
   - installations
+  verbs:
+  - '*'
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
   verbs:
   - '*'
 # for galley (pilot and prometheus also watch nodes)
@@ -171,11 +180,13 @@ rules:
   - list
   - watch
 # for pilot
+# for istio-authenticated, *: *
 - apiGroups:
   - rbac.istio.io
   resources:
   - '*'
   verbs:
+  - '*'
   - get
   - list
   - watch

@@ -175,3 +175,15 @@ func (key ResourceKey) ToUnstructured() *unstructured.Unstructured {
 	retval.SetKind(gvk[1])
 	return retval
 }
+
+// FindResourcesOfKind returns all the specified kind.  Note, this does not account for group or version.
+func (s *ComponentStatus) FindResourcesOfKind(kind string) map[ResourceKey]*StatusType {
+	resources := map[ResourceKey]*StatusType{}
+	suffix := ","+kind
+	for key, status := range s.ResourceStatus {
+		if strings.HasSuffix(string(key), suffix) {
+			resources[key] = status
+		}
+	}
+	return resources
+}

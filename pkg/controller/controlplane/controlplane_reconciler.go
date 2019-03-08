@@ -5,6 +5,7 @@ import (
 	"path"
 	"reflect"
 	"strings"
+	"time"
 
 	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 
@@ -39,7 +40,7 @@ var seen = struct{}{}
 func (r *controlPlaneReconciler) Delete() (reconcile.Result, error) {
 	allErrors := []error{}
 	for key := range r.instance.Status.ComponentStatus {
-		err := r.processComponentManifests(key, r.serviceAccountNewObjectProcessor, r.serviceAccountDeleteObjectProcessor)
+		err := r.processComponentManifests(key)
 		if err != nil {
 			allErrors = append(allErrors, err)
 		}
@@ -88,6 +89,7 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 	// install istio
 	// update injection label on namespace
 	// XXX: this should probably only be done when installing a control plane
+	// e.g. spec.pilot.enabled || spec.mixer.enabled || spec.galley.enabled || spec.sidecarInjectorWebhook.enabled || ....
 	// which is all we're supporting atm.  if the scope expands to allow
 	// installing custom gateways, etc., we should revisit this.
 	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: r.instance.Namespace}}
@@ -119,68 +121,59 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 
 	// create core istio resources
 	componentsProcessed["istio"] = seen
-	err = r.processComponentManifests("istio", nil, nil)
+	err = r.processComponentManifests("istio")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
 
 	// create security
 	componentsProcessed["istio/charts/security"] = seen
-	err = r.processComponentManifests("istio/charts/security", nil, nil)
+	err = r.processComponentManifests("istio/charts/security")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
 
 	// create galley
 	componentsProcessed["istio/charts/galley"] = seen
-	err = r.processComponentManifests("istio/charts/galley", nil, nil)
-	if err != nil {
-		allErrors = append(allErrors, err)
-	}
-
-	// XXX: waiting is important for the follow-on components
-	// wait for galley
-
-	// wait for validating webhook to reconfigure
-
-	// gateways
-	componentsProcessed["istio/charts/gateways"] = seen
-	err = r.processComponentManifests("istio/charts/gateways", nil, nil)
-	if err != nil {
-		allErrors = append(allErrors, err)
-	}
-
-	// create mixer
-	componentsProcessed["istio/charts/mixer"] = seen
-	err = r.processComponentManifests("istio/charts/mixer", nil, nil)
+	err = r.processComponentManifests("istio/charts/galley")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
 
 	// create pilot
 	componentsProcessed["istio/charts/pilot"] = seen
-	err = r.processComponentManifests("istio/charts/pilot", nil, nil)
+	err = r.processComponentManifests("istio/charts/pilot")
+	if err != nil {
+		allErrors = append(allErrors, err)
+	}
+
+	// create mixer
+	componentsProcessed["istio/charts/mixer"] = seen
+	err = r.processComponentManifests("istio/charts/mixer")
+	if err != nil {
+		allErrors = append(allErrors, err)
+	}
+
+	// gateways
+	componentsProcessed["istio/charts/gateways"] = seen
+	err = r.processComponentManifests("istio/charts/gateways")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
 
 	// prometheus
 	componentsProcessed["istio/charts/prometheus"] = seen
-	err = r.processComponentManifests("istio/charts/prometheus", nil, nil)
+	err = r.processComponentManifests("istio/charts/prometheus")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
 
 	// sidecar injector
 	componentsProcessed["istio/charts/sidecarInjectorWebhook"] = seen
-	err = r.processComponentManifests("istio/charts/sidecarInjectorWebhook", nil, nil)
+	err = r.processComponentManifests("istio/charts/sidecarInjectorWebhook")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
-
-	// wait for sidecar injector deployment
-
-	// wait for mutating webhook
 
 	// ingress
 	// install grafana
@@ -195,7 +188,7 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 			continue
 		}
 		componentsProcessed[key] = seen
-		err = r.processComponentManifests(key, nil, nil)
+		err = r.processComponentManifests(key)
 		if err != nil {
 			allErrors = append(allErrors, err)
 		}
@@ -207,7 +200,7 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 			continue
 		}
 		componentsProcessed[key] = seen
-		err = r.processComponentManifests(key, nil, nil)
+		err = r.processComponentManifests(key)
 		if err != nil {
 			allErrors = append(allErrors, err)
 		}
@@ -227,7 +220,7 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 
 	updateErr := r.client.Status().Update(context.TODO(), r.instance)
 	if updateErr != nil {
-		r.log.Error(err, "error updating ControlPlane status for object", "object", r.instance.GetName())
+		r.log.Error(err, "error updating ControlPlane status")
 		if err == nil {
 			// XXX: is this the right thing to do?
 			return reconcile.Result{}, updateErr
@@ -236,60 +229,55 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 	return reconcile.Result{}, err
 }
 
-type customizationHook func(object *unstructured.Unstructured) error
-
-func noopCustimizationHook(_ *unstructured.Unstructured) error { return nil }
-
-func (r *controlPlaneReconciler) processComponentManifests(componentName string,
-	processNewObject customizationHook,
-	processDeletedObject customizationHook) error {
+func (r *controlPlaneReconciler) processComponentManifests(componentName string) error {
 	var err error
 	status, hasStatus := r.instance.Status.ComponentStatus[componentName]
 	renderings, hasRenderings := r.renderings[componentName]
+	origLogger := r.log
+	r.log = r.log.WithValues("Component", componentName)
+	defer func() { r.log = origLogger }()
 	if hasRenderings {
 		if !hasStatus {
 			status = istiov1alpha3.NewComponentStatus()
 			r.instance.Status.ComponentStatus[componentName] = status
 		}
-		r.log.Info("reconciling resources for Component", "Component", componentName)
+		r.log.Info("reconciling component resources")
 		status.RemoveCondition(istiov1alpha3.ConditionTypeReconciled)
-		err := r.processManifests(renderings, status, r.serviceAccountNewObjectProcessor, r.serviceAccountDeleteObjectProcessor)
+		err := r.processManifests(renderings, status)
 		updateReconcileStatus(&status.StatusType, err)
 		status.ObservedGeneration = r.instance.GetGeneration()
+		r.processNewComponent(componentName, status)
 	} else if hasStatus && status.GetCondition(istiov1alpha3.ConditionTypeInstalled).Status != istiov1alpha3.ConditionStatusFalse {
 		// delete resources
-		r.log.Info("deleting resources for Component", "Component", componentName)
-		err := r.processManifests([]manifest.Manifest{}, status, r.serviceAccountNewObjectProcessor, r.serviceAccountDeleteObjectProcessor)
+		r.log.Info("deleting component resources")
+		err := r.processManifests([]manifest.Manifest{}, status)
 		updateDeleteStatus(&status.StatusType, err)
 		status.ObservedGeneration = r.instance.GetGeneration()
+		r.processDeletedComponent(componentName, status)
 	} else {
-		r.log.Info("no renderings for Component", "Component", componentName)
+		r.log.Info("no renderings for component")
 	}
 	return err
 }
 
 func (r *controlPlaneReconciler) processManifests(manifests []manifest.Manifest,
-	componentStatus *istiov1alpha3.ComponentStatus,
-	processNewObject customizationHook,
-	processDeletedObject customizationHook) error {
+	componentStatus *istiov1alpha3.ComponentStatus) error {
 
 	allErrors := []error{}
 	resourcesProcessed := map[istiov1alpha3.ResourceKey]struct{}{}
-	if processNewObject == nil {
-		processNewObject = noopCustimizationHook
-	}
-	if processDeletedObject == nil {
-		processDeletedObject = noopCustimizationHook
-	}
 
+	origLogger := r.log
+	defer func() { r.log = origLogger }()
 	for _, manifest := range manifests {
+		r.log = origLogger.WithValues("manifest", manifest.Name)
 		if !strings.HasSuffix(manifest.Name, ".yaml") {
-			r.log.V(2).Info("Skipping rendering of file", "file", manifest.Name)
+			r.log.V(2).Info("Skipping rendering of manifest")
 			continue
 		}
-		r.log.V(2).Info("Processing resources from file", "file", manifest.Name)
+		r.log.Info("Processing resources from manifest")
 		// split the manifest into individual objects
 		objects := releaseutil.SplitManifests(manifest.Content)
+		manifestLogger := r.log
 		for _, raw := range objects {
 			rawJSON, err := yaml.YAMLToJSON([]byte(raw))
 			if err != nil {
@@ -309,8 +297,9 @@ func (r *controlPlaneReconciler) processManifests(manifests []manifest.Manifest,
 			obj.SetOwnerReferences(r.ownerRefs)
 
 			key := istiov1alpha3.NewResourceKey(obj, obj)
+			r.log = manifestLogger.WithValues("Resource", key)
 
-			r.log.V(2).Info("beginning reconciliation of ResourceKey", "ResourceKey", key)
+			r.log.V(2).Info("beginning reconciliation of resource", "ResourceKey", key)
 
 			resourcesProcessed[key] = seen
 			status, ok := componentStatus.ResourceStatus[key]
@@ -325,7 +314,7 @@ func (r *controlPlaneReconciler) processManifests(manifests []manifest.Manifest,
 			receiver := key.ToUnstructured()
 			objectKey, err := client.ObjectKeyFromObject(receiver)
 			if err != nil {
-				r.log.Error(err, "client.ObjectKeyFromObject() failed for ResourceKey", "ResourceKey", key)
+				r.log.Error(err, "client.ObjectKeyFromObject() failed for resource")
 				r.log.V(5).Info("raw: object", "object", raw)
 				// This can only happen if reciever isn't an unstructured.Unstructured
 				// i.e. this should never happen
@@ -336,19 +325,19 @@ func (r *controlPlaneReconciler) processManifests(manifests []manifest.Manifest,
 			err = r.client.Get(context.TODO(), objectKey, receiver)
 			if err != nil {
 				if errors.IsNotFound(err) {
-					r.log.Info("creating resource ResourceKey", "ResourceKey", key)
+					r.log.Info("creating resource")
 					err = r.client.Create(context.TODO(), obj)
 					if err == nil {
 						status.ObservedGeneration = obj.GetGeneration()
 						// special handling
-						processNewObject(obj)
+						r.processNewObject(obj)
 					}
 				}
 			} else if (receiver.GetGeneration() > status.ObservedGeneration) || // somebody changed the object out from under us
 				!(reflect.DeepEqual(obj.GetAnnotations(), receiver.GetAnnotations()) &&
 					reflect.DeepEqual(obj.GetLabels(), receiver.GetLabels())) ||
 				shouldUpdate(obj.UnstructuredContent(), receiver.UnstructuredContent()) {
-				r.log.Info("updating resource ResourceKey", "ResourceKey", key)
+				r.log.Info("updating existing resource")
 				//r.log.Info("updates not supported at this time")
 				// XXX: k8s barfs on some updates: metadata.resourceVersion: Invalid value: 0x0: must be specified for an update
 				obj.SetResourceVersion(receiver.GetResourceVersion())
@@ -357,10 +346,10 @@ func (r *controlPlaneReconciler) processManifests(manifests []manifest.Manifest,
 					status.ObservedGeneration = obj.GetGeneration()
 				}
 			}
-			r.log.V(2).Info("reconciliation complete for ResourceKey", "ResourceKey", key)
+			r.log.V(2).Info("resource reconciliation complete")
 			updateReconcileStatus(status, err)
 			if err != nil {
-				r.log.Error(err, "error occurred reconciling resource", "ResourceKey", key)
+				r.log.Error(err, "error occurred reconciling resource")
 				allErrors = append(allErrors, err)
 			}
 		}
@@ -369,17 +358,19 @@ func (r *controlPlaneReconciler) processManifests(manifests []manifest.Manifest,
 	// handle deletions
 	// XXX: should these be processed in reverse order of creation?
 	for key, status := range componentStatus.ResourceStatus {
+		r.log = origLogger.WithValues("Resource", key)
 		if _, ok := resourcesProcessed[key]; !ok {
 			if condition := status.GetCondition(istiov1alpha3.ConditionTypeInstalled); condition.Status != istiov1alpha3.ConditionStatusFalse {
-				r.log.Info("deleting resource ResourceKey", "ResourceKey", key)
+				r.log.Info("deleting resource")
 				unstructured := key.ToUnstructured()
 				err := r.client.Delete(context.TODO(), unstructured, client.PropagationPolicy(metav1.DeletePropagationBackground))
 				updateDeleteStatus(status, err)
 				if err == nil || errors.IsNotFound(err) {
 					status.ObservedGeneration = 0
 					// special handling
-					processDeletedObject(unstructured)
+					r.processDeletedObject(unstructured)
 				} else {
+					r.log.Error(err, "error deleting resource")
 					allErrors = append(allErrors, err)
 				}
 			}
@@ -472,31 +463,74 @@ func shouldUpdate(o1, o2 map[string]interface{}) bool {
 	}
 	return false
 }
+func (r *controlPlaneReconciler) processNewComponent(name string, status *istiov1alpha3.ComponentStatus) error {
+	switch name {
+	case "istio/charts/galley":
+		r.waitForDeployments(status)
+		if name == "istio/charts/galley" {
+			for webhookKey, status := range status.FindResourcesOfKind("ValidatingWebhookConfiguration") {
+				if installCondition := status.GetCondition(istiov1alpha3.ConditionTypeInstalled); installCondition.Status == istiov1alpha3.ConditionStatusTrue {
+					r.waitForWebhookCABundleInitialization(webhookKey.ToUnstructured())
+				}
+			}
+		}
+	case "istio/charts/sidecarInjectorWebhook":
+		for webhookKey, status := range status.FindResourcesOfKind("MutatingWebhookConfiguration") {
+			if installCondition := status.GetCondition(istiov1alpha3.ConditionTypeInstalled); installCondition.Status == istiov1alpha3.ConditionStatusTrue {
+				r.waitForWebhookCABundleInitialization(webhookKey.ToUnstructured())
+			}
+		}
+		r.waitForDeployments(status)
+	default:
+		r.waitForDeployments(status)
+	}
+	return nil
+}
+
+func (r *controlPlaneReconciler) processDeletedComponent(name string, status *istiov1alpha3.ComponentStatus) error {
+	return nil
+}
+
+func (r *controlPlaneReconciler) processNewObject(object *unstructured.Unstructured) error {
+	gk := object.GroupVersionKind().GroupKind()
+	switch gk.String() {
+	case "ServiceAccount":
+		return r.processNewServiceAccount(object)
+	}
+	return nil
+}
+
+func (r *controlPlaneReconciler) processDeletedObject(object *unstructured.Unstructured) error {
+	gk := object.GroupVersionKind().GroupKind()
+	switch gk.String() {
+	case "ServiceAccount":
+		return r.processDeletedServiceAccount(object)
+	}
+	return nil
+}
 
 // add-scc-to-user anyuid to service accounts: citadel, egressgateway, galley, ingressgateway, mixer, pilot, sidecar-injector
 // plus: grafana, prometheus
 
 // add-scc-to-user privileged service accounts: jaeger
-func (r *controlPlaneReconciler) serviceAccountNewObjectProcessor(object *unstructured.Unstructured) error {
-	if gvk := object.GroupVersionKind(); gvk.Group == "" && gvk.Kind == "ServiceAccount" {
-		switch object.GetName() {
-		case "istio-ingressgateway-service-account",
-			"istio-egressgateway-service-account",
-			"istio-pilot-service-account",
-			"istio-mixer-service-account",
-			"istio-mixer-post-install-account",
-			"istio-ca-service-account",
-			"istio-sidecar-injector-service-account",
-			"istio-citadel-service-account",
-			"istio-ingress-service-account",
-			"istio-galley-service-account",
-			"istio-cleanup-old-ca-service-account",
-			"prometheus",
-			"default":
-			return r.addUserToSCC("anyuid", serviceaccount.MakeUsername(object.GetNamespace(), object.GetName()))
-		case "jaeger":
-			return r.addUserToSCC("privileged", serviceaccount.MakeUsername(object.GetNamespace(), object.GetName()))
-		}
+func (r *controlPlaneReconciler) processNewServiceAccount(object *unstructured.Unstructured) error {
+	switch object.GetName() {
+	case "istio-ingressgateway-service-account",
+		"istio-egressgateway-service-account",
+		"istio-pilot-service-account",
+		"istio-mixer-service-account",
+		"istio-mixer-post-install-account",
+		"istio-ca-service-account",
+		"istio-sidecar-injector-service-account",
+		"istio-citadel-service-account",
+		"istio-ingress-service-account",
+		"istio-galley-service-account",
+		"istio-cleanup-old-ca-service-account",
+		"prometheus",
+		"default":
+		return r.addUserToSCC("anyuid", serviceaccount.MakeUsername(object.GetNamespace(), object.GetName()))
+	case "jaeger":
+		return r.addUserToSCC("privileged", serviceaccount.MakeUsername(object.GetNamespace(), object.GetName()))
 	}
 	return nil
 }
@@ -522,26 +556,24 @@ func (r *controlPlaneReconciler) addUserToSCC(sccName, user string) error {
 	return err
 }
 
-func (r *controlPlaneReconciler) serviceAccountDeleteObjectProcessor(object *unstructured.Unstructured) error {
-	if gvk := object.GroupVersionKind(); gvk.Group == "" && gvk.Kind == "ServiceAccount" {
-		switch object.GetName() {
-		case "istio-ingressgateway-service-account",
-			"istio-egressgateway-service-account",
-			"istio-pilot-service-account",
-			"istio-mixer-service-account",
-			"istio-mixer-post-install-account",
-			"istio-ca-service-account",
-			"istio-sidecar-injector-service-account",
-			"istio-citadel-service-account",
-			"istio-ingress-service-account",
-			"istio-galley-service-account",
-			"istio-cleanup-old-ca-service-account",
-			"prometheus",
-			"default":
-			return r.removeUserFromSCC("anyuid", serviceaccount.MakeUsername(object.GetNamespace(), object.GetName()))
-		case "jaeger":
-			return r.removeUserFromSCC("privileged", serviceaccount.MakeUsername(object.GetNamespace(), object.GetName()))
-		}
+func (r *controlPlaneReconciler) processDeletedServiceAccount(object *unstructured.Unstructured) error {
+	switch object.GetName() {
+	case "istio-ingressgateway-service-account",
+		"istio-egressgateway-service-account",
+		"istio-pilot-service-account",
+		"istio-mixer-service-account",
+		"istio-mixer-post-install-account",
+		"istio-ca-service-account",
+		"istio-sidecar-injector-service-account",
+		"istio-citadel-service-account",
+		"istio-ingress-service-account",
+		"istio-galley-service-account",
+		"istio-cleanup-old-ca-service-account",
+		"prometheus",
+		"default":
+		return r.removeUserFromSCC("anyuid", serviceaccount.MakeUsername(object.GetNamespace(), object.GetName()))
+	case "jaeger":
+		return r.removeUserFromSCC("privileged", serviceaccount.MakeUsername(object.GetNamespace(), object.GetName()))
 	}
 	return nil
 }
@@ -565,4 +597,52 @@ func (r *controlPlaneReconciler) removeUserFromSCC(sccName, user string) error {
 		}
 	}
 	return err
+}
+
+func (r *controlPlaneReconciler) waitForDeployments(status *istiov1alpha3.ComponentStatus) error {
+	for deploymentKey, status := range status.FindResourcesOfKind("Deployment") {
+		if installCondition := status.GetCondition(istiov1alpha3.ConditionTypeInstalled); installCondition.Status == istiov1alpha3.ConditionStatusTrue {
+			r.waitForDeployment(deploymentKey.ToUnstructured())
+		}
+	}
+	return nil
+}
+
+func (r *controlPlaneReconciler) waitForDeployment(object *unstructured.Unstructured) error {
+	name := object.GetName()
+	// wait for deployment replicas >= 1
+	r.log.Info("waiting for deployment to become ready", "Deployment", name)
+	for i := 0; i < 10; i++ {
+		r.client.Get(context.TODO(), client.ObjectKey{Namespace: object.GetNamespace(), Name: name}, object)
+		if val, _, _ := unstructured.NestedInt64(object.UnstructuredContent(), "status", "readyReplicas"); val > 0 {
+			return nil
+		}
+		time.Sleep(6 * time.Second)
+	}
+	r.log.Error(nil, "deployment failed to become ready after 600s", "Deployment", name)
+	return nil
+}
+
+func (r *controlPlaneReconciler) waitForWebhookCABundleInitialization(object *unstructured.Unstructured) error {
+	name := object.GetName()
+	kind := object.GetKind()
+	r.log.Info("waiting for webhook CABundle initialization", kind, name)
+outer:
+	for i := 0; i < 10; i++ {
+		r.client.Get(context.TODO(), client.ObjectKey{Name: name}, object)
+		webhooks, found, _ := unstructured.NestedSlice(object.UnstructuredContent(), "webhooks")
+		if !found || len(webhooks) == 0 {
+			return nil
+		}
+		for _, webhook := range webhooks {
+			typedWebhook, _ := webhook.(map[string]interface{})
+			if caBundle, found, _ := unstructured.NestedString(typedWebhook, "clientConfig", "caBundle"); !found || len(caBundle) == 0 {
+				time.Sleep(6 * time.Second)
+				continue outer
+			}
+		}
+		return nil
+	}
+	r.log.Error(nil, "webhook CABundle failed to become initialized after 600s", kind, name)
+	return nil
 }

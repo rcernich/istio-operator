@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+set -e
+
+: ${MAISTRA_VERSION:=0.10.0}
+
 DIR=$(pwd)/tmp/_output/helm
 
 ISTIO_VERSION=1.1.0-rc.2
@@ -25,7 +30,9 @@ ISTIO_NAME=${ISTIO_NAME//./-}
 
 HELM_DIR=${RELEASE_DIR}
 
-PATCH_1_0=$(echo "${ISTIO_VERSION}" | grep "^1\.0\..*")
+if [[ "${ISTIO_VERSION}" =~ ^1\.0\..* ]]; then
+  PATCH_1_0="true"
+fi
 
 COMMUNITY=${COMMUNITY:-true}
 
@@ -45,10 +52,10 @@ function retrieveIstioRelease() {
   (
       cd "${RELEASES_DIR}"
       ${EXTRACT_CMD}
-      (
-        cd "${HELM_DIR}/istio"
-        helm dep update
-      )
+      #(
+      #  cd "${HELM_DIR}/istio"
+      #  helm dep update
+      #)
   )
 }
 
@@ -94,8 +101,8 @@ function patchTemplates() {
 
   # - add a maistra-version label to all objects which have a release label
   find ${HELM_DIR} -name "*.yaml" -o -name "*.yaml.tpl" | \
-    xargs sed -i -e 's/^\(.*\)release:\(.*\)$/\1maistra-version: MAISTRA_VERSION\
-\1release:\2/' 
+    xargs sed -i -e 's/^\(.*\)release:\(.*\)$/\1maistra-version: '${MAISTRA_VERSION}'\
+\1release:\2/'
 
   # update the hub value
   # set global.hub=docker.io/istio
@@ -315,6 +322,8 @@ function patchKialiOpenShift() {
 }
 
 retrieveIstioRelease
+
+cp -rv "$(pwd)/helm/istio" ${HELM_DIR}
 
 patchTemplates
 patchCRDs
