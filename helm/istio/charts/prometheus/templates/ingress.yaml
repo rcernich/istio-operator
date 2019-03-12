@@ -1,4 +1,4 @@
-{{- if .Values.enabled }}
+{{- if .Values.ingress.enabled -}}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
@@ -9,8 +9,12 @@ metadata:
     chart: {{ template "prometheus.chart" . }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
+  annotations:
+    {{- range $key, $value := .Values.ingress.annotations }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
 spec:
   to:
     kind: Service
     name: prometheus
-{{- end }}
+{{- end -}}

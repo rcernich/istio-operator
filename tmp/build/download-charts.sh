@@ -59,6 +59,11 @@ function retrieveIstioRelease() {
   )
 }
 
+# copy maistra specific templates into charts
+function copyOverlay() {
+  cp -rv "$(pwd)/helm/istio" "$(pwd)/helm/istio-init" ${HELM_DIR}
+}
+
 # The following modifications are made to the generated helm template for the Istio yaml files
 # - remove the create customer resources job, we handle this in the installer to deal with potential races
 # - remove the cleanup secrets job, we handle this in the installer
@@ -101,8 +106,8 @@ function patchTemplates() {
 
   # - add a maistra-version label to all objects which have a release label
   find ${HELM_DIR} -name "*.yaml" -o -name "*.yaml.tpl" | \
-    xargs sed -i -e 's/^\(.*\)release:\(.*\)$/\1maistra-version: '${MAISTRA_VERSION}'\
-\1release:\2/'
+    xargs sed -i -e 's/^\(.*\)app:\(.*\)$/\1app:\2\
+\1maistra-version: '${MAISTRA_VERSION}'/'
 
   # update the hub value
   # set global.hub=docker.io/istio
@@ -117,6 +122,11 @@ function patchTemplates() {
   
   # - switch prometheus init container image from busybox to prometheus
   sed -i -e 's/"?busybox:?.*$/"docker.io\/prom\/prometheus:v2.3.1"/' ${HELM_DIR}/istio/charts/prometheus/templates/deployment.yaml
+
+  # - enable ingress (route) for prometheus
+  sed -i -e '/ingress:/,/service:/ {
+    s/enabled:.*$/enabled: true/
+}' ${HELM_DIR}/istio/charts/prometheus/values.yaml
 
   # - switch webhook ports to 8443: add targetPort name to galley service
   # XXX: move upstream (add targetPort name)
@@ -156,10 +166,7 @@ function patchTemplates() {
 # The following modifications are made to the generated helm template to extract the CRDs
 # - remove all content except for the crd configmaps
 # - add maistra-version labels
-function patchCRDs() {
-  find ${HELM_DIR}/istio-init/files -name "crd-*.yaml" | xargs sed -i -e 's/^\(.*\)labels:$/\1labels:\
-\1  maistra-version: MAISTRA_VERSION/'
-}
+# all of this is done above in patchTemplates()
 
 # The following modifications are made to the generated helm template for the Grafana yaml file
 # - add a service account for grafana
@@ -169,23 +176,35 @@ function patchCRDs() {
 # - add a maistra-version label to all objects which have a release label (done in patchTemplates())
 function patchGrafanaTemplate() {
   # - add a service account for grafana
-  echo 'apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: grafana
-  namespace: istio-system
-  labels:
-    app: grafana
-' > ${HELM_DIR}/istio/charts/grafana/templates/serviceaccount.yaml
+  # added a file to overlays
 
   # - remove the extraneous create custom resources job
   if [ -f ${HELM_DIR}/istio/charts/grafana/templates/create-custom-resources-job.yaml ]; then
     rm ${HELM_DIR}/istio/charts/grafana/templates/create-custom-resources-job.yaml
   fi
 
+  # - custom resources will be installed directly
+  if [ -f ${HELM_DIR}/istio/charts/grafana/templates/configmap-custom-resources.yaml ]; then
+    rm ${HELM_DIR}/istio/charts/grafana/templates/configmap-custom-resources.yaml
+  fi
+  sed -i -e '/grafana-default.yaml.tpl/d' -e '/{{.*end.*}}/d' ${HELM_DIR}/istio/charts/grafana/templates/grafana-ports-mtls.yaml
+
   # - add the service account to the deployment
   sed -i -e 's/^\(.*\)containers:\(.*\)$/\1serviceAccountName: grafana\
 \1containers:\2/' ${HELM_DIR}/istio/charts/grafana/templates/deployment.yaml
+}
+
+# patch tracing specific templates
+function patchTracingtemplate() {
+  # update jaeger image hub
+  sed -i -e 's+hub: docker.io/jaegertracing+hub: jaegertracing+g' \
+         -e 's+tag: 1.9+tag: 1.11+g' ${HELM_DIR}/istio/charts/tracing/values.yaml
+
+  # update jaeger zipkin port name
+  sed -i -e '/service:$/,/externalPort:/ {
+    s/name:.*$/name: jaeger-collector-zipkin/
+}' ${HELM_DIR}/istio/charts/tracing/values.yaml
+
 }
 
 # The following modifications are made to the generated helm template for the Kiali yaml file
@@ -322,11 +341,10 @@ function patchKialiOpenShift() {
 }
 
 retrieveIstioRelease
-
-cp -rv "$(pwd)/helm/istio" ${HELM_DIR}
+copyOverlay
 
 patchTemplates
-patchCRDs
 patchGrafanaTemplate
+patchTracingtemplate
 patchKialiTemplate
 patchKialiOpenShift

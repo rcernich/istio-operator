@@ -1,0 +1,17 @@
+{{ if eq .Values.provider "jaeger" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-cluster
+  labels:
+    app: elasticsearch
+spec:
+  ports:
+  - name: cluster
+    port: 9300
+    protocol: TCP
+    targetPort: 9300
+  selector:
+    app: elasticsearch
+type: ClusterIP
+{{ end }}

@@ -6,13 +6,24 @@ spec:
   global:
     proxy:
       autoInject: disabled
-      privileged: false
+      privileged: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 128Mi
     multiCluster:
       enabled: false
 
   security:
     enabled: true
     cleanUpOldCA: false
+
+  ingress:
+    autoscaleMin: 0
+    autoscaleMax: 0
 
   gateways:
     istio-egressgateway:
@@ -34,6 +45,13 @@ spec:
     telemetry:
       enabled: true
       autoscaleEnabled: false
+      resources:
+        requests:
+          cpu: 100m
+          memory: 1G
+        limits:
+          cpu: 500m
+          memory: 4G
 
   pilot:
     autoscaleMin: 0
@@ -44,3 +62,13 @@ spec:
     enabled: true
     enableNamespacesByDefault: true
 
+  grafana:
+    enabled: true
+
+  tracing:
+    enabled: true
+
+  kiali:
+    enabled: true
+    hub: kiali
+    tag: v0.15.0

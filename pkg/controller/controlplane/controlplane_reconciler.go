@@ -1,7 +1,9 @@
 package controlplane
 
 import (
+	"regexp"
 	"context"
+	"fmt"
 	"path"
 	"reflect"
 	"strings"
@@ -140,9 +142,9 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 		allErrors = append(allErrors, err)
 	}
 
-	// create pilot
-	componentsProcessed["istio/charts/pilot"] = seen
-	err = r.processComponentManifests("istio/charts/pilot")
+	// prometheus
+	componentsProcessed["istio/charts/prometheus"] = seen
+	err = r.processComponentManifests("istio/charts/prometheus")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
@@ -154,16 +156,16 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 		allErrors = append(allErrors, err)
 	}
 
-	// gateways
-	componentsProcessed["istio/charts/gateways"] = seen
-	err = r.processComponentManifests("istio/charts/gateways")
+	// create pilot
+	componentsProcessed["istio/charts/pilot"] = seen
+	err = r.processComponentManifests("istio/charts/pilot")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
 
-	// prometheus
-	componentsProcessed["istio/charts/prometheus"] = seen
-	err = r.processComponentManifests("istio/charts/prometheus")
+	// gateways
+	componentsProcessed["istio/charts/gateways"] = seen
+	err = r.processComponentManifests("istio/charts/gateways")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
@@ -175,10 +177,28 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 		allErrors = append(allErrors, err)
 	}
 
-	// ingress
 	// install grafana
+	componentsProcessed["istio/charts/grafana"] = seen
+	err = r.processComponentManifests("istio/charts/grafana")
+	if err != nil {
+		allErrors = append(allErrors, err)
+	}
+
 	// install jaeger
+	componentsProcessed["istio/charts/tracing"] = seen
+	err = r.processComponentManifests("istio/charts/tracing")
+	if err != nil {
+		allErrors = append(allErrors, err)
+	}
+
 	// install kiali
+	componentsProcessed["istio/charts/kiali"] = seen
+	err = r.processComponentManifests("istio/charts/kiali")
+	if err != nil {
+		allErrors = append(allErrors, err)
+	}
+
+	// ingress
 	// install 3scale
 	// install launcher
 	// other components
@@ -310,6 +330,13 @@ func (r *controlPlaneReconciler) processManifests(manifests []manifest.Manifest,
 			}
 
 			status.RemoveCondition(istiov1alpha3.ConditionTypeReconciled)
+
+			err = r.patchObject(obj)
+			if err != nil {
+				r.log.Error(err, "error patching object")
+				updateReconcileStatus(status, err)
+				continue
+			}
 
 			receiver := key.ToUnstructured()
 			objectKey, err := client.ObjectKeyFromObject(receiver)
@@ -481,6 +508,9 @@ func (r *controlPlaneReconciler) processNewComponent(name string, status *istiov
 			}
 		}
 		r.waitForDeployments(status)
+	case "istio/charts/tracing":
+		// XXX: not sure if we need to have elasticsearch ready before jaeger, nor how to accomplish that
+		r.waitForDeployments(status)
 	default:
 		r.waitForDeployments(status)
 	}
@@ -488,6 +518,17 @@ func (r *controlPlaneReconciler) processNewComponent(name string, status *istiov
 }
 
 func (r *controlPlaneReconciler) processDeletedComponent(name string, status *istiov1alpha3.ComponentStatus) error {
+	return nil
+}
+
+func (r *controlPlaneReconciler) patchObject(object *unstructured.Unstructured) error {
+	gk := object.GroupVersionKind().GroupKind()
+	switch gk.String() {
+	case "ConfigMap":
+		if object.GetName() == "kiali" {
+			return r.patchKialiConfig(object)
+		}
+	}
 	return nil
 }
 
@@ -507,6 +548,50 @@ func (r *controlPlaneReconciler) processDeletedObject(object *unstructured.Unstr
 		return r.processDeletedServiceAccount(object)
 	}
 	return nil
+}
+
+var (
+	grafanaRegexp = regexp.MustCompile("(grafana:\\s*url:).*?\n")
+	jaegerRegexp = regexp.MustCompile("(jaeger:\\s*url:).*?\n")
+)
+func (r *controlPlaneReconciler) patchKialiConfig(object *unstructured.Unstructured) error {
+	configYaml, found, err := unstructured.NestedString(object.UnstructuredContent(), "data", "config.yaml")
+	if err != nil {
+		// This shouldn't occur if it's really a ConfigMap, but...
+		r.log.Error(err, "could not parse kiali ConfigMap")
+		return err
+	} else if !found {
+		return nil
+	}
+
+	// get jaeger route host
+	jaegerRoute := &unstructured.Unstructured{}
+	jaegerRoute.SetAPIVersion("route.openshift.io/v1")
+	jaegerRoute.SetKind("Route")
+	err = r.client.Get(context.TODO(), client.ObjectKey{Name: "jaeger-query", Namespace: object.GetNamespace()}, jaegerRoute)
+	if err != nil && !errors.IsNotFound(err) {
+		r.log.Error(err, "error retrieving jaeger route")
+		return fmt.Errorf("could not retrieve jaeger route: %s", err)
+	}
+
+	// get grafana route host
+	grafanaRoute := &unstructured.Unstructured{}
+	grafanaRoute.SetAPIVersion("route.openshift.io/v1")
+	grafanaRoute.SetKind("Route")
+	err = r.client.Get(context.TODO(), client.ObjectKey{Name: "grafana", Namespace: object.GetNamespace()}, grafanaRoute)
+	if err != nil && !errors.IsNotFound(err) {
+		r.log.Error(err, "error retrieving grafana route")
+		return fmt.Errorf("could not retrieve grafana route: %s", err)
+	}
+
+	// update config.yaml.external_services.grafana.url
+	grafanaURL, _, _ := unstructured.NestedString(grafanaRoute.UnstructuredContent(), "spec", "host")
+	configYaml = string(grafanaRegexp.ReplaceAll([]byte(configYaml), []byte("${1} " + grafanaURL)))
+	// update config.yaml.external_services.jaeger.url
+	jaegerURL, _, _ := unstructured.NestedString(jaegerRoute.UnstructuredContent(), "spec", "host")
+	configYaml = string(jaegerRegexp.ReplaceAll([]byte(configYaml), []byte("${1} " + jaegerURL)))
+
+	return unstructured.SetNestedField(object.UnstructuredContent(), configYaml, "data", "config.yaml")
 }
 
 // add-scc-to-user anyuid to service accounts: citadel, egressgateway, galley, ingressgateway, mixer, pilot, sidecar-injector

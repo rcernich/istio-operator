@@ -1,0 +1,53 @@
+{{ if eq .Values.provider "jaeger" }}
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  serviceName: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+        tuned.openshift.io/elasticsearch: ""
+    spec:
+      containers:
+      - name: elasticsearch
+        image: registry.centos.org/rhsyseng/elasticsearch:5.6.10
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9200
+          name: api
+          protocol: TCP
+        - containerPort: 9300
+          name: cluster
+          protocol: TCP
+        resources:
+{{- if .Values.jaeger.resources }}
+{{ toYaml .Values.jaeger.resources | indent 10 }}
+{{- else }}
+{{ toYaml .Values.global.defaultResources | indent 10 }}
+{{- end }}
+        volumeMounts:
+        - mountPath: /elasticsearch/persistent
+          name: elasticsearch-persistent
+        - mountPath: /etc/elasticsearch/elasticsearch.yml
+          subPath: elasticsearch.yml
+          name: elasticsearch-conf
+      securityContext: {}
+      serviceAccount: elasticsearch
+      serviceAccountName: elasticsearch
+      volumes:
+      - name: elasticsearch-persistent
+        emptyDir: {}
+      - name: elasticsearch-conf
+        configMap:
+name: elasticsearch-conf
+{{ end }}
