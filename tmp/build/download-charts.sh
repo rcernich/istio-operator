@@ -44,12 +44,14 @@ function retrieveIstioRelease() {
 
   if [ ! -f "${RELEASES_DIR}/${ISTIO_FILE}" ] ; then
     (
+      echo "downloading Istio Release: ${ISTIO_URL}"
       cd "${RELEASES_DIR}"
       curl -LO "${ISTIO_URL}"
     )
   fi
 
   (
+      echo "extracting Istio Helm charts to ${RELEASES_DIR}"
       cd "${RELEASES_DIR}"
       ${EXTRACT_CMD}
       #(
@@ -61,7 +63,8 @@ function retrieveIstioRelease() {
 
 # copy maistra specific templates into charts
 function copyOverlay() {
-  cp -rv "$(pwd)/helm/istio" "$(pwd)/helm/istio-init" ${HELM_DIR}
+  echo "copying Maistra chart customizations over stock Istio charts"
+  find "$(pwd)/helm/" -maxdepth 1 -mindepth 1 -type d | xargs -I '{}' -n 1 -rt cp -r '{}' ${HELM_DIR}
 }
 
 # The following modifications are made to the generated helm template for the Istio yaml files
@@ -79,6 +82,7 @@ function copyOverlay() {
 # - switch webhook ports to 8443
 # - switch health check files into /tmp
 function patchTemplates() {
+  echo "patching Helm charts"
   # - remove the create customer resources job, we handle this in the installer to deal with potential races
   rm ${HELM_DIR}/istio/charts/grafana/templates/create-custom-resources-job.yaml
 
@@ -175,6 +179,8 @@ function patchTemplates() {
 # - add the service account to the deployment
 # - add a maistra-version label to all objects which have a release label (done in patchTemplates())
 function patchGrafanaTemplate() {
+  echo "patching Grafana specific Helm charts"
+
   # - add a service account for grafana
   # added a file to overlays
 
@@ -196,6 +202,7 @@ function patchGrafanaTemplate() {
 
 # patch tracing specific templates
 function patchTracingtemplate() {
+  echo "patching Jaeger (tracing) specific Helm charts"
   # update jaeger image hub
   sed -i -e 's+hub: docker.io/jaegertracing+hub: jaegertracing+g' \
          -e 's+tag: 1.9+tag: 1.11+g' ${HELM_DIR}/istio/charts/tracing/values.yaml
@@ -211,6 +218,7 @@ function patchTracingtemplate() {
 # - remove all non kiali configuration
 # - remove the kiali username/password secret
 function patchKialiTemplate() {
+  echo "patching Kiali specific Helm charts"
 
   # - remove the kiali username/password secret
   rm ${HELM_DIR}/istio/charts/kiali/templates/demosecret.yaml
@@ -225,6 +233,7 @@ function patchKialiTemplate() {
 # - Add the kiali-cert volume
 # - Add istio namespace to the configmap
 function patchKialiOpenShift() {
+  echo "more patching of Kiali specific Helm charts"
   # - Add jaeger and grafana URLs to the configmap as well as the identity certs
   #   these should be defined in the values file kiali.dashboard.grafanaURL
   #   and kiali.dashboard.jaegerURL.  If not specified, the URLs should be
