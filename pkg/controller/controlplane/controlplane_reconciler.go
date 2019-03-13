@@ -1,27 +1,28 @@
 package controlplane
 
 import (
-	"regexp"
 	"context"
 	"fmt"
 	"path"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 
-	"k8s.io/apiserver/pkg/authentication/serviceaccount"
-
 	"github.com/ghodss/yaml"
-
 	"github.com/go-logr/logr"
 
 	istiov1alpha3 "github.com/maistra/istio-operator/pkg/apis/istio/v1alpha3"
 
 	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+
+	"k8s.io/apiserver/pkg/authentication/serviceaccount"
+
 	"k8s.io/helm/pkg/manifest"
 	"k8s.io/helm/pkg/releaseutil"
 
@@ -65,6 +66,7 @@ func (r *controlPlaneReconciler) Delete() (reconcile.Result, error) {
 func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 	allErrors := []error{}
 	var err error
+	var launcherRenderings, threeScaleRenderings map[string][]manifest.Manifest
 
 	// prepare to write a new reconciliation status
 	r.instance.Status.RemoveCondition(istiov1alpha3.ConditionTypeReconciled)
@@ -74,12 +76,44 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 	}
 
 	// Render the templates
-	r.renderings, _, err = RenderHelmChart(path.Join(ChartPath, "istio"), r.instance)
+	istioRenderings, _, err := RenderHelmChart(path.Join(ChartPath, "istio"), r.instance.GetNamespace(), r.instance.Spec.Istio)
 	if err != nil {
+		allErrors = append(allErrors, err)
+	}
+	if isEnabled(r.instance.Spec.Launcher) {
+		launcherRenderings, _, err = RenderHelmChart(path.Join(ChartPath, "maistra-launcher"), r.instance.GetNamespace(), r.instance.Spec.Launcher)
+		if err != nil {
+			allErrors = append(allErrors, err)
+		}
+	} else {
+		launcherRenderings = map[string][]manifest.Manifest{}
+	}
+	if isEnabled(r.instance.Spec.ThreeScale) {
+		threeScaleRenderings, _, err = RenderHelmChart(path.Join(ChartPath, "maistra-threescale"), r.instance.GetNamespace(), r.instance.Spec.ThreeScale)
+		if err != nil {
+			allErrors = append(allErrors, err)
+		}
+	} else {
+		threeScaleRenderings = map[string][]manifest.Manifest{}
+	}
+	if len(allErrors) > 0 {
+		err = utilerrors.NewAggregate(allErrors)
 		// we can't progress here
 		updateReconcileStatus(&r.instance.Status.StatusType, err)
 		r.client.Status().Update(context.TODO(), r.instance)
 		return reconcile.Result{}, err
+	}
+
+	// merge the rendernings
+	r.renderings = map[string][]manifest.Manifest{}
+	for key, value := range istioRenderings {
+		r.renderings[key] = value
+	}
+	for key, value := range launcherRenderings {
+		r.renderings[key] = value
+	}
+	for key, value := range threeScaleRenderings {
+		r.renderings[key] = value
 	}
 
 	// create project
@@ -198,11 +232,11 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 		allErrors = append(allErrors, err)
 	}
 
-	// ingress
-	// install 3scale
-	// install launcher
 	// other components
 	for key := range r.renderings {
+		if !strings.HasPrefix(key, "istio/") {
+			continue
+		}
 		if _, ok := componentsProcessed[key]; ok {
 			// already processed this component
 			continue
@@ -212,6 +246,20 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 		if err != nil {
 			allErrors = append(allErrors, err)
 		}
+	}
+
+	// install launcher
+	componentsProcessed["maistra-launcher"] = seen
+	err = r.processComponentManifests("maistra-launcher")
+	if err != nil {
+		allErrors = append(allErrors, err)
+	}
+
+	// install 3scale
+	componentsProcessed["maistra-launcher"] = seen
+	err = r.processComponentManifests("maistra-threescale")
+	if err != nil {
+		allErrors = append(allErrors, err)
 	}
 
 	// delete unseen components
@@ -247,6 +295,15 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 		}
 	}
 	return reconcile.Result{}, err
+}
+
+func isEnabled(spec map[string]interface{}) bool {
+	if enabledVal, ok := spec["enabled"]; ok {
+		if enabled, ok := enabledVal.(bool); ok {
+			return enabled
+		}
+	}
+	return false
 }
 
 func (r *controlPlaneReconciler) processComponentManifests(componentName string) error {
@@ -552,8 +609,9 @@ func (r *controlPlaneReconciler) processDeletedObject(object *unstructured.Unstr
 
 var (
 	grafanaRegexp = regexp.MustCompile("(grafana:\\s*url:).*?\n")
-	jaegerRegexp = regexp.MustCompile("(jaeger:\\s*url:).*?\n")
+	jaegerRegexp  = regexp.MustCompile("(jaeger:\\s*url:).*?\n")
 )
+
 func (r *controlPlaneReconciler) patchKialiConfig(object *unstructured.Unstructured) error {
 	configYaml, found, err := unstructured.NestedString(object.UnstructuredContent(), "data", "config.yaml")
 	if err != nil {
@@ -586,10 +644,10 @@ func (r *controlPlaneReconciler) patchKialiConfig(object *unstructured.Unstructu
 
 	// update config.yaml.external_services.grafana.url
 	grafanaURL, _, _ := unstructured.NestedString(grafanaRoute.UnstructuredContent(), "spec", "host")
-	configYaml = string(grafanaRegexp.ReplaceAll([]byte(configYaml), []byte("${1} " + grafanaURL)))
+	configYaml = string(grafanaRegexp.ReplaceAll([]byte(configYaml), []byte("${1} "+grafanaURL)))
 	// update config.yaml.external_services.jaeger.url
 	jaegerURL, _, _ := unstructured.NestedString(jaegerRoute.UnstructuredContent(), "spec", "host")
-	configYaml = string(jaegerRegexp.ReplaceAll([]byte(configYaml), []byte("${1} " + jaegerURL)))
+	configYaml = string(jaegerRegexp.ReplaceAll([]byte(configYaml), []byte("${1} "+jaegerURL)))
 
 	return unstructured.SetNestedField(object.UnstructuredContent(), configYaml, "data", "config.yaml")
 }

@@ -2,19 +2,17 @@ package controlplane
 
 import (
 	"encoding/json"
-	"k8s.io/helm/pkg/proto/hapi/release"
-	"k8s.io/helm/pkg/tiller"
 	"fmt"
 	"strings"
 
 	"github.com/ghodss/yaml"
 
-	"github.com/maistra/istio-operator/pkg/apis/istio/v1alpha3"
-
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/manifest"
 	"k8s.io/helm/pkg/proto/hapi/chart"
+	"k8s.io/helm/pkg/proto/hapi/release"
 	"k8s.io/helm/pkg/renderutil"
+	"k8s.io/helm/pkg/tiller"
 	"k8s.io/helm/pkg/timeconv"
 )
 
@@ -27,8 +25,8 @@ var (
 // key names represent the chart from which the template was processed.  Subcharts
 // will be keyed as <root-name>/charts/<subchart-name>, e.g. istio/charts/galley.
 // The root chart would be simply, istio.
-func RenderHelmChart(chartPath string, icp *v1alpha3.ControlPlane) (map[string][]manifest.Manifest, map[string]interface{}, error) {
-	rawVals, err := yaml.Marshal(icp.Spec)
+func RenderHelmChart(chartPath string, namespace string, values interface{}) (map[string][]manifest.Manifest, map[string]interface{}, error) {
+	rawVals, err := yaml.Marshal(values)
 	config := &chart.Config{Raw: string(rawVals), Values: map[string]*chart.Value{}}
 
 	c, err := chartutil.Load(chartPath)
@@ -43,7 +41,7 @@ func RenderHelmChart(chartPath string, icp *v1alpha3.ControlPlane) (map[string][
 			IsInstall: true,
 			IsUpgrade: false,
 			Time:      timeconv.Now(),
-			Namespace: icp.GetNamespace(),
+			Namespace: namespace,
 		},
 		// XXX: hard-code or look this up somehow?
 		KubeVersion: fmt.Sprintf("%s.%s", chartutil.DefaultKubeVersion.Major, chartutil.DefaultKubeVersion.Minor),
@@ -57,7 +55,7 @@ func RenderHelmChart(chartPath string, icp *v1alpha3.ControlPlane) (map[string][
 		Name:      renderOpts.ReleaseOptions.Name,
 		Chart:     c,
 		Config:    config,
-		Namespace: icp.GetNamespace(),
+		Namespace: namespace,
 		Info:      &release.Info{LastDeployed: renderOpts.ReleaseOptions.Time},
 	}
 

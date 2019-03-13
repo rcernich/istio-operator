@@ -44,15 +44,20 @@ type ControlPlaneStatus struct {
 	StatusType `json:",inline"`
 	// ComponentStatus represents the current status of the components
 	ComponentStatus map[string]*ComponentStatus `json:"componentStatus,omitempty"`
-	// Helm release information
-	ReleaseInfo ReleaseInfoType `json:"releaseInfo,omitempty"`
 }
 
-// ReleaseInfoType is typedef for helm release.Release
-type ReleaseInfoType map[string]interface{}
+// HelmValuesType is typedef for Helm .Values
+type HelmValuesType map[string]interface{}
 
-// ControlPlaneSpec defines the desired state of ControlPlane
+// ControlPlaneSpec represents the configuration for installing a control plane
 type ControlPlaneSpec struct {
+	Istio      IstioHelmValues `json:"istio,omitempty"`
+	Launcher   HelmValuesType  `json:"launcher,omitempty"`
+	ThreeScale HelmValuesType  `json:"threeScale,omitempty"`
+}
+
+// IstioHelmValues defines the desired state of ControlPlane
+type IstioHelmValues struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 
