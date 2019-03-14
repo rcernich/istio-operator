@@ -51,12 +51,14 @@ type HelmValuesType map[string]interface{}
 
 // ControlPlaneSpec represents the configuration for installing a control plane
 type ControlPlaneSpec struct {
-	Istio      IstioHelmValues `json:"istio,omitempty"`
-	Launcher   HelmValuesType  `json:"launcher,omitempty"`
-	ThreeScale HelmValuesType  `json:"threeScale,omitempty"`
+	Istio      *IstioHelmValues `json:"istio,omitempty"`
+	Launcher   HelmValuesType   `json:"launcher,omitempty"`
+	ThreeScale HelmValuesType   `json:"threeScale,omitempty"`
 }
 
 // IstioHelmValues defines the desired state of ControlPlane
+// XXX: NOT ALL FIELDS ARE MAPPED AND SOME MAY BE OUT OF DATE
+// XXX: while a good idea in theory, it may be best to just treat this as a map[string]interface{}
 type IstioHelmValues struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
@@ -64,12 +66,14 @@ type IstioHelmValues struct {
 	Global          *GlobalConfig          `json:"global,omitempty"`
 	Galley          *GalleyConfig          `json:"galley,omitempty"`
 	Gateways        *GatewaysConfig        `json:"gateways,omitempty"`
+	Grafana         HelmValuesType         `json:"grafana,omitempty"`
 	Mixer           *MixerConfig           `json:"mixer,omitempty"`
 	Pilot           *PilotConfig           `json:"pilot,omitempty"`
 	Prometheus      *PrometheusConfig      `json:"prometheus,omitempty"`
 	Security        *SecurityConfig        `json:"security,omitempty"`
 	SidecarInjector *SidecarInjectorConfig `json:"sidecarInjectorWebhook,omitempty"`
 	Tracing         *TracingConfig         `json:"tracing,omitempty"`
+	Kiali           *KialiConfig           `json:"kiali,omitempty"`
 }
 
 // Globals
@@ -546,14 +550,20 @@ type MixerConfig struct {
 	// Autoscaler and ReplicaCount fields are unused
 	DeploymentFields `json:",inline"`
 
-	// Policy Deployment configuration.  Only Autoscaler and ReplicaCount fields
+	// Policy configuration.  Only Autoscaler and ReplicaCount fields
 	// are used.
-	Policy *DeploymentFields `json:"policy,omitempty"`
+	Policy *MixerPolicyConfig `json:"policy,omitempty"`
 	// Telemetry configuration.
 	Telemetry *MixerTelemetryConfig `json:"telemetry,omitempty"`
 
 	// Adapters is the configuration for Mixer adapters.
 	Adapters *MixerAdaptersConfig `json:"adapters,omitempty"`
+}
+
+// MixerPolicyConfig is the configuration for Mixer's policy component
+type MixerPolicyConfig struct {
+	EnabledField     `json:",inline"`
+	DeploymentFields `json:",inline"`
 }
 
 // MixerTelemetryConfig is the configuration for Mixer's telemetry component
@@ -651,7 +661,7 @@ type PrometheusConfig struct {
 	Gateway *PrometheusGatewayConfig `json:"gateway,omitempty"`
 
 	// Ingress configuration for Prometheus component
-	Ingress *PrometheusIngressConfig `json:"ingress,omitempty"`
+	Ingress *IngressConfig `json:"ingress,omitempty"`
 
 	// Security configuration for Prometheus component
 	Security *PrometheusSecurityConfig `json:"security,omitempty"`
@@ -664,19 +674,6 @@ type PrometheusConfig struct {
 type PrometheusGatewayConfig struct {
 	// Defaults to false
 	EnabledField `json:",inline"`
-}
-
-// PrometheusIngressConfig is the Ingres configuration for the Prometheus component
-type PrometheusIngressConfig struct {
-	// Defaults to false
-	EnabledField `json:",inline"`
-	// Annotations to configure on the Ingress
-	Annotations AnnotationsType `json:"annotations,omitempty"`
-	// Hosts to configure on the Ingress
-	// Defaults to: [ prometheus.local ]
-	Hosts string `json:"hosts,omitempty"`
-	// TLS configuration for the Ingress
-	TLS []extensionsv1beta1.IngressTLS `json:"tls,omitempty"`
 }
 
 // PrometheusSecurityConfig is the security configuration for the Prometheus component
@@ -758,7 +755,7 @@ type TracingConfig struct {
 	Gateway *TracingGatewayConfig `json:"gateway,omitempty"`
 
 	// Ingress configuration for tracing Ingress resource
-	Ingress *TracingIngressConfig `json:"ingress,omitempty"`
+	Ingress *IngressConfig `json:"ingress,omitempty"`
 
 	// Jaeger configuration
 	Jaeger *TracingJaegerConfig `json:"jaeger,omitempty"`
@@ -786,18 +783,6 @@ type TracingGatewayConfig struct {
 	EnabledField `json:",inline"`
 	// Name for the Gateway.  Defaults to ingressgateway
 	Name string `json:"name,omitempty"`
-}
-
-// TracingIngressConfig is the Ingress configuration for tracing
-type TracingIngressConfig struct {
-	// Whether or not an Ingress is configured for tracing.  Defaults to false.
-	EnabledField `json:",inline"`
-	// Annotations for the Ingress
-	Annotations AnnotationsType `json:"annotations,omitempty"`
-	// Hosts are host names to configure on the Ingress rules
-	Hosts []string `json:"hosts,omitempty"`
-	// TLS configuration for the Ingress
-	TLS []extensionsv1beta1.IngressTLS `json:"tls,omitempty"`
 }
 
 // TracingJaegerConfig is the configuration for Jaeger
@@ -867,7 +852,54 @@ type TracingZipkinNodeConfig struct {
 	CPUs string `json:"cpus,omitempty"`
 }
 
+// Kiali component
+
+// KialiConfig is the configuration for the Kiali component
+type KialiConfig struct {
+	CommonComponentConfig `json:",inline"`
+	// Defaults: ReplicaCount: 1
+	DeploymentFields `json:",inline"`
+	// Hub is the name of the image registry/namespace from which the image should be pulled.
+	// Defaults to docker.io/kiali
+	Hub string `json:"hub,omitempty"`
+	// Tag is the tag of the image
+	// Defaults to v0.14
+	Tag string `json:"tag,omitempty"`
+	// ContextPath for the service
+	ContextPath string                `json:"contextPath,omitempty"`
+	Gateway     *EnabledField         `json:"gateway,omitempty"`
+	Ingress     *IngressConfig        `json:"ingress,omitempty"`
+	Dashboard   *KialiDashboardConfig `json:"dashboard,omitempty"`
+	// PrometheusAddr for prometheus service
+	PrometheusAddr string `json:"prometheusAddr,omitempty"`
+	// CreateDemoSecret will cause a secret will be created with a default username
+	// and password. Useful for demos.
+	CreateDemoSecret *bool `json:"createDemoSecret,omitempty"`
+}
+
+// KialiDashboardConfig is the configuration for the Kiali dashboard
+type KialiDashboardConfig struct {
+	SecretName    string `json:"secretName,omitempty"`
+	UsernameKey   string `json:"usernameKey,omitempty"`
+	PassphraseKey string `json:"passphraseKey,omitempty"`
+	User          string `json:"user,omitempty"`
+	Passphrase    string `json:"passphrase,omitempty"`
+}
+
 // Shared structs used by multiple components
+
+// IngressConfig is the Ingres configuration used by many components
+type IngressConfig struct {
+	// Defaults to false
+	EnabledField `json:",inline"`
+	// Annotations to configure on the Ingress
+	Annotations AnnotationsType `json:"annotations,omitempty"`
+	// Hosts to configure on the Ingress
+	// Defaults to: [ prometheus.local ]
+	Hosts []string `json:"hosts,omitempty"`
+	// TLS configuration for the Ingress
+	TLS []extensionsv1beta1.IngressTLS `json:"tls,omitempty"`
+}
 
 // CommonComponentConfig are settings common to most components
 type CommonComponentConfig struct {

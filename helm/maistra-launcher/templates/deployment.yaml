@@ -1,5 +1,5 @@
 kind: DeploymentConfig
-apiVersion: v1
+apiVersion: apps.openshift.io/v1
 metadata:
   name: launcher-backend
   namespace: {{ .Release.Namespace }}
@@ -196,7 +196,7 @@ spec:
 
 ---
 kind: DeploymentConfig
-apiVersion: v1
+apiVersion: apps.openshift.io/v1
 metadata:
   name: launcher-frontend
   namespace: {{ .Release.Namespace }}
@@ -294,7 +294,7 @@ spec:
   - type: ConfigChange
 
 ---
-apiVersion: v1
+apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
 metadata:
   labels:

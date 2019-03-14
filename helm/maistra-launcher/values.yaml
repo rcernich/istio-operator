@@ -39,10 +39,10 @@ LAUNCHER_TRACKER_SEGMENT_TOKEN:
 LAUNCHER_BOOSTER_CATALOG_REPOSITORY: "https://github.com/fabric8-launcher/launcher-booster-catalog.git"
 
 # The Git reference to use for the above repository
-LAUNCHER_BOOSTER_CATALOG_REF: v30
+LAUNCHER_BOOSTER_CATALOG_REF: v85
 
 # Optional expression to filter a subset of boosters for the above repository (eg. booster.mission.id == 'rest-http')
-LAUNCHER_BACKEND_CATALOG_FILTER:
+LAUNCHER_BACKEND_CATALOG_FILTER: booster.mission.metadata.istio
 
 # A token that must be passed to the catalog reindex service to trigger the catalog
 # reindexing.

@@ -1,8 +1,15 @@
+{{ if eq .Values.provider "jaeger" }}
+
 apiVersion: authentication.istio.io/v1alpha1
 kind: Policy
 metadata:
   name: disable-mtls-jaeger-collector
-  namespace: istio-system
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.provider }}
+    chart: {{ template "tracing.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
 spec:
   targets:
   - name: jaeger-collector
@@ -11,7 +18,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: disable-mtls-jaeger-collector
-  namespace: istio-system
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.provider }}
+    chart: {{ template "tracing.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
 spec:
   host: jaeger-collector
   trafficPolicy:
@@ -22,7 +34,12 @@ apiVersion: authentication.istio.io/v1alpha1
 kind: Policy
 metadata:
   name: disable-mtls-zipkin
-  namespace: istio-system
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.provider }}
+    chart: {{ template "tracing.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
 spec:
   targets:
   - name: zipkin
@@ -31,9 +48,16 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: disable-mtls-zipkin
-  namespace: istio-system
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.provider }}
+    chart: {{ template "tracing.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
 spec:
   host: zipkin
   trafficPolicy:
     tls:
-mode: DISABLE
+      mode: DISABLE
+
+{{ end }}

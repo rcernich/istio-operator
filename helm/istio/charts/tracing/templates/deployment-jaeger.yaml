@@ -4,6 +4,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: jaeger-collector
+  namespace: {{ .Release.Namespace }}
   labels:
     app: jaeger
     jaeger-infra: collector-deployment
@@ -78,6 +79,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: jaeger-query
+  namespace: {{ .Release.Namespace }}
   labels:
     app: jaeger
     jaeger-infra: query-deployment
@@ -154,6 +156,7 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   name: jaeger-agent
+  namespace: {{ .Release.Namespace }}
   labels:
     app: jaeger
     jaeger-infra: agent-daemonset

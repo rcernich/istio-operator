@@ -58,7 +58,6 @@ func RenderHelmChart(chartPath string, namespace string, values interface{}) (ma
 		Namespace: namespace,
 		Info:      &release.Info{LastDeployed: renderOpts.ReleaseOptions.Time},
 	}
-
 	rawRel := map[string]interface{}{}
 	data, err := json.Marshal(rel)
 	if err == nil {

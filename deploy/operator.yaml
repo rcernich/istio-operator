@@ -15,7 +15,7 @@ spec:
       serviceAccountName: istio-operator
       containers:
         - name: istio-operator
-          image: maistra/istio-operator:0.1.0
+          image: maistra/istio-operator:0.10.0
           ports:
           - containerPort: 60000
             name: metrics
@@ -32,9 +32,7 @@ spec:
             failureThreshold: 1
           env:
             - name: WATCH_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              value: istio-system
             - name: POD_NAME
               valueFrom:
                 fieldRef:

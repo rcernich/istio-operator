@@ -57,7 +57,7 @@ func processCRDFile(k8sClient client.Client, fileName string) error {
 	for index, raw := range releaseutil.SplitManifests(string(buf.Bytes())) {
 		rawJSON, err := yaml.YAMLToJSON([]byte(raw))
 		if err != nil {
-			log.Error(err, "unable to convert raw data to JSON", fileName, "index", index)
+			log.Error(err, "unable to convert raw data to JSON", "file", fileName, "index", index)
 			allErrors = append(allErrors, err)
 			continue
 		}

@@ -3,72 +3,82 @@ kind: ControlPlane
 metadata:
   name: default-controlplane
 spec:
-  global:
-    proxy:
-      autoInject: disabled
-      privileged: true
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-        limits:
-          cpu: 500m
-          memory: 128Mi
-    multiCluster:
-      enabled: false
-
-  security:
+  launcher:
     enabled: true
-    cleanUpOldCA: false
+  threeScale:
+    enabled: true
+  istio:
+    global:
+      proxy:
+        autoInject: disabled
+        privileged: false
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 128Mi
+      multiCluster:
+        enabled: false
 
-  ingress:
-    autoscaleMin: 0
-    autoscaleMax: 0
-
-  gateways:
-    istio-egressgateway:
+    security:
       enabled: true
-      autoscaleMin: 0
-      autoscaleMax: 0
-    istio-ingressgateway:
-      autoscaleMin: 0
-      autoscaleMax: 0
+      cleanUpOldCA: false
 
-  mixer:
-    autoscaleMin: 0
-    autoscaleMax: 0
+    gateways:
+      istio-egressgateway:
+        enabled: true
+        autoscaleEnabled: false
+      istio-ingressgateway:
+        enabled: true
+        autoscaleEnabled: false
 
-    policy:
-      enabled: true
+    mixer:
+      policy:
+        enabled: true
+        autoscaleEnabled: false
+
+      telemetry:
+        enabled: true
+        autoscaleEnabled: false
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1G
+          limits:
+            cpu: 500m
+            memory: 4G
+
+    pilot:
       autoscaleEnabled: false
+      traceSampling: 100.0
 
-    telemetry:
+    sidecarInjectorWebhook:
       enabled: true
-      autoscaleEnabled: false
-      resources:
-        requests:
-          cpu: 100m
-          memory: 1G
-        limits:
-          cpu: 500m
-          memory: 4G
+      enableNamespacesByDefault: true
 
-  pilot:
-    autoscaleMin: 0
-    autoscaleMax: 0
-    traceSampling: 100.0
+    prometheus:
+      enabled: true
+      ingress:
+        enabled: true
 
-  sidecarInjectorWebhook:
-    enabled: true
-    enableNamespacesByDefault: true
+    grafana:
+      enabled: true
+      ingress:
+        enabled: true
 
-  grafana:
-    enabled: true
+    tracing:
+      enabled: true
+      ingress:
+        enabled: true
 
-  tracing:
-    enabled: true
-
-  kiali:
-    enabled: true
-    hub: kiali
-    tag: v0.15.0
+    kiali:
+      enabled: true
+      hub: kiali
+      tag: v0.15.0
+      ingress:
+        enabled: true
+      dashboard:
+        user: admin
+        passphrase: admin

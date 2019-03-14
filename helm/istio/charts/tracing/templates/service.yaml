@@ -13,6 +13,7 @@ items:
   kind: Service
   metadata:
     name: zipkin
+    namespace: {{ .Release.Namespace }}
     labels:
       app: {{ .Values.provider }}
 {{ if eq .Values.provider "jaeger" }}

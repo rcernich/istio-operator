@@ -12,6 +12,7 @@
 # the License.
 #
 
+{{ if eq .Values.provider "jaeger" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -20,7 +21,7 @@ metadata:
   labels:
     app: jaeger
     jaeger-infra: configuration
-    chart: {{ template "jaeger.chart" . }}
+    chart: {{ template "tracing.chart" . }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
 data:
@@ -59,3 +60,5 @@ data:
   agent: |
     collector:
       host-port: "jaeger-collector:14267"
+
+{{ end }}

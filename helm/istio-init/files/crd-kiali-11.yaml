@@ -13,4 +13,4 @@ spec:
     plural: monitoringdashboards
     singular: monitoringdashboard
   scope: Namespaced
-version: v1alpha1
+  version: v1alpha1

@@ -3,8 +3,12 @@ apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   name: elasticsearch
+  namespace: {{ .Release.Namespace }}
   labels:
     app: elasticsearch
+    chart: {{ template "tracing.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
 spec:
   podManagementPolicy: OrderedReady
   replicas: 1
@@ -16,6 +20,9 @@ spec:
     metadata:
       labels:
         app: elasticsearch
+        chart: {{ template "tracing.chart" . }}
+        heritage: {{ .Release.Service }}
+        release: {{ .Release.Name }}
         tuned.openshift.io/elasticsearch: ""
     spec:
       containers:
@@ -49,5 +56,6 @@ spec:
         emptyDir: {}
       - name: elasticsearch-conf
         configMap:
-name: elasticsearch-conf
+          name: elasticsearch-conf
+
 {{ end }}
