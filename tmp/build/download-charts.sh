@@ -100,6 +100,12 @@ function patchTemplates() {
   # setting the proper values will fix this:
   # global.proxy.privileged=false
   # global.proxy.enableCoreDump=false
+  # however, we need to ensure privileged is set for istio_init
+  sed -i -e '/- name: istio-init/,/- name: enable-core-dump/ {
+    /- NET_ADMIN/,+3 {
+      /{{/d
+    }
+  }' ${HELM_DIR}/istio/templates/sidecar-injector-configmap.yaml
 
   # - update the namespaceSelector to ignore namespaces with the label istio.openshift.com/ignore-namespace
   # set sidecarInjectorWebhook.enableNamespacesByDefault=true
@@ -110,8 +116,8 @@ function patchTemplates() {
 
   # - add a maistra-version label to all objects which have a release label
   find ${HELM_DIR} -name "*.yaml" -o -name "*.yaml.tpl" | \
-    xargs sed -i -e 's/^\(.*\)app:\(.*\)$/\1app:\2\
-\1maistra-version: '${MAISTRA_VERSION}'/'
+    xargs sed -i -e 's/^\(.*\)release:\(.*\)$/\1maistra-version: '${MAISTRA_VERSION}'\
+\1release:\2/'
 
   # update the hub value
   # set global.hub=docker.io/istio
@@ -125,7 +131,7 @@ function patchTemplates() {
   rm ${HELM_DIR}/istio/templates/clusterrole.yaml
   
   # - switch prometheus init container image from busybox to prometheus
-  sed -i -e 's/"?busybox:?.*$/"docker.io\/prom\/prometheus:v2.3.1"/' ${HELM_DIR}/istio/charts/prometheus/templates/deployment.yaml
+  sed -i -r -e 's/"?busybox:?.*$/"docker.io\/prom\/prometheus:v2.3.1"/' ${HELM_DIR}/istio/charts/prometheus/templates/deployment.yaml
 
   # - enable ingress (route) for prometheus
   sed -i -e '/ingress:/,/service:/ {
@@ -312,6 +318,7 @@ function patchKialiOpenShift() {
 \- apiGroups: ["authentication.istio.io"]\
 \  resources:\
 \  - policies\
+\  - meshpolicies\
 \  verbs:\
 \  - create\
 \  - delete\
@@ -324,12 +331,26 @@ function patchKialiOpenShift() {
 
   # add monitoring.kiali.io
   sed -i -e '/apiGroups:.*authentication.istio.io/,/^-/ {
+      /- policies/ a\
+\  - meshpolicies
       /- watch/ a\
 \- apiGroups: ["monitoring.kiali.io"]\
 \  resources:\
 \  - monitoringdashboards\
 \  verbs:\
-\  - get
+\  - get\
+\- apiGroups: ["rbac.istio.io"]\
+\  resources:\
+\  - clusterrbacconfigs\
+\  - serviceroles\
+\  - servicerolebindings\
+\  verbs:\
+\  - create\
+\  - delete\
+\  - get\
+\  - list\
+\  - patch\
+\  - watch
   }' ${HELM_DIR}/istio/charts/kiali/templates/clusterrole.yaml
   
   # - add create verb to config.istio.io (for 1.0 templates)

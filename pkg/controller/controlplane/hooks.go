@@ -248,6 +248,11 @@ func (r *controlPlaneReconciler) waitForDeployments(status *istiov1alpha3.Compon
 			r.waitForDeployment(deploymentKey.ToUnstructured())
 		}
 	}
+	for deploymentKey, status := range status.FindResourcesOfKind("DeploymentConfig") {
+		if installCondition := status.GetCondition(istiov1alpha3.ConditionTypeInstalled); installCondition.Status == istiov1alpha3.ConditionStatusTrue {
+			r.waitForDeployment(deploymentKey.ToUnstructured())
+		}
+	}
 	return nil
 }
 
