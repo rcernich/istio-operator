@@ -194,16 +194,9 @@ func (r *controlPlaneReconciler) Reconcile() (reconcile.Result, error) {
 	}
 
 	// delete unseen components
-	for index := len(r.instance.Status.ComponentStatus) -1; index >= 0; index-- {
-		status := r.instance.Status.ComponentStatus[index]
-		if _, ok := componentsProcessed[status.Resource]; ok {
-			continue
-		}
-		componentsProcessed[status.Resource] = seen
-		err = r.processComponentManifests(status.Resource)
-		if err != nil {
-			allErrors = append(allErrors, err)
-		}
+	err = r.prune(r.instance.GetGeneration())
+	if err != nil {
+		allErrors = append(allErrors, err)
 	}
 
 	r.status.ObservedGeneration = r.instance.GetGeneration()
