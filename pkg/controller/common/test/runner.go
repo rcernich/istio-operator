@@ -70,8 +70,10 @@ func RunControllerTestCases(t *testing.T, testCases ...ControllerTestCase) {
 						}
 						// insert verifier.  this needs to be the first handler, as it verifies the event, but does not handle it
 						tracker.PrependReaction(event.Verifier)
-						// add failure for events occurring after validation should be complete
-						tracker.PrependReaction(&extraneousActionFailure{verifier: event.Verifier, t: t})
+						if event.AssertExtraneousActions {
+							// add failure for events occurring after validation should be complete
+							tracker.PrependReaction(&extraneousActionFailure{verifier: event.Verifier, t: t})
+						}
 						if err := event.Execute(mgr, tracker); err != nil {
 							t.Fatal(err)
 						}
@@ -127,7 +129,11 @@ type extraneousActionFailure struct {
 var _ clienttesting.Reactor = (*extraneousActionFailure)(nil)
 
 func (r *extraneousActionFailure) Handles(action clienttesting.Action) bool {
-	return r.verifier.HasFired()
+	// ignore any ReconcileResultActions, as these could come after verification
+	// is complete, i.e. test may not verify the reconcile result and we don't
+	// want the test to fail.
+	_, ok := action.(*ReconcileResultAction)
+	return !ok && r.verifier.HasFired()
 }
 func (r *extraneousActionFailure) React(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 	r.t.Fatalf("unexpectect action ocurred: %#v", action)

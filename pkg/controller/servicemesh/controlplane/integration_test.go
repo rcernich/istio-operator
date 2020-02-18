@@ -58,7 +58,7 @@ func TestBootstrapping(t *testing.T) {
 					// initialize status
 					Verify("update").On("servicemeshcontrolplanes/status").Named(smcpName).In(controlPlaneNamespace).IsSeen(),
 					// verify that a CRD is installed
-					Verify("create").On("customresourcedefinitions").IsSeen(),
+					Verify("create").On("customresourcedefinitions").SeenCountIs(28),
 					// verify that CNI is installed
 					Verify("create").On("daemonsets").Named(cniDaemonSetName).In(operatorNamespace).IsSeen(),
 					// verify CNI readiness check during reconcile
@@ -70,7 +70,11 @@ func TestBootstrapping(t *testing.T) {
 					// verify proper number of CRDs is created
 					Assert("create").On("customresourcedefinitions").SeenCountIs(28),
 				},
+				// we don't expect any actions after the readiness check, which should fail,
+				// causing reconciliation to pause
+				AssertExtraneousActions: true,
 				Reactors: []clienttesting.Reactor{
+					// Make sure daemon set status is set so readiness check fails
 					ReactTo("list").On("daemonsets").In(operatorNamespace).With(
 						SetDaemonSetStatus(cniDaemonSetName, appsv1.DaemonSetStatus{
 							NumberAvailable: 0,

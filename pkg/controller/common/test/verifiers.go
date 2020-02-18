@@ -61,6 +61,16 @@ func (f *ActionVerifierFactory) IsSeen() ActionVerifier {
 		})
 }
 
+// SeenCountIs returns an ActionVerifier that verifies the specified action has
+// occurred exactly the expected number of times.
+func (f *ActionVerifierFactory) SeenCountIs(expected int) ActionVerifier {
+	return NewSimpleActionVerifier(f.Verb, f.Resource, f.Subresource, f.Namespace, f.Name,
+		func(action clienttesting.Action) (bool, error) {
+			expected--
+			return expected == 0, nil
+		})
+}
+
 // IsNotSeen returns an ActionVerifier that verifies the specified action has occurred.
 // This should be the last verifier in a list of verifiers, as it will wait for the
 // full timeout before returning success.
@@ -70,6 +80,12 @@ func (f *ActionVerifierFactory) IsNotSeen() ActionVerifier {
 		return true, fmt.Errorf("unexpected %s action occurred: %s", verifier.AbstractActionFilter.String(), action)
 	}
 	return verifier
+}
+
+// With creturns an ActionVerifier that verifies the filtered action using the
+// specified verifier function.
+func (f *ActionVerifierFactory) With(verifier ActionVerifierFunc) ActionVerifier {
+	return NewSimpleActionVerifier(f.Verb, f.Resource, f.Subresource, f.Namespace, f.Name, verifier)
 }
 
 type notSeenActionVerifier struct {

@@ -56,6 +56,13 @@ type ControllerTestEvent struct {
 	Reactors []clienttesting.Reactor
 	// Timeout is the maximum amount of time to wait for the Verifier to be triggered.
 	Timeout time.Duration
+	// AssertExtraneousActions determines whether or not the test event should assert
+	// actions that are delivered after verification is complete.  Set this to false
+	// if the test case does not care about subsequent events (e.g. the test is verifying
+	// a specific create value).  Set to true to verify that no other actions are sent
+	// through the system after the last verification (i.e. the test case does not expect
+	// any further action by the reconciler).
+	AssertExtraneousActions bool
 }
 
 // GenerateEventFunc is a function which triggers some test action.

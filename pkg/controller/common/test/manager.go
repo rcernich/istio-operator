@@ -25,8 +25,9 @@ import (
 // FakeManager is a manager that can be used for testing
 type FakeManager struct {
 	manager.Manager
+	fake             *clienttesting.Fake
 	recorderProvider recorder.Provider
-	reconcileWG sync.WaitGroup
+	reconcileWG      sync.WaitGroup
 }
 
 var _ manager.Manager = (*FakeManager)(nil)
@@ -55,15 +56,21 @@ func StartManager(mgr manager.Manager, t *testing.T) func() {
 
 // NewManager returns a new FakeManager that can be used for testing.
 func NewManager(scheme *runtime.Scheme, tracker clienttesting.ObjectTracker, groupResources ...*restmapper.APIGroupResources) (*FakeManager, error) {
-	options := NewManagerOptions(scheme, tracker, groupResources...)
+	var enhancedTracker *EnhancedTracker
+	var ok bool
+	if enhancedTracker, ok = tracker.(*EnhancedTracker); !ok {
+		enhancedTracker = NewEnhancedTracker(tracker, scheme)
+	}
+	options := NewManagerOptions(scheme, enhancedTracker, groupResources...)
 	delegate, err := manager.New(&rest.Config{}, options)
 	if err != nil {
 		return nil, err
 	}
 	return &FakeManager{
 		Manager:          delegate,
+		fake:             &enhancedTracker.Fake,
 		recorderProvider: NewRecorderProvider(scheme),
-		reconcileWG: sync.WaitGroup{},
+		reconcileWG:      sync.WaitGroup{},
 	}, nil
 }
 
@@ -82,7 +89,8 @@ func (m *FakeManager) Add(runnable manager.Runnable) error {
 		value := reflect.ValueOf(controller)
 		doValue := value.Elem().FieldByName("Do")
 		if reconciler, ok := doValue.Elem().Interface().(reconcile.Reconciler); ok {
-			reconciler = &trackingReconciler{Reconciler: reconciler, wg: &m.reconcileWG}
+			controllerName := value.Elem().FieldByName("Name").String()
+			reconciler = &trackingReconciler{Reconciler: reconciler, fake: m.fake, controllerName: controllerName, wg: &m.reconcileWG}
 			doValue.Set(reflect.ValueOf(reconciler))
 		}
 	}
@@ -102,7 +110,35 @@ func (m *FakeManager) WaitForReconcileCompletion() {
 
 type trackingReconciler struct {
 	reconcile.Reconciler
-	wg *sync.WaitGroup
+	fake           *clienttesting.Fake
+	controllerName string
+	wg             *sync.WaitGroup
+}
+
+// ReconcileRequestAction is a GenericAction that is sent out prior to
+// invoking reconciler.Reconciler.Reconcile().  The GenericAction.GetValue() is
+// the reconcile.Request, Action.GetVerb() is "reconcile", and
+// Action.GetNamespace() is the namespace of the object being reconciled.
+type ReconcileRequestAction struct {
+	clienttesting.GenericActionImpl
+	// Name of the object being reconciled.
+	Name string
+	// ControllerName corresponds to the reconcile.Reconciler being invoked.
+	ControllerName string
+}
+
+// ReconcileResultAction is a GenericAction that is sent out prior to
+// invoking reconciler.Reconciler.Reconcile().  The GenericAction.GetValue() is
+// the reconcile.Result, Action.GetVerb() is "reconciled",
+// and Action.GetNamespace() is the namespace of the object that was reconciled.
+type ReconcileResultAction struct {
+	clienttesting.GenericActionImpl
+	// Name of the object that was reconciled.
+	Name string
+	// ControllerName corresponds to the reconcile.Reconciler that was invoked.
+	ControllerName string
+	// Error is the error returned by the reconcile.Reconciler.
+	Error error
 }
 
 func (r *trackingReconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -110,7 +146,36 @@ func (r *trackingReconciler) Reconcile(request reconcile.Request) (reconcile.Res
 	// a new reconcile once a caller has begun waiting for completion?
 	r.wg.Add(1)
 	defer r.wg.Done()
-	return r.Reconciler.Reconcile(request)
+
+	r.fake.Invokes(&ReconcileRequestAction{
+		GenericActionImpl: clienttesting.GenericActionImpl{
+			ActionImpl: clienttesting.ActionImpl{
+				Verb:      "reconcile-request",
+				Namespace: request.Namespace,
+			},
+			Value: request,
+		},
+		Name:           request.Name,
+		ControllerName: r.controllerName,
+	}, nil)
+
+	// XXX: consider adding a ReconcileReactor interface to Fake?
+	result, err := r.Reconciler.Reconcile(request)
+
+	r.fake.Invokes(&ReconcileResultAction{
+		GenericActionImpl: clienttesting.GenericActionImpl{
+			ActionImpl: clienttesting.ActionImpl{
+				Verb:      "reconcile-result",
+				Namespace: request.Namespace,
+			},
+			Value: result,
+		},
+		Name:           request.Name,
+		ControllerName: r.controllerName,
+		Error:          err,
+	}, nil)
+
+	return result, err
 }
 
 // NewManagerOptions returns a set of options that create a "normal" manager for
