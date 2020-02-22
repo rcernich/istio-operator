@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: istio-operator
+  namespace: istio-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: istio-operator
+  template:
+    metadata:
+      labels:
+        name: istio-operator
+    spec:
+      serviceAccountName: istio-operator
+      containers:
+        - name: istio-operator
+          image: maistra/istio-ubi8-operator:1.1.0
+          ports:
+          - containerPort: 11999
+            name: validation
+          - containerPort: 60000
+            name: metrics
+          command:
+          - istio-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: istio-operator
+            - name: ISTIO_CNI_V1_0_IMAGE
+              value: maistra/istio-cni-ubi8:1.0.0
+            - name: ISTIO_CNI_V1_1_IMAGE
+              value: maistra/istio-cni-ubi8:1.1.0
+#            - name: ISTIO_CNI_IMAGE_PULL_SECRET
+#              value: name-of-secret

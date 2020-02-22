@@ -8,8 +8,10 @@ spec:
   # default values (i.e. no values will be specified for that element, not even
   # the defaults baked into the chart values.yaml).
 
-  # For a complete list of all options, see the docs at https://maistra-1-0.maistra.io/docs/installation/installation-options/
+  # use default install template
+  template: default
 
+  # For a complete list of all options, see the docs at https://maistra-1-0.maistra.io/docs/installation/installation-options/
   istio:
     global:
       # the following lines enable tls across the control and data planes

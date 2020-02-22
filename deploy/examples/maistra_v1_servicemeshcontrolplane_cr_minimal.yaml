@@ -3,6 +3,9 @@ kind: ServiceMeshControlPlane
 metadata:
   name: minimal-install
 spec:
+  # use default install template
+  template: default
+
   # For a complete list of all options, see the docs at https://maistra-1-0.maistra.io/docs/installation/installation-options/
 
   istio:
