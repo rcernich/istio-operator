@@ -1,0 +1,166 @@
+rewriteAppHTTPProbe: false # rewrite probes for application pods to route through sidecar
+
+# these are used by MeshConfig too
+globals:
+  # .Values.global.proxy.clusterDomain, used with --domain, appended to service names
+  # cluster domain. Default value is "cluster.local".
+  clusterDomainSuffix: cluster.local
+  # .Values.global.trustDomain
+  # The trust domain corresponds to the trust root of a system
+  # Refer to https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md#21-trust-domain
+  # Indicate the domain used in SPIFFE identity URL
+  # The default depends on the environment.
+  #   kubernetes: cluster.local
+  #   else:  default dns domain
+  trustDomain: cluster.local
+  # .Values.global.logAsJson
+  # To output all istio components logs in json format by adding --log_as_json argument to each container argument
+  logAsJSON: false
+  # .Values.global.jwtPolicy
+  # Configure the policy for validating JWT.
+  # Currently, two options are supported: "third-party-jwt" and "first-party-jwt".
+  jwtPolicy: third-party-jwt
+  # .Values.global.pilotCertProvider
+  # Configure the certificate provider for control plane communication.
+  # Currently, two providers are supported: "kubernetes" and "istiod".
+  # As some platforms may not have kubernetes signing APIs,
+  # Istiod is the default
+  certProvider:  istiod
+  # .Values.global.caAddress
+  # The customized CA address to retrieve certificates for the pods in the cluster.
+  # CSR clients such as the Istio Agent and ingress gateways can use this to specify the CA endpoint.
+  # If this is set, it overrides the default setting of istiod-<revision>.<istio-namespace>.svc:15012
+  caAddress: ""
+  # .Values.global.multiCluster.clusterName
+  # Should be set to the name of the cluster this installation will run in. This is required for sidecar injection
+  # to properly label proxies
+  clusterName: Kubernetes
+  # .Values.global.network
+  # Network defines the network this cluster belong to. This name
+  # corresponds to the networks in the map of mesh networks.
+  network: ""
+  # .Values.global.meshID
+  # Mesh ID means Mesh Identifier. It should be unique within the scope where
+  # meshes will interact with each other, but it is not required to be
+  # globally/universally unique. For example, if any of the following are true,
+  # then two meshes must have different Mesh IDs:
+  # - Meshes will have their telemetry aggregated in one place
+  # - Meshes will be federated together
+  # - Policy will be written referencing one mesh from the other
+  #
+  # If an administrator expects that any of these conditions may become true in
+  # the future, they should ensure their meshes have different Mesh IDs
+  # assigned.
+  #
+  # Within a multicluster mesh, each cluster must be (manually or auto)
+  # configured to have the same Mesh ID value. If an existing cluster 'joins' a
+  # multicluster mesh, it will need to be migrated to the new mesh ID. Details
+  # of migration TBD, and it may be a disruptive operation to change the Mesh
+  # ID post-install.
+  #
+  # If the mesh admin does not specify a value, Istio will use the value of the
+  # mesh's Trust Domain. The best practice is to select a proper Trust Domain
+  # value.
+  meshID: cluster.local
+  # .Values.global.mountMtlsCerts
+  mountMTLSCerts: false
+  # .Values.global.sds.token.aud
+  # The JWT token for SDS and the aud field of such JWT. See RFC 7519, section 4.1.3.
+  # When a CSR is sent from Citadel Agent to the CA (e.g. Citadel), this aud is to make sure the
+  # JWT is intended for the CA.
+  audience: istio-ca
+
+networking:
+  # istio_cni.enabled, use cni or iptables
+  cni: true
+  # sidecar.istio.io/interceptionMode
+  # TPROXY requires running as root
+  interceptionMode: REDIRECT # or TPROXY; NONE can only be specified in pod annotation
+  # .Values.global.proxy.includeIPRanges, overridden by traffic.sidecar.istio.io/includeOutboundIPRanges
+  includeOutboundIPRanges: [] # * or comma separated list of CIDR
+  # .Values.global.proxy.excludeIPRanges, overridden by traffic.sidecar.istio.io/excludeOutboundIPRanges
+  excludeOutboundIPRanges: [] # * or comma separated list of CIDR
+  # traffic.sidecar.istio.io/includeInboundPorts
+  includeInboundPorts: [ "*" ] # * or comma separated list of integers
+  # .Values.global.proxy.excludeOutboundPorts, overridden by traffic.sidecar.istio.io/excludeOutboundPorts
+  excludeOutboundPorts: [] # comma separated list of integers
+
+  deployment:
+    # .Values.global.proxy_init.image
+    # XXX: should we allow separate images for init and sidecar?
+    image: proxyv2
+    # .Values.global.imagePullPolicy
+    imagePullPolicy: Always
+    # .Values.global.proxy_init.resources
+    resources: {}
+    # .Values.global.proxy.privileged
+    privileged: false
+
+sidecar:
+  # .Values.global.proxy.logLevel, overridden by sidecar.istio.io/logLevel
+  # Log level for proxy, applies to gateways and sidecars.
+  # Expected values are: trace|debug|info|warning|error|critical|off
+  logLevel: warning
+  # .Values.global.proxy.componentLogLevel, overridden by sidecar.istio.io/componentLogLevel
+  # comma separated list of <component>:<level>
+  componentLogLevel: misc:error
+  # .Values.global.sts.servicePort
+  # The service port used by Security Token Service (STS) server to handle token exchange requests.
+  # Setting this port to a non-zero value enables STS server.
+  stsPort: 0
+  # map (name:value) of additional environment variables to set on sidecar
+  proxyMetadata: {}
+  dnsConfig:
+    # .Values.global.podDNSSearchNamespaces
+    # Custom DNS config for the pod to resolve names of services in other
+    # clusters. Use this to add additional search domains, and other settings.
+    # see
+    # https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#dns-config
+    # This does not apply to gateway pods as they typically need a different
+    # set of DNS settings than the normal application pods (e.g., in
+    # multicluster scenarios).
+    # NOTE: If using templates, follow the pattern in the commented example below.
+    #podDNSSearchNamespaces:
+    #- global
+    #- "{{ valueOrDefault .DeploymentMeta.Namespace \"default\" }}.global"
+    searches: []
+  # this is generated from networking settings
+  podRedirectAnnot: {}
+  readiness:
+    # .Values.global.proxy.statusPort, overridden by status.sidecar.istio.io/port
+    # Default port for Pilot agent health checks. A value of 0 will disable health checking.
+    # XXX: this has no affect on which port is actually used for status.
+    statusPort: 15020
+    # .Values.global.proxy.readinessInitialDelaySeconds, overridden by readiness.status.sidecar.istio.io/initialDelaySeconds
+    initialDelaySeconds: 1
+    # .Values.global.proxy.readinessPeriodSeconds, overridden by readiness.status.sidecar.istio.io/periodSeconds
+    periodSeconds: 2
+    # .Values.global.proxy.readinessFailureThreshold, overridden by readiness.status.sidecar.istio.io/failureThreshold
+    failureThreshold: 30
+
+  deployment:
+    # .Values.global.proxy.image
+    # can be overridden by pod annotation sidecar.istio.io/proxyImage
+    image: proxyv2
+    # .Values.global.proxy.lifecycle
+    lifecycle: {}
+    # .Values.global.imagePullPolicy
+    imagePullPolicy: Always
+    # .Values.global.proxy.privileged
+    privileged: false
+    # .Values.global.proxy.resources, or overridden if any of the annotations listed below are set
+    resources:
+      requests:
+        # idecar.istio.io/proxyCPU
+        cpu:
+        # sidecar.istio.io/proxyMemory
+        memory:
+      limits:
+        # sidecar.istio.io/proxyCPULimit
+        cpu:
+        # sidecar.istio.io/proxyMemoryLimit
+        memory:
+
+# .Values.global.proxy.enableCoreDump
+# XXX: not sure if this should be here or somewhere else
+enableCoreDump: false

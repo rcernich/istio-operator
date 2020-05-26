@@ -1,0 +1,9 @@
+.Values.global.centralIstiod
+.Values.global.createRemoteSvcEndpoints
+.Values.global.imagePullSecrets
+.Values.global.istiod.enableAnalysis
+.Values.global.istiod.enabled
+.Values.global.istioNamespace
+.Values.global.remotePilotAddress
+.Values.global.remotePolicyAddress
+.Values.global.remoteTelemetryAddress

@@ -1,0 +1,69 @@
+.Values.global.certificates                                  certificates:
+.Values.global.controlPlaneSecurityEnabled                   used to determine which port to use for mixerCheckServer: and mixerReportServer:
+.Values.global.createRemoteSvcEndpoints                      flag used to specify creation of k8s Services for policy and telemetry, ties in with mixerCheckServer and mixerReportServer
+.Values.global.disablePolicyChecks                           disablePolicyChecks: defaults to true. only used with mixer (i think)
+.Values.global.enableTracing                                 enableTracing:
+.Values.global.localityLbSetting                             localityLbSetting:
+.Values.global.localityLbSetting.enabled                     enables filling of localityLbSetting: with value of global.localityLbSetting
+.Values.global.meshNetworks                                  meshNetworks: { networks: {global.meshNetworks} } meshNetworks is not part of MeshConfig
+.Values.global.mtls.auto                                     enableAutoMtls:
+.Values.global.outboundTrafficPolicy.mode                    outboundTrafficPolicy: { mode: global.outboundTrafficPolicy.mode }
+.Values.global.policyCheckFailOpen                           policyCheckFailOpen: only applicable if mixer policy is enabled or remote policy is in use
+.Values.global.policyNamespace                               used to construct mixerCheckServer address
+.Values.global.proxy.accessLogEncoding                       accessLogEncoding:
+.Values.global.proxy.accessLogFile                           accessLogFile:
+.Values.global.proxy.accessLogFormat                         accessLogFormat:
+
+.Values.global.proxy.clusterDomain                           used to construct address for mixerCheckServer and mixerReportServer
+
+.Values.global.proxy.concurrency                             concurrency:
+.Values.global.proxy.envoyAccessLogService                   envoyAccessLogService:
+.Values.global.proxy.envoyAccessLogService.enabled           generate content for envoyAccessLogService:
+.Values.global.proxy.envoyAccessLogService.host              envoyAccessLogService.address: host:port
+.Values.global.proxy.envoyAccessLogService.port              see above
+.Values.global.proxy.envoyAccessLogService.tcpKeepalive      envoyAccessLogService.tcpKeepalive: global.proxy.envoyAccessLogService.tcpKeepalive
+.Values.global.proxy.envoyAccessLogService.tlsSettings       envoyAccessLogService.tlsSettings: global.proxy.envoyAccessLogService.tlsSettings
+.Values.global.proxy.envoyMetricsService                     envoyMetricsService:
+.Values.global.proxy.envoyMetricsService.enabled             generate content for envoyMetricsService
+.Values.global.proxy.envoyMetricsService.host                envoyMetricsService.address: host:port
+.Values.global.proxy.envoyMetricsService.port                see above
+.Values.global.proxy.envoyMetricsService.tcpKeepalive        envoyMetricsService.tcpKeepalive: global.proxy.envoyMetricsService.tcpKeepalive
+.Values.global.proxy.envoyMetricsService.tlsSettings         envoyMetricsService.tlsSettings: global.proxy.envoyMetricsService.tlsSettings
+.Values.global.proxy.protocolDetectionTimeout                protocolDetectionTimeout: default 100ms
+
+.Values.global.proxy.tracer                                  determines which tracing provider is configured tracing.(lightstep | zipkin | datadog | stackdriver)
+
+.Values.global.remotePilotAddress                            used with discoverAddress: sets either istiod-remote.<namespace>.svc:15012 or istiod-<rev>.<namespace>.svc:15012
+.Values.global.remotePolicyAddress                           mixerCheckServer: global.remotePolicyAddress:15004
+.Values.global.remoteTelemetryAddress                        mixerReportServer: global.remoteTelemetryAddress:15004
+.Values.global.telemetryNamespace                            mixerReportServer: namespace for service
+.Values.global.tracer.datadog.address                        tracing.datadog.address:
+.Values.global.tracer.lightstep.accessToken                  tracing.lightstep.accessToken:
+.Values.global.tracer.lightstep.address                      tracing.lightstep.address:
+.Values.global.tracer.stackdriver.debug                      tracing.stackdriver.debug:
+.Values.global.tracer.stackdriver.maxNumberOfAnnotations     tracing.stackdriver.maxNumberOfAnnotations:
+.Values.global.tracer.stackdriver.maxNumberOfAttributes      tracing.stackdriver.maxNumberOfAttributes:
+.Values.global.tracer.stackdriver.maxNumberOfMessageEvents   tracing.stackdriver.maxNumberOfMessageEvents:
+.Values.global.tracer.zipkin.address                         tracing.zipkin.address:
+
+.Values.global.trustDomain                                   trustDomain:
+
+.Values.global.trustDomainAliases                            trustDomainAliases: list of aliases
+.Values.global.useMCP                                        triggers configuration of configSources: and configSources.subscribedResources: using pilot.configSource.subscribedResources
+.Values.meshConfig                                           meshConfig to merge in with the default mesh config generated using the above
+.Values.mixer.policy.enabled                                 triggers configuration of mixerCheckServer:
+.Values.mixer.telemetry.reportBatchMaxEntries                reportBatchMaxEntries:
+.Values.mixer.telemetry.reportBatchMaxTime                   reportBatchMaxTime:
+.Values.mixer.telemetry.sessionAffinityEnabled               sidecarToTelemetrySessionAffinity:
+.Values.pilot.configMap                                      triggers generation of MeshConfig ConfigMap
+.Values.pilot.configSource.subscribedResources               configSources.subscribedResources:
+.Values.pilot.ingress                                        triggers configuration if ingress* settings
+.Values.pilot.ingress.ingressClass                           ingressClass:
+.Values.pilot.ingress.ingressControllerMode                  ingressControllerMode:
+.Values.pilot.ingress.ingressService                         ingressService:
+
+.Values.revision                                             used to set a specific revision, used with istio.io/rev label
+
+.Values.telemetry.enabled                                    enables telemetry
+.Values.telemetry.v1.enabled                                 triggers configuration of mixerReportServer:
+.Values.telemetry.v2.enabled                                 sets disableMixerHttpReports: true

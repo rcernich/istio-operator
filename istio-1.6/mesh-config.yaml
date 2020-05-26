@@ -1,0 +1,214 @@
+# all tracing related configuration
+tracing:
+  # .Values.global.enableTracing, maps to enableTracing
+  enabled: false
+
+logging:
+  # all configuration for access logging
+  access:
+    file:
+      # was previously disabled by setting path=""
+      enabled: false
+      # .Values.global.proxy.accessLogFile, maps to accessLogFile
+      path: ""
+      # .Values.global.proxy.accessLogFormat, maps to accessLogFormat
+      format: ""
+      # .Values.global.proxy.accessLogEncoding, maps to accessLogEncoding
+      encoding: TEXT
+    remote:
+      # .Values.global.proxy.envoyAccessLogService.enabled, maps to enableEnvoyAccessLogService
+      # XXX: is this redundant, i.e. treat as enabled if specified?
+      enabled: false
+      # .Values.global.proxy.envoyAccessLogService.host : .Values.global.proxy.envoyAccessLogService.port, maps to envoyAccessLogService.address
+      address: ""
+      # .Values.global.proxy.envoyAccessLogService.tlsSettings, maps to envoyAccessLogService.tlsSettings
+      tlsSettings: {}
+      # .Values.global.proxy.envoyAccessLogService.tcpKeepalive, maps to envoyAccessLogService.tcpKeepAlive
+      tcpKeepAlive: {}
+  application:
+    # .Values.global.proxy.logLevel, overridden by sidecar.istio.io/logLevel
+    # Log level for proxy, applies to gateways and sidecars.
+    # Expected values are: trace|debug|info|warning|error|critical|off
+    logLevel: warning
+    # .Values.global.proxy.componentLogLevel, overridden by sidecar.istio.io/componentLogLevel
+    # comma separated list of <component>:<level>
+    componentLogLevel: misc:error
+
+proxy:
+  # maps to defaultConfig.connectionTimeout
+  connectionTimeout: 10s
+  # maps to defaultConfig.proxyAdminPort
+  adminPort: 15000
+  # .Values.global.proxy.concurrency, maps to defaultConfig.concurrency
+  concurrency: 2
+
+# policy specific configuration
+policy:
+  # .Values.mixer.policy.enabled
+  enabled: false
+  # .Values.global.policyCheckFailOpen, maps to policyCheckFailOpen
+  # policyCheckFailOpen allows traffic in cases when the mixer policy service cannot be reached.
+  # Default is false which means the traffic is denied when the client is unable to connect to Mixer.
+  failOpen: true
+  # .Values.global.disablePolicyChecks, maps to disablePolicyChecks
+  disablePolicyChecks: false
+  remote:
+    # legacy mixerCheckServer setting
+    # .Values.global.remotePolicyAddress, maps to mixerCheckServer
+    server: ""
+    # .Values.global.createRemoteSvcEndpoints
+    createServices: true
+
+# telemtry specific configuration
+telemetry:
+  # .Values.telemetry.enabled
+  enabled: false
+  legacy:
+    # XXX: this is a little redundant, as mixer could be treated as a "remote" telemetry endpoint
+    # XXX: batching and sessionAffinity under remote also apply here
+    # .Values.telemetry.v1.enabled, maps to mixerReportServer, also sets disableMixerHttpReports=false
+    enabled: false
+  # use for remote service
+  remote:
+    # maps to mixerReportServer setting, also sets disableMixerHttpReports=false
+    # .Values.global.remoteTelemetryAddress
+    server: ""
+    # .Values.global.createRemoteSvcEndpoints
+    createServices: true
+    # .Values.mixer.telemetry.sessionAffinityEnabled, maps to sidecarToTelemetrySessionAffinity
+    sessionAffinity: false
+    batching:
+      #.Values.mixer.telemetry.reportBatchMaxEntries, maps to reportBatchMaxEntries
+      # Set reportBatchMaxEntries to 0 to use the default batching behavior (i.e., every 100 requests).
+      # A positive value indicates the number of requests that are batched before telemetry data
+      # is sent to the mixer server
+      maxEntries: 100
+      # .Values.mixer.telemetry.reportBatchMaxTime, maps to reportBatchMaxTime
+      # Set reportBatchMaxTime to 0 to use the default batching behavior (i.e., every 1 second).
+      # A positive time value indicates the maximum wait time since the last request will telemetry data
+      # be batched before being sent to the mixer server
+      maxTime: 1s
+  envoyMetricsService:
+    # .Values.global.proxy.envoyMetricsService.enabled
+    # XXX: is this redundant, i.e. treat as enabled if specified?
+    enabled: false
+    # .Values.global.proxy.envoyMetricsService.host : .Values.global.proxy.envoyMetricsService.port, maps to defaultConfig.envoyMetricsService.address
+    address:
+    # .Values.global.proxy.envoyMetricsService.tlsSettings, maps to defaultConfig.envoyMetricsService.tlsSettings
+    tlsSettings: {}
+    # .Values.global.proxy.envoyMetricsService.tcpKeepalive, maps to defaultConfig.envoyMetricsService.tcpKeepAlive
+    tcpKeepAlive: {}
+  # telemetry specific filters to be added to envoy
+  filters:
+    metadataExchange:
+      # Indicates whether to enable WebAssembly runtime for metadata exchange filter.
+      wasmEnabled: false
+    prometheus:
+      # XXX: does this need to be enabled if using prometheus merging?
+      enabled: true
+      # previously enablePrometheusMerge
+      # annotates injected pods with prometheus.io annotations (scrape, path, port)
+      # overridden through prometheus.istio.io/merge-metrics
+      # XXX: if this is enabled, must statusPort also be specified?
+      scrape: true
+      # Indicates whether to enable WebAssembly runtime for stats filter.
+      wasmEnabled: false
+    stackdriver:
+      enabled: false
+      logging: false
+      monitoring: false
+      topology: false
+      disableOutbound: false
+      #  configOverride parts give you the ability to override the low level configuration params passed to envoy filter.
+      #  e.g.
+      #  enable_mesh_edges_reporting: true
+      #  disable_server_access_logging: false
+      #  meshEdgesReportingDuration: 500s
+      #  disable_host_header_fallback: true
+      configOverride: {}
+    # Access Log Policy Filter Settings. This enables filtering of access logs from stackdriver.
+    accessLogPolicy:
+      enabled: false
+      # To reduce the number of successful logs, default log window duration is
+      # set to 12 hours.
+      logWindowDuration: "43200s"
+
+networking:
+  # .Values.global.proxy.protocolDetectionTimeout, maps to protocolDetectionTimeout
+  # Automatic protocol detection uses a set of heuristics to
+  # determine whether the connection is using TLS or not (on the
+  # server side), as well as the application protocol being used
+  # (e.g., http vs tcp). These heuristics rely on the client sending
+  # the first bits of data. For server first protocols like MySQL,
+  # MongoDB, etc., Envoy will timeout on the protocol detection after
+  # the specified period, defaulting to non mTLS plain TCP
+  # traffic. Set this field to tweak the period that Envoy will wait
+  # for the client to send the first bits of data. (MUST BE >=1ms)
+  protocolDetectionTimeout: 100ms
+
+security:
+  trust:
+    #.Values.global.trustDomain, maps to trustDomain
+    # The trust domain corresponds to the trust root of a system.
+    # Refer to https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md#21-trust-domain
+    domain: cluster.local
+    # .Values.global.trustDomainAliases, maps to trustDomainAliases
+    #  Any service with the identity "td1/ns/foo/sa/a-service-account", "td2/ns/foo/sa/a-service-account",
+    #  or "td3/ns/foo/sa/a-service-account" will be treated the same in the Istio mesh.
+    additionalDomains: []
+    # XXX: trusted certificate authorities
+    ca: []
+  identity:
+    # .Values.global.mtls.auto, maps to enableAutoMtls
+    autoMTLS: true
+    # maps to defaultConfig.controlPlaneAuthPolicy
+    controlPlaneMTLS: NONE
+    # configuration for various cert providers
+    certProvider:
+      # internal cert provider
+      # XXX: theoretically, istiod should implement the same interface as external providers
+      # .Values.global.pilotCertProvider
+      # Configure the certificate provider for control plane communication.
+      # Currently, two providers are supported: "kubernetes" and "istiod".
+      # As some platforms may not have kubernetes signing APIs,
+      # Istiod is the default
+      istiod:
+        # .Values.global.certificates, maps to certificates
+        # XXX: these are serving keys/certificates
+        # XXX: consider how third-party solutions might be configured here
+        # Configures DNS certificates provisioned through Chiron linked into Pilot.
+        # The DNS names in this file are all hard-coded; please ensure the namespaces
+        # in dnsNames are consistent with those of your services.
+        # Example:
+        # certificates:
+        #   - secretName: dns.istiod-service-account
+        #     dnsNames: [istiod.istio-system.svc, istiod.istio-system]
+        certificates: []
+
+clustering:
+  # if .Values.global.useMCP
+  configSources:
+    # .Values.pilot.configSource.subscribedResources, maps to configSources.subscribedResources
+    # This is used to set the source of configuration for
+    # the associated address in configSource, if nothing is specificed
+    # the default MCP is assumed.
+    subscribedResources: []
+  loadBalancing:
+    # .Values.global.localityLbSetting.enabled and .Values.global.localityLbSetting, maps to localityLbSetting
+    locality: {}
+  # .Values.pilot.ingress
+  # Controls legacy k8s ingress
+  # configures ingress for istiod
+  ingress:
+    # .Values.pilot.ingress.ingressService, maps to ingressService
+    # If empty, node-port is assumed.
+    service: istio-ingressgateway
+    # .Values.pilot.ingress.ingressControllerMode, maps to ingressControllerMode
+    # DEFAULT: all Ingress resources without annotation or with istio annotation
+    # STRICT: only with istio annotation
+    # OFF: no ingress or sync.
+    controllerMode: STRICT
+    # .Values.pilot.ingress.ingressClass, maps to ingressClass
+    # Value to set on "kubernetes.io/ingress.class" annotations to activate, if mode is STRICT
+    # This is required to be different than 'istio' if multiple ingresses are present.
+    class: istio

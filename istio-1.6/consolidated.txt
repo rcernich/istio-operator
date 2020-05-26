@@ -1,0 +1,14 @@
+Common:
+
+.Values.global.proxy.clusterDomain                       --domain <pod-namespace>.svc.<global.proxy.clusterDomain>
+.Values.global.proxy.clusterDomain                       used to construct address for mixerCheckServer and mixerReportServer
+
+.Values.global.proxy.tracer                              used to configure additional details for lightstep and datadog
+.Values.global.proxy.tracer                              determines which tracing provider is configured tracing.(lightstep | zipkin | datadog | stackdriver)
+
+.Values.global.trustDomain                               --trustDomain (if specified) and ISTIO_META_MESH_ID (if global.meshID is ommitted)
+.Values.global.trustDomain                               trustDomain:
+
+.Values.revision                                         CA_ADDR
+.Values.revision                                         used to set a specific revision, used with istio.io/rev label
+

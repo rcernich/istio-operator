@@ -1,0 +1,48 @@
+.Values.global.caAddress                                 CA_ADDR env
+.Values.global.hub
+.Values.global.imagePullPolicy
+.Values.global.istioNamespace                            used to construct value for CA_ADDR (e.g. istiod-<revision>.<global.istioNamespace>.svc:15012)
+.Values.global.jwtPolicy                                 JWT_POLICY env.  if 'third-party-jwt' then volume is mounted for secret with audience=global.sds.token.aud
+.Values.global.logAsJson                                 --log_as_json
+.Values.global.meshID                                    ISTIO_META_MESH_ID (takes precedent over global.trustDomain, omitted if not specified)
+.Values.global.mountMtlsCerts                            mounts /etc/certs from "istio.<service-account-name>" secret
+.Values.global.multiCluster.clusterName                  ISTIO_META_CLUSTER_ID (defaults to 'Kubernetes')
+.Values.global.network                                   ISTIO_META_NETWORK (omitted if not specified)
+.Values.global.pilotCertProvider                         PILOT_CERT_PROVIDER, mounts /var/run/istio/secrets if set to 'istiod' from istio-ca-root-cert config map
+.Values.global.podDNSSearchNamespaces                    dnsConfig.searches list
+.Values.global.proxy.capNetBindService                   adds NET_BIND_SERVICE to securityContext.capabilities.add list on injected pod
+
+.Values.global.proxy.clusterDomain                       --domain <pod-namespace>.svc.<global.proxy.clusterDomain>
+
+.Values.global.proxy.componentLogLevel                   --proxyComponentLogLevel
+.Values.global.proxy.enableCoreDump                      adds core dump container
+.Values.global.proxy.excludeInboundPorts                 podRedirectAnnot.'traffic.sidecar.istio.io/excludeInboundPorts'
+.Values.global.proxy.excludeIPRanges                     podRedirectAnnot.'traffic.sidecar.istio.io/excludeOutboundIPRanges'
+.Values.global.proxy.excludeOutboundPorts                podRedirectAnnot.'traffic.sidecar.istio.io/excludeOutboundPorts'
+.Values.global.proxy.image                               image used for istio-proxy pod container
+.Values.global.proxy.includeIPRanges                     podRedirectAnnot.'traffic.sidecar.istio.io/includeOutboundIPRanges'
+.Values.global.proxy_init.image
+.Values.global.proxy_init.resources
+.Values.global.proxy.lifecycle                           lifecycle settings for istio-proxy pod container
+.Values.global.proxy.logLevel                            --proxyLogLevel
+.Values.global.proxy.privileged                          securityContext.allowPrivilegeEscalation and securityContext.privileged on istio-proxy container
+.Values.global.proxy.readinessFailureThreshold           readinessProbe.failureThreshold, only used if statusPort is set
+.Values.global.proxy.readinessInitialDelaySeconds        readinessProbe.readinessInitialDelaySeconds, only used if statusPort is set
+.Values.global.proxy.readinessPeriodSeconds              readinessProbe.periodSeconds, only used if statusPort is set
+.Values.global.proxy.resources                           resources to use if annotations are not specified on pod, e.g. sidecar.istio.io/proxyCPU
+.Values.global.proxy.statusPort                          configures readinessProbe on sidecar (not sure if this is hard-coded to 15090)
+
+.Values.global.proxy.tracer                              used to configure additional details for lightstep and datadog
+
+.Values.global.sds.token.aud                             audience used to access service account token projected as istio-token; used when jwtPolicy=third-party-jwt
+.Values.global.sts.servicePort                           --stsPort, ommitted if not specified
+.Values.global.tag
+
+.Values.global.trustDomain                               --trustDomain (if specified) and ISTIO_META_MESH_ID (if global.meshID is ommitted)
+
+.Values.istio_cni.enabled                                configures proxy_init as "istio-validation" setting --run-validation, --skip-rule-apply, and privileges similar to sidecar proxy
+.Values.meshConfig.defaultConfig.tracing.tlsSettings     configures tls certs for lightstep tracer
+
+.Values.revision                                         CA_ADDR
+
+.Values.sidecarInjectorWebhook.rewriteAppHTTPProbe       rewriteAppHTTPProbe

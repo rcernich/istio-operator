@@ -1,0 +1,4 @@
+.Values.global.proxy.clusterDomain
+.Values.global.proxy.tracer
+.Values.global.trustDomain
+.Values.revision
