@@ -1,0 +1,88 @@
+spec:
+  logging:
+    level: info
+    componentLevel: {}
+    logAsJSON: false
+
+  policy:
+    # one of the following
+    mixer: # legacy v1
+      disableChecks: true
+      failOpen: false
+    # or
+    remote:
+      address: my-remote-policy.example.com
+      createServices: false
+      disableChecks: true
+      failOpen: false
+    # or v2
+    builtIn: {}
+
+  telemetry:
+    # one of the following
+    mixer: # legacy v1
+      sessionAffinity: false
+      batching:
+        maxEntries: 100
+        maxTime: 1s
+    # or
+    remote:
+      address: my-remote-telemetry.example.com
+      createServices: false
+      sessionAffinity: false
+      batching:
+        maxEntries: 100
+        maxTime: 1s
+    # or v2
+    builtIn:
+      # any or all of the following
+      metadataExchange:
+        wasmEnabled: false
+      prometheusFilter:
+        scrape: true
+        wasmEnabled: false
+      stackDriverFilter:
+        logging: false
+        monitoring: false
+        topology: false
+        disableOutbound: false
+        configOverride: {}
+
+  proxy:
+    adminPort: 15000
+    concurrency: 0
+
+    logging:
+      level: info
+      componentLevel: {}
+      logAsJSON: false
+
+    networking:
+      protocolDetectionTimeout: 100ms
+      connectionTimeout: 10s
+
+      initialization:
+        # one of the following
+        cni: {}
+        # or
+        ipTables: {}
+
+      trafficControl:
+        interceptionMode: REDIRECT
+        inbound:
+          includedPorts: "*"
+        outbound:
+          includeIPRanges: []
+          excludedIPRanges: []
+          excludedPorts: []
+          policy: ALLOW_ANY
+
+      dns:
+        searchSuffixes: []
+
+    readiness:
+      rewriteApplicationProbes: false
+      statusPort: 15020
+      initialDelaySeconds: 1
+      periodSeconds: 2
+      failureThreshold: 30

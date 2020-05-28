@@ -5,6 +5,7 @@ tracing:
 
 logging:
   # all configuration for access logging
+  # ZZZ: REMOVED IN 1.7
   access:
     file:
       # was previously disabled by setting path=""
@@ -40,6 +41,7 @@ proxy:
   # maps to defaultConfig.proxyAdminPort
   adminPort: 15000
   # .Values.global.proxy.concurrency, maps to defaultConfig.concurrency
+  # ZZZ: removed in 1.7
   concurrency: 2
 
 # policy specific configuration
@@ -69,6 +71,7 @@ telemetry:
     # .Values.telemetry.v1.enabled, maps to mixerReportServer, also sets disableMixerHttpReports=false
     enabled: false
   # use for remote service
+  # ZZZ: REMOVED IN 1.7
   remote:
     # maps to mixerReportServer setting, also sets disableMixerHttpReports=false
     # .Values.global.remoteTelemetryAddress
@@ -88,6 +91,7 @@ telemetry:
       # A positive time value indicates the maximum wait time since the last request will telemetry data
       # be batched before being sent to the mixer server
       maxTime: 1s
+  # ZZZ: removed in 1.7
   envoyMetricsService:
     # .Values.global.proxy.envoyMetricsService.enabled
     # XXX: is this redundant, i.e. treat as enabled if specified?
@@ -144,6 +148,7 @@ networking:
   # the specified period, defaulting to non mTLS plain TCP
   # traffic. Set this field to tweak the period that Envoy will wait
   # for the client to send the first bits of data. (MUST BE >=1ms)
+  # ZZZ: removed in 1.7
   protocolDetectionTimeout: 100ms
 
 security:
@@ -151,6 +156,7 @@ security:
     #.Values.global.trustDomain, maps to trustDomain
     # The trust domain corresponds to the trust root of a system.
     # Refer to https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md#21-trust-domain
+    # XXX: can this be consolidated with clusterDomainSuffix?
     domain: cluster.local
     # .Values.global.trustDomainAliases, maps to trustDomainAliases
     #  Any service with the identity "td1/ns/foo/sa/a-service-account", "td2/ns/foo/sa/a-service-account",
@@ -159,6 +165,7 @@ security:
     # XXX: trusted certificate authorities
     ca: []
   identity:
+    # ZZZ: mtls config removed in 1.7
     # .Values.global.mtls.auto, maps to enableAutoMtls
     autoMTLS: true
     # maps to defaultConfig.controlPlaneAuthPolicy
@@ -183,6 +190,7 @@ security:
         # certificates:
         #   - secretName: dns.istiod-service-account
         #     dnsNames: [istiod.istio-system.svc, istiod.istio-system]
+        # ZZZ: REMOVED IN 1.7
         certificates: []
 
 clustering:
@@ -199,6 +207,7 @@ clustering:
   # .Values.pilot.ingress
   # Controls legacy k8s ingress
   # configures ingress for istiod
+  # ZZZ: removed in 1.7
   ingress:
     # .Values.pilot.ingress.ingressService, maps to ingressService
     # If empty, node-port is assumed.
