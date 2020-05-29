@@ -5,20 +5,22 @@ spec:
     logAsJSON: false
 
   policy:
+    type: Istiod # or Mixer or Remote
     # one of the following
     mixer: # legacy v1
-      disableChecks: true
+      enableChecks: false
       failOpen: false
     # or
     remote:
       address: my-remote-policy.example.com
       createServices: false
-      disableChecks: true
+      enableChecks: false
       failOpen: false
     # or v2
-    builtIn: {}
+    istiod: {}
 
   telemetry:
+    type: Istiod # or Mixer or Remote
     # one of the following
     mixer: # legacy v1
       sessionAffinity: false
@@ -34,7 +36,7 @@ spec:
         maxEntries: 100
         maxTime: 1s
     # or v2
-    builtIn:
+    istiod:
       # any or all of the following
       metadataExchange:
         wasmEnabled: false
@@ -58,14 +60,14 @@ spec:
       logAsJSON: false
 
     networking:
-      protocolDetectionTimeout: 100ms
       connectionTimeout: 10s
 
       initialization:
+        type: CNI # or InitContainer
         # one of the following
         cni: {}
         # or
-        ipTables: {}
+        initContainer: {}
 
       trafficControl:
         interceptionMode: REDIRECT
@@ -76,6 +78,12 @@ spec:
           excludedIPRanges: []
           excludedPorts: []
           policy: ALLOW_ANY
+
+      protocol:
+        detectionTimeout: 100ms
+        debug:
+          enableInboundSniffing: false
+          enableOutboundSniffing: false
 
       dns:
         searchSuffixes: []

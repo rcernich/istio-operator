@@ -39,10 +39,10 @@ type LoggingConfig struct {
 
 // .Values.mixer.policy.enabled
 type MixerPolicyConfig struct {
-	// .Values.global.disablePolicyChecks | default "true"
-	// Set the following variable to true to disable policy checks by the Mixer.
+	// .Values.global.disablePolicyChecks | default "true" (false, inverted logic)
+	// Set the following variable to false to disable policy checks by the Mixer.
 	// Note that metrics will still be reported to the Mixer.
-	DisableChecks bool
+	EnableChecks bool
 	// .Values.global.policyCheckFailOpen, maps to MeshConfig.policyCheckFailOpen
 	// policyCheckFailOpen allows traffic in cases when the mixer policy service cannot be reached.
 	// Default is false which means the traffic is denied when the client is unable to connect to Mixer.
@@ -54,22 +54,31 @@ type RemotePolicyConfig struct {
 	Address string
 	// .Values.global.createRemoteSvcEndpoints
 	CreateServices bool
-	// .Values.global.disablePolicyChecks | default "true"
-	// Set the following variable to true to disable policy checks by the Mixer.
+	// .Values.global.disablePolicyChecks | default "true" (false, inverted logic)
+	// Set the following variable to false to disable policy checks by the Mixer.
 	// Note that metrics will still be reported to the Mixer.
-	DisableChecks bool
+	EnableChecks bool
 	// .Values.global.policyCheckFailOpen, maps to MeshConfig.policyCheckFailOpen
 	// policyCheckFailOpen allows traffic in cases when the mixer policy service cannot be reached.
 	// Default is false which means the traffic is denied when the client is unable to connect to Mixer.
 	FailOpen bool
 }
 
-type BuiltInPolicyConfig struct{}
+type IstiodPolicyConfig struct{}
+
+type PolicyType string
+
+const (
+	PolicyTypeMixer  PolicyType = "Mixer"
+	PolicyTypeRemote PolicyType = "Remote"
+	PolicyTypeIstiod PolicyType = "Istiod"
+)
 
 type PolicyConfig struct {
-	Mixer   *MixerPolicyConfig
-	Remote  *RemotePolicyConfig
-	BuiltIn *BuiltInPolicyConfig
+	Type   PolicyType
+	Mixer  *MixerPolicyConfig
+	Remote *RemotePolicyConfig
+	Istiod *IstiodPolicyConfig
 }
 
 type TelemetryBatchingConfig struct {
@@ -101,6 +110,7 @@ type RemoteTelemetryConfig struct {
 }
 
 type MetadataExchangeConfig struct {
+	// .Values.telemetry.v2.metadataExchange.wasmEnabled
 	// Indicates whether to enable WebAssembly runtime for metadata exchange filter.
 	WASMEnabled bool
 }
@@ -132,17 +142,30 @@ type AccessLogTelemetryFilterConfig struct {
 }
 
 // .Values.telemetry.v2.enabled
-type BuiltInTelemetryConfig struct {
-	MetadataExchange         *MetadataExchangeConfig
-	PrometheusFilter         *PrometheusFilterConfig
-	StackDriverFilter        *StackDriverFilterConfig
+type IstiodTelemetryConfig struct {
+	// always enabled
+	MetadataExchange *MetadataExchangeConfig
+	// .Values.telemetry.v2.prometheus.enabled
+	PrometheusFilter *PrometheusFilterConfig
+	// .Values.telemetry.v2.stackdriver.enabled
+	StackDriverFilter *StackDriverFilterConfig
+	// .Values.telemetry.v2.accessLogPolicy.enabled
 	AccessLogTelemetryFilter *AccessLogTelemetryFilterConfig
 }
 
+type TelemetryType string
+
+const (
+	TelemetryTypeMixer  TelemetryType = "Mixer"
+	TelemetryTypeRemote TelemetryType = "Remote"
+	TelemetryTypeIstiod TelemetryType = "Istiod"
+)
+
 type TelemetryConfig struct {
-	Mixer   *MixerTelemetryConfig
-	Remote  *RemoteTelemetryConfig
-	BuiltIn *BuiltInTelemetryConfig
+	Type   TelemetryType
+	Mixer  *MixerTelemetryConfig
+	Remote *RemoteTelemetryConfig
+	Istiod *IstiodTelemetryConfig
 }
 
 type ProxyConfig struct {
@@ -150,12 +173,21 @@ type ProxyConfig struct {
 	Logging    LoggingConfig
 	Networking ProxyNetworkingConfig
 	Readiness  ProxyReadinessConfig
+	Tracing    ProxyTracingConfig
 	// maps to defaultConfig.proxyAdminPort, defaults to 15000
 	AdminPort int32
 	// .Values.global.proxy.concurrency, maps to defaultConfig.concurrency
 	// XXX: removed in 1.7
 	// XXX: this is defaulted to 2 in our values.yaml, but should probably be 0
 	Concurrency int32
+}
+
+type ProxyTracingConfig struct {
+	Jaeger      *JaegerTracerConfig
+	Zipkin      *ZipkinTracerConfig
+	Lightstep   *LightstepTracerConfig
+	Datadog     *DatadogTracerConfig
+	Stackdriver *StackdriverTracerConfig
 }
 
 type ProxyReadinessConfig struct {
@@ -175,13 +207,23 @@ type ProxyReadinessConfig struct {
 }
 
 type ProxyNetworkingConfig struct {
-	// .Values.global.proxy.protocolDetectionTimeout, maps to protocolDetectionTimeout
-	ProtocolDetectionTimeout string
 	// maps to defaultConfig.connectionTimeout, defaults to 10s
 	ConnectionTimeout string
 	Initialization    ProxyNetworkInitConfig
 	TrafficControl    ProxyTrafficControlConfig
-	DNS ProxyDNSConfig
+	Protocol          ProxyNetworkProtocolConfig
+	DNS               ProxyDNSConfig
+}
+
+type ProxyNetworkProtocolConfig struct {
+	// .Values.global.proxy.protocolDetectionTimeout, maps to protocolDetectionTimeout
+	DetectionTimeout string
+	Debug            ProxyNetworkProtocolDebugConfig
+}
+
+type ProxyNetworkProtocolDebugConfig struct {
+	EnableInboundSniffing  bool
+	EnableOutboundSniffing bool
 }
 
 type ProxyDNSConfig struct {
@@ -206,22 +248,30 @@ const (
 	ProxyNetworkInterceptionModeTProxy   ProxyNetworkInterceptionMode = "TPROXY"
 )
 
+type ProxyNetworkInitType string
+
+const (
+	ProxyNetworkInitTypeCNI           ProxyNetworkInitType = "CNI"
+	ProxyNetworkInitTypeInitContainer ProxyNetworkInitType = "InitContainer"
+)
+
 type ProxyNetworkInitConfig struct {
+	Type ProxyNetworkInitType
 	// istio_cni.enabled, use cni or iptables
-	CNI      *ProxyCNIConfig
-	IPTables *ProxyIPTablesConfig
+	CNI           *ProxyCNIConfig
+	InitContainer *ProxyInitContainerConfig
 }
 
 type ProxyCNIConfig struct {
 	// TODO: add runtime configuration
 }
 
-type ProxyIPTablesConfig struct {
+type ProxyInitContainerConfig struct {
 	// TODO: add runtime configuration
 }
 
 type ProxyTrafficControlConfig struct {
-	InterceptionMode  ProxyNetworkInterceptionMode
+	InterceptionMode ProxyNetworkInterceptionMode
 	// traffic.sidecar.istio.io/includeInboundPorts defaults to * (all ports)
 	Inbound  ProxyInboundTrafficControlConfig
 	Outbound ProxyOutboundTrafficControlConfig
