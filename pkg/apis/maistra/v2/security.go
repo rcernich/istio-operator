@@ -1,7 +1,7 @@
 package v2
 
 type SecurityConfig struct {
-	MutualTLSConfig MutualTLSConfig
+	MutualTLS MutualTLSConfig
 }
 
 type MutualTLSConfig struct {
@@ -63,24 +63,6 @@ const (
 	IstioCertificateSignerTypeSelfSigned IstioCertificateSignerType = "SelfSigned"
 )
 
-// nothing in here is currently configurable, except RootCADir
-type IstioPrivateKeyCertificateSignerConfig struct {
-	// hard coded to use a secret named cacerts
-	EncryptionSecret string
-	// ROOT_CA_DIR, defaults to /etc/cacerts
-	// Mount directory for encryption secret
-	// XXX: currently, not configurable in the charts
-	RootCADir string
-	// hard coded to ca-key.pem
-	SigningKeyFile string
-	// hard coded to ca-cert.pem
-	SigningCertFile string
-	// hard coded to root-cert.pem
-	RootCertFile string
-	// hard coded to cert-chain.pem
-	CertChainFile string
-}
-
 type IstioSelfSignedCertificateSignerConfig struct {
 	// TTL for self-signed root certificate
 	// env CITADEL_SELF_SIGNED_CA_CERT_TTL
@@ -100,6 +82,24 @@ type IstioSelfSignedCertificateSignerConfig struct {
 	EnableJitter bool
 	// currently uses TrustDomain
 	Org string
+}
+
+// nothing in here is currently configurable, except RootCADir
+type IstioPrivateKeyCertificateSignerConfig struct {
+	// hard coded to use a secret named cacerts
+	EncryptionSecret string
+	// ROOT_CA_DIR, defaults to /etc/cacerts
+	// Mount directory for encryption secret
+	// XXX: currently, not configurable in the charts
+	RootCADir string
+	// hard coded to ca-key.pem
+	SigningKeyFile string
+	// hard coded to ca-cert.pem
+	SigningCertFile string
+	// hard coded to root-cert.pem
+	RootCertFile string
+	// hard coded to cert-chain.pem
+	CertChainFile string
 }
 
 type CustomCertificateAuthorityConfig struct {
@@ -140,7 +140,7 @@ type ThirdPartyIdentityConfig struct {
 
 type ControlPlaneMTLSConfig struct {
 	// .Values.global.controlPlaneSecurityEnabled
-    EnableControlPlaneSecurity bool
+    Enable bool
     // .Values.global.pilotCertProvider
     // Provider used to generate serving certs for istiod (pilot)
 	CertProvider               ControlPlaneCertProviderType

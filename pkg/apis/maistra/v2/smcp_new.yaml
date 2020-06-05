@@ -97,6 +97,53 @@ spec:
       periodSeconds: 2
       failureThreshold: 30
 
+  security:
+    mutualTLS:
+      auto: true
+      trust:
+        domain: cluster.local
+        additionalDomains: [some-other.cluster]
+      certificateAuthority:
+        workloadCertTTLDefault: 24h
+        workloadCertTTLMax: 90d
+
+        type: Istiod # or Custom
+        # one of the following
+        istiod:
+          type: SelfSigned # or PrivateKey
+          # one of the following
+          selfSigned:
+            ttl: 10y
+            gracePeriod: 20%
+            checkPeriod: 1h
+            enableJitter: true
+            org: cluster.local # XXX: there is overlap between this and security.trust.domain
+          # or
+          privateKey:
+            encryptionSecret: cacerts # currently not configurable
+            rootCADir: /etc/cacerts
+            signingKeyFile: ca-key.pem # currently not configurable
+            signingCertFile: ca-cert.pem # currently not configurable
+            rootCertFile: root-cert.pem # currently not configurable
+            certChainFile: cert-chain.pem # currently not configurable
+        # or
+        custom:
+          address: some.location.domain
+
+      identity:
+        type: Kubernetes # or ThirdParty
+        # one of
+        kubernetes: {}
+        # or
+        thirdParty:
+          tokenPath: /var/run/secrets/tokens/istio-token # currently not configurable
+          issuer: ""
+          audience: istio-ca
+
+      controlPlane:
+        enable: true
+        certProvider: Istiod # or Kubernetes or Custom
+
   tracing:
     type: Jaeger # or Zipkin, Lightstep, Datadog, Stackdriver
     jaeger: {}
