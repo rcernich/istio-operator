@@ -1,4 +1,5 @@
 spec:
+  # this would apply to control plane components
   logging:
     level: info
     componentLevel: {}
@@ -54,6 +55,7 @@ spec:
     adminPort: 15000
     concurrency: 0
 
+    # this would apply only to proxies
     logging:
       level: info
       componentLevel: {}
@@ -94,3 +96,10 @@ spec:
       initialDelaySeconds: 1
       periodSeconds: 2
       failureThreshold: 30
+
+  tracing:
+    type: Jaeger # or Zipkin, Lightstep, Datadog, Stackdriver
+    jaeger: {}
+    lightstep: {}
+    datadog: {}
+    stackdriver: {}
