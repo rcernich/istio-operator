@@ -5,7 +5,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// TODO: figure out multicluster options
+// The following structure could be considered for "master" control planes,
+// while one which only allows specification of remote addresses for pilot,
+// policy, and telemetry should be consider for "slaves."  Ideally, there would
+// be tooling which would help generate an SMCPSlave resource that could be
+// installed directly.
 type SMCP struct {
+	// .Values.global.multiCluster.clusterName, defaults to Kubernetes
+	Cluster string
+	// .Values.global.network
+	// XXX: not sure what the difference is between this and cluster name
+	Network    string
 	// Should this be separate from Proxy.Logging?
 	Logging   *LoggingConfig
 	Policy    *PolicyConfig
