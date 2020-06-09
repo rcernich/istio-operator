@@ -20,6 +20,7 @@ type MixerTelemetryConfig struct {
 	// .Values.mixer.telemetry.sessionAffinityEnabled, maps to MeshConfig.sidecarToTelemetrySessionAffinity
 	SessionAffinity bool
 	Batching        TelemetryBatchingConfig
+	Runtime         *DeploymentRuntimeConfig
 }
 
 type TelemetryBatchingConfig struct {

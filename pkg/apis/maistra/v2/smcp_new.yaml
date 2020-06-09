@@ -1,4 +1,9 @@
 spec:
+  cluster:
+    name: Kubernetes
+    network: main
+    meshNetworks: {}
+
   # this would apply to control plane components
   logging:
     level: info

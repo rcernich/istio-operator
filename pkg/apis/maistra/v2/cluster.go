@@ -1,23 +1,11 @@
 package v2
 
-type ClusterConfig struct {
-	Clustering ControlPlaneClusteringConfig
-}
-
-type ControlPlaneClusteringConfig struct {
-	Type   ControlPlaneType
-	Master *ControlPlaneMasterConfig
-	Slave  *ControlPlaneSlaveConfig
-}
-
-type ControlPlaneType string
-
-const (
-	ControlPlaneTypeMaster ControlPlaneType = "Master"
-	ControlPlaneTypeSlave  ControlPlaneType = "Slave"
-)
-
-type ControlPlaneMasterConfig struct {
+type ControlPlaneClusterConfig struct {
+	// .Values.global.multiCluster.clusterName, defaults to Kubernetes
+	Name string
+	// .Values.global.network
+	// XXX: not sure what the difference is between this and cluster name
+	Network    string
 	// .Values.global.meshNetworks
 	// XXX: if non-empty, local cluster network should be configured as:
 	//  <spec.cluster.network>:
@@ -45,11 +33,3 @@ type MeshGatewayConfig struct {
 	Port    int32
 }
 
-type ControlPlaneSlaveConfig struct {
-	// .Values.global.remotePilotAddress
-	// if specified, cannot specify MeshNetworks
-    Pilot string
-    Policy *RemotePolicyConfig
-    // implies v1
-    Telemetry *RemoteTelemetryConfig
-}

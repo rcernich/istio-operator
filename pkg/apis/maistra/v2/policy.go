@@ -25,6 +25,7 @@ type MixerPolicyConfig struct {
 	// policyCheckFailOpen allows traffic in cases when the mixer policy service cannot be reached.
 	// Default is false which means the traffic is denied when the client is unable to connect to Mixer.
 	FailOpen bool
+	Runtime  *DeploymentRuntimeConfig
 }
 
 type RemotePolicyConfig struct {
@@ -43,4 +44,3 @@ type RemotePolicyConfig struct {
 }
 
 type IstiodPolicyConfig struct{}
-

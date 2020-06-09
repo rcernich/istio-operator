@@ -1,10 +1,14 @@
 package v2
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
 type ProxyConfig struct {
 	// XXX: should this be independent of global logging?
 	Logging    LoggingConfig
 	Networking ProxyNetworkingConfig
-	Readiness  ProxyReadinessConfig
+	Runtime    ProxyRuntimeConfig
 	// maps to defaultConfig.proxyAdminPort, defaults to 15000
 	AdminPort int32
 	// .Values.global.proxy.concurrency, maps to defaultConfig.concurrency
@@ -37,11 +41,18 @@ const (
 )
 
 type ProxyCNIConfig struct {
-	// TODO: add runtime configuration
+    // TODO: add runtime configuration
+    Runtime *ProxyCNIRuntimeConfig
+}
+
+type ProxyCNIRuntimeConfig struct {
+    ContainerConfig
+	PriorityClassName string `json:"priorityClassName,omitempty" protobuf:"bytes,24,opt,name=priorityClassName"`
 }
 
 type ProxyInitContainerConfig struct {
 	// TODO: add runtime configuration
+    Runtime *ContainerConfig
 }
 
 type ProxyTrafficControlConfig struct {
@@ -110,6 +121,11 @@ type ProxyDNSConfig struct {
 	//    - global
 	//    - "{{ valueOrDefault .DeploymentMeta.Namespace \"default\" }}.global"
 	SearchSuffixes []string
+}
+
+type ProxyRuntimeConfig struct {
+	Readiness ProxyReadinessConfig
+	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
 
 type ProxyReadinessConfig struct {
