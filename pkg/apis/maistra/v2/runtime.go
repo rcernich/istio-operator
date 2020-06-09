@@ -7,12 +7,19 @@ import (
 )
 
 type ControlPlaneRuntimeConfig struct {
-	Citadel  *DeploymentRuntimeConfig
-	Galley   *DeploymentRuntimeConfig
-    Pilot    *DeploymentRuntimeConfig
-    // Defaults will be merged into specific component config.
-	Defaults *DeploymentRuntimeConfig
+	Citadel *ComponentRuntimeConfig
+	Galley  *ComponentRuntimeConfig
+	Pilot   *ComponentRuntimeConfig
+	// Defaults will be merged into specific component config.
+	Defaults *DefaultRuntimeConfig
 }
+
+type ComponentRuntimeConfig struct {
+	Deployment DeploymentRuntimeConfig
+	Pod        PodRuntimeConfig
+	Containers map[string]ContainerConfig
+}
+
 type DeploymentRuntimeConfig struct {
 	Labels map[string]string
 	// Number of desired pods. This is a pointer to distinguish between explicit
@@ -33,7 +40,7 @@ type DeploymentRuntimeConfig struct {
 
 	AutoScaling *AutoScalerConfig
 
-	PodDisruption *PodDisruptionBudget
+	Disruption *PodDisruptionBudget
 }
 
 type AutoScalerConfig struct {
@@ -70,8 +77,6 @@ type PodRuntimeConfig struct {
 
 	PriorityClassName string `json:"priorityClassName,omitempty" protobuf:"bytes,24,opt,name=priorityClassName"`
 
-	Containers map[string]ContainerConfig
-
 	Annotations map[string]string
 }
 
@@ -84,4 +89,10 @@ type ContainerConfig struct {
 type PodDisruptionBudget struct {
 	MinAvailable   *intstr.IntOrString `json:"minAvailable,omitempty" protobuf:"bytes,1,opt,name=minAvailable"`
 	MaxUnavailable *intstr.IntOrString `json:"maxUnavailable,omitempty" protobuf:"bytes,3,opt,name=maxUnavailable"`
+}
+
+type DefaultRuntimeConfig struct {
+	Labels      map[string]string
+	Annotations map[string]string
+	Container   *ContainerConfig
 }

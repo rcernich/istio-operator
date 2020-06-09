@@ -155,3 +155,24 @@ spec:
     lightstep: {}
     datadog: {}
     stackdriver: {}
+
+  runtime:
+    pilot: # component specific overrides
+      deployment:
+        replicas: 2
+      pod:
+        affinity: {}
+      containers:
+        discovery:
+          resources:
+            limits: {}
+            requirements: {}
+    defaults: # merged into any component specific overrides. component specific overrides take precedence
+      container:
+        imagePullPolicy: Always
+        imagePullSecrets:
+        - name: registry-token-secret
+        resources:
+          limits: {}
+          requirements: {}
+
