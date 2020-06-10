@@ -26,6 +26,14 @@ type MixerPolicyConfig struct {
 	// Default is false which means the traffic is denied when the client is unable to connect to Mixer.
 	FailOpen bool
 	Runtime  *DeploymentRuntimeConfig
+	Adapters *MixerPolicyAdaptersConfig
+}
+
+type MixerPolicyAdaptersConfig struct {
+	// .Values.mixer.policy.adapters.useAdapterCRDs, removed in istio 1.4, defaults to false
+	UseAdapterCRDs bool
+	// .Values.mixer.policy.adapters.kubernetesenv.enabled, defaults to true
+	KubernetesEnv bool
 }
 
 type RemotePolicyConfig struct {
