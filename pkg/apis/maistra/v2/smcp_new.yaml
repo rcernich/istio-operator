@@ -8,8 +8,9 @@ spec:
     meshExpansion: # null to disable mesh expansion
       ilbGateway: # if null, ingress gateway will be used for expansion and expansion ports will be added to it automatically
         service: # type is overridden to LoadBalancer, expansion ports are added automatically
-          annotations:
-            cloud.google.com/load-balancer-type: "internal"
+          metadata:
+            annotations:
+              cloud.google.com/load-balancer-type: "internal"
 
   # this would apply to control plane components
   logging:
@@ -177,8 +178,9 @@ spec:
           port: 443
           targetPort: 8443
         # mesh expansion ports will be added automatically, based on cluster config
-        annotations: {}
-        labels: {}
+        metadata:
+          annotations: {}
+          labels: {}
       rutnime: {}
     egress:
       service:
@@ -193,6 +195,49 @@ spec:
           port: 443
           targetPort: 8443
       # requestedNetworkView: [external] set automatically if multi-cluster is enabled
+
+  addons:
+    metrics:
+      prometheus:
+        install:
+          selfManaged: true
+          config:
+            retention: 6h
+            scrapeInterval: 15s
+          useTLS: true
+          service:
+            ingress:
+              contextPath: /prometheus
+              tls:
+                termination: reencrypt
+
+    tracing:
+      type: Jaeger # or Zipkin, Lightstep, Datadog, Stackdriver
+      jaeger:
+        name: jaeger
+        create: true
+        config:
+          storage:
+            type: Memory # or Elasticsearch
+            memory:
+              maxTraces: 100000
+        ingress: {}
+
+    visualization:
+      grafana:
+        install:
+          service:
+            ingress:
+              contextPath: /grafana
+              tls:
+                termination: reencrypt
+      kiali:
+        name: kiali
+        create: true
+        install:
+          service:
+            ingress:
+              contextPath: /kiali
 
   runtime:
     pilot: # component specific overrides

@@ -4,7 +4,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ISTIO_META_ROUTER_MODE: "sni-dnat" seems to be used by all gateway types, but does not appear to be read by
+// ISTIO_META_ROUTER_MODE: "sni-dnat" seems to be used by all gateway types,
+// but does not appear to be read by
 type GatewaysConfig struct {
 	// works in conjunction with cluster.meshExpansion.ingress configuration
 	// (for enabling ILB gateway and mesh expansion ports)
@@ -16,11 +17,16 @@ type GatewaysConfig struct {
 // XXX: should standard istio secrets be configured automatically, i.e. should
 // the user be forced to add these manually?
 type GatewayConfig struct {
-	Service GatewayServiceConfig
-    // sets ISTIO_META_ROUTER_MODE env, defaults to sni-dnat
-    RouterMode RouterModeType
-    // sets ISTIO_META_REQUESTED_NETWORK_VIEW env, defaults to empty list
-    RequestedNetworkView []string
+	// defaults to control plane namespace
+	// XXX: for the standard gateways, it might be possible that related
+	// resources could be installed in control plane namespace instead of the
+	// gateway namespace.  not sure if this is a problem or not.
+	Namespace string
+	Service   GatewayServiceConfig
+	// sets ISTIO_META_ROUTER_MODE env, defaults to sni-dnat
+	RouterMode RouterModeType
+	// sets ISTIO_META_REQUESTED_NETWORK_VIEW env, defaults to empty list
+	RequestedNetworkView []string
 	// .Values.gateways.<gateway-name>.sds.enabled
 	EnableSDS bool
 	Volumes   []VolumeConfig
@@ -28,16 +34,16 @@ type GatewayConfig struct {
 }
 
 type RouterModeType string
+
 const (
-    RouterModeTypeSNI_DNAT RouterModeType = "sni-dnat"
-    RouterModeTypeStandard RouterModeType = "standard"
+	RouterModeTypeSNI_DNAT RouterModeType = "sni-dnat"
+	RouterModeTypeStandard RouterModeType = "standard"
 )
 
 type GatewayServiceConfig struct {
-    // XXX: selector is ignored
+	// XXX: selector is ignored
 	corev1.ServiceSpec
-	Annotations map[string]string
-	Labels      map[string]string
+	Metadata  MetadataConfig
 }
 
 // XXX: this may be overkill, as only ConfigMap and Secret volume types are

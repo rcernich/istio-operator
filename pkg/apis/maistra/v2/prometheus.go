@@ -1,39 +1,29 @@
 package v2
 
 type PrometheusAddonConfig struct {
-	// true if the entire install should be managed by Maistra, false if using prometheus CR (not supported)
-	SelfManaged bool
-    Install PrometheusInstallConfig
-    Config PrometheusConfig
+	// only one of install or address may be specified
+	// install prometheus and manage with control plane
+	Install *PrometheusInstallConfig
+	// use existing prometheus installation at address
+	Address *string
 }
 
 type PrometheusConfig struct {
-    Retention string
-    ScrapeInterval string
+	Retention      string
+	ScrapeInterval string
 }
 
 type PrometheusInstallConfig struct {
-    Service PrometheusServiceConfig
-    Runtime *ComponentRuntimeConfig
+	// true if the entire install should be managed by Maistra, false if using prometheus CR (not supported)
+	SelfManaged bool
+	Config      PrometheusConfig
+	Service     ComponentServiceConfig
+	Runtime     *ComponentRuntimeConfig
 	// .Values.prometheus.provisionPrometheusCert
 	// 1.6+
-	ProvisionCert bool
+	//ProvisionCert bool
 	// this seems to overlap with provision cert, as this manifests something similar to the above
-	EnableSecurity bool
+	// .Values.prometheus.security.enabled, version < 1.6
+	//EnableSecurity bool
+	UseTLS bool
 }
-
-type PrometheusServiceConfig struct {
-	Annotations map[string]string
-	// .Values.prometheus.service.nodePort.port, ...enabled is true if not null
-	NodePort *int32
-	Ingress  *PrometheusIngressConfig
-}
-
-type PrometheusIngressConfig struct {
-	Hosts       []string
-	ContextPath string
-	TLS         map[string]string // RawExtension?
-	Annotations map[string]string
-	Labels      map[string]string
-}
-

@@ -17,11 +17,10 @@ type ControlPlaneRuntimeConfig struct {
 type ComponentRuntimeConfig struct {
 	Deployment DeploymentRuntimeConfig
 	Pod        PodRuntimeConfig
-	Containers map[string]ContainerConfig
 }
 
 type DeploymentRuntimeConfig struct {
-	Labels map[string]string
+	Metadata MetadataConfig
 	// Number of desired pods. This is a pointer to distinguish between explicit
 	// zero and not specified. Defaults to 1.
 	// +optional
@@ -56,6 +55,7 @@ type AutoScalerConfig struct {
 }
 
 type PodRuntimeConfig struct {
+	Metadata MetadataConfig
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
@@ -77,7 +77,8 @@ type PodRuntimeConfig struct {
 
 	PriorityClassName string `json:"priorityClassName,omitempty" protobuf:"bytes,24,opt,name=priorityClassName"`
 
-	Annotations map[string]string
+	// XXX: is it too cheesy to use 'default' name for defaults?
+	Containers map[string]ContainerConfig
 }
 
 type ContainerConfig struct {
@@ -92,7 +93,31 @@ type PodDisruptionBudget struct {
 }
 
 type DefaultRuntimeConfig struct {
+	Metadata  MetadataConfig
+	Container *ContainerConfig
+}
+
+type MetadataConfig struct {
 	Labels      map[string]string
 	Annotations map[string]string
-	Container   *ContainerConfig
+}
+
+type ComponentServiceConfig struct {
+	Metadata MetadataConfig
+	// .Values.prometheus.service.nodePort.port, ...enabled is true if not null
+	NodePort *int32
+	Ingress  *ComponentIngressConfig
+}
+
+type ComponentIngressConfig struct {
+	Metadata    MetadataConfig
+	Hosts       []string
+	ContextPath string
+	TLS         map[string]string // RawExtension?
+}
+
+type ComponentPersistenceConfig struct {
+	StorageClassName string
+	AccessModes      []corev1.PersistentVolumeAccessMode
+	Capacity         corev1.ResourceList
 }
