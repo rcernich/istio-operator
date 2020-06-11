@@ -2,7 +2,14 @@ spec:
   cluster:
     name: Kubernetes
     network: main
-    meshNetworks: {}
+    multiCluster: # null to disable multi-cluster
+      meshNetworks: {}
+      ingress: false
+    meshExpansion: # null to disable mesh expansion
+      ilbGateway: # if null, ingress gateway will be used for expansion and expansion ports will be added to it automatically
+        service: # type is overridden to LoadBalancer, expansion ports are added automatically
+          annotations:
+            cloud.google.com/load-balancer-type: "internal"
 
   # this would apply to control plane components
   logging:
@@ -155,6 +162,37 @@ spec:
     lightstep: {}
     datadog: {}
     stackdriver: {}
+
+  gateways:
+    ingress:
+      service:
+        type: ClusterIP
+        ports:
+        - name: status-port
+          port: 15020
+        - name: http2
+          port: 80
+          targetPort: 8080
+        - name: https
+          port: 443
+          targetPort: 8443
+        # mesh expansion ports will be added automatically, based on cluster config
+        annotations: {}
+        labels: {}
+      rutnime: {}
+    egress:
+      service:
+        type: ClusterIP
+        ports:
+        - name: status-port
+          port: 15020
+        - name: http2
+          port: 80
+          targetPort: 8080
+        - name: https
+          port: 443
+          targetPort: 8443
+      # requestedNetworkView: [external] set automatically if multi-cluster is enabled
 
   runtime:
     pilot: # component specific overrides

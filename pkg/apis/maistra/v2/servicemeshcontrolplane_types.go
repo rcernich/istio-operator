@@ -55,8 +55,9 @@ type ControlPlaneSpec struct {
 	Proxy     *ProxyConfig
 	Security  *SecurityConfig
 	Telemetry *TelemetryConfig
-    Tracing   *TracingConfig
-    Gateways *GatewaysConfig
+	Tracing   *TracingConfig
+	Gateways  *GatewaysConfig
 	// Runtime configuration for pilot (and galley, pre 1.2)
-	Runtime *DeploymentRuntimeConfig
+	Runtime *ControlPlaneRuntimeConfig
+	Addons  *AddonsConfig
 }
