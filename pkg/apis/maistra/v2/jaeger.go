@@ -6,7 +6,10 @@ type JaegerTracerConfig struct {
 	Name string
 	// Create a Jaeger resource if not present.  If false, will use an existing
 	// named Jaeger resource.  This allows full customization of the Jaeger CR.
-	Create bool
+	Install *JaegerInstallConfig
+}
+
+type JaegerInstallConfig struct {
 	Config JaegerConfig
 	// Used to configure resources and affinity.  runtime.pod.containers can be
 	// used to override details for specific jaeger components, e.g. allInOne,

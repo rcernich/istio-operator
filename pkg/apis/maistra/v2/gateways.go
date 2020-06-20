@@ -42,8 +42,10 @@ const (
 
 type GatewayServiceConfig struct {
 	// XXX: selector is ignored
-	corev1.ServiceSpec
-	Metadata  MetadataConfig
+	// Service details used to configure the gateway's Service resource
+	corev1.ServiceSpec `json:",inline"`
+	// metadata to be applied to the gateway's service (annotations and labels)
+	Metadata  MetadataConfig `json:"metadata,omitempty"`
 }
 
 // XXX: this may be overkill, as only ConfigMap and Secret volume types are

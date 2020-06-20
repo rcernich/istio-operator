@@ -41,6 +41,13 @@ spec:
       batching:
         maxEntries: 100
         maxTime: 1s
+      adapters:
+        kubernetesenv: true
+        stdio:
+          outputAsJSON: false
+        prometheus:
+          metricsExpiryDuration: 10m
+        stackdriver: null
     # or
     remote:
       address: my-remote-telemetry.example.com
@@ -85,8 +92,8 @@ spec:
         initContainer: {}
 
       trafficControl:
-        interceptionMode: REDIRECT
         inbound:
+          interceptionMode: REDIRECT
           includedPorts: "*"
         outbound:
           includeIPRanges: []
@@ -157,13 +164,6 @@ spec:
         enable: true
         certProvider: Istiod # or Kubernetes or Custom
 
-  tracing:
-    type: Jaeger # or Zipkin, Lightstep, Datadog, Stackdriver
-    jaeger: {}
-    lightstep: {}
-    datadog: {}
-    stackdriver: {}
-
   gateways:
     ingress:
       service:
@@ -196,49 +196,6 @@ spec:
           targetPort: 8443
       # requestedNetworkView: [external] set automatically if multi-cluster is enabled
 
-  addons:
-    metrics:
-      prometheus:
-        install:
-          selfManaged: true
-          config:
-            retention: 6h
-            scrapeInterval: 15s
-          useTLS: true
-          service:
-            ingress:
-              contextPath: /prometheus
-              tls:
-                termination: reencrypt
-
-    tracing:
-      type: Jaeger # or Zipkin, Lightstep, Datadog, Stackdriver
-      jaeger:
-        name: jaeger
-        create: true
-        config:
-          storage:
-            type: Memory # or Elasticsearch
-            memory:
-              maxTraces: 100000
-        ingress: {}
-
-    visualization:
-      grafana:
-        install:
-          service:
-            ingress:
-              contextPath: /grafana
-              tls:
-                termination: reencrypt
-      kiali:
-        name: kiali
-        create: true
-        install:
-          service:
-            ingress:
-              contextPath: /kiali
-
   runtime:
     pilot: # component specific overrides
       deployment:
@@ -258,4 +215,46 @@ spec:
         resources:
           limits: {}
           requirements: {}
+
+  addons:
+    metrics:
+      prometheus:
+        install:
+          selfManaged: true
+          config:
+            retention: 6h
+            scrapeInterval: 15s
+          useTLS: true
+          service:
+            ingress:
+              contextPath: /prometheus
+              tls:
+                termination: reencrypt
+
+    tracing:
+      type: Jaeger # or Zipkin, Lightstep, Datadog, Stackdriver
+      jaeger:
+        name: jaeger
+        install:
+          config:
+            storage:
+              type: Memory # or Elasticsearch
+              memory:
+                maxTraces: 100000
+          ingress: {}
+
+    visualization:
+      grafana:
+        install:
+          service:
+            ingress:
+              contextPath: /grafana
+              tls:
+                termination: reencrypt
+      kiali:
+        name: kiali
+        install:
+          service:
+            ingress:
+              contextPath: /kiali
 

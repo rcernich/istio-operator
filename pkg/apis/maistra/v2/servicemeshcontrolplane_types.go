@@ -48,14 +48,23 @@ type ControlPlaneSpec struct {
 	// Existing ServiceMeshControlPlanes with an empty version are treated as
 	// having the version set to "v1.0"
 	Version string `json:"version,omitempty"`
-	Cluster *ControlPlaneClusterConfig
-	// Should this be separate from Proxy.Logging?
-	Logging   *LoggingConfig
-	Policy    *PolicyConfig
-	Proxy     *ProxyConfig
-	Security  *SecurityConfig
-	Telemetry *TelemetryConfig
-	Tracing   *TracingConfig
+	// Cluster is the general configuration of the cluster (cluster name,
+	// network name, multi-cluster, mesh expansion, etc.)
+	Cluster *ControlPlaneClusterConfig `json:"cluster,omitempty"`
+	// Logging represents the logging configuration for the control plane components
+	// XXX: Should this be separate from Proxy.Logging?
+	Logging *LoggingConfig `json:"logging,omitempty"`
+	// Policy configures policy checking for the control plane.
+	// .Values.policy.enabled, true if not null
+	Policy *PolicyConfig `json:"policy,omitempty"`
+	// Proxy configures the default behavior for sidecars.  Many values were
+	// previously exposed through .Values.global.proxy
+	Proxy *ProxyConfig `json:"proxy,omitempty"`
+	// Security configures aspects of security for the control plane.
+	Security  *SecurityConfig `json:"security,omitempty"`
+	// Telemetry configures telemetry for the mesh.
+	// .Values.mixer.telemetry.enabled, true if not null.  1.6, .Values.telemetry.enabled
+	Telemetry *TelemetryConfig `json:"telemetry,omitempty"`
 	Gateways  *GatewaysConfig
 	// Runtime configuration for pilot (and galley, pre 1.2)
 	Runtime *ControlPlaneRuntimeConfig
