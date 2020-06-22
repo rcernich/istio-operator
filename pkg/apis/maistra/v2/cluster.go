@@ -1,5 +1,6 @@
 package v2
 
+// ControlPlaneClusterConfig configures aspects related to clustering.
 type ControlPlaneClusterConfig struct {
 	// .Values.global.multiCluster.clusterName, defaults to Kubernetes
 	Name string `json:"name,omitempty"`
@@ -15,6 +16,7 @@ type ControlPlaneClusterConfig struct {
 	MeshExpansion *MeshExpansionConfig `json:"meshExpansion,omitempty"`
 }
 
+// MultiClusterConfig configures aspects related to multi-cluster.
 // implies the following:
 // adds external to RequestedNetworkView (ISTIO_META_REQUESTED_NETWORK_VIEW) for egress gateway
 // adds "global" and "{{ valueOrDefault .DeploymentMeta.Namespace \"default\" }}.global" to pod dns search suffixes
@@ -36,11 +38,13 @@ type MultiClusterConfig struct {
 	MeshNetworks map[string][]MeshNetworkConfig `json:"meshNetworks,omitempty"`
 }
 
+// MeshExpansionConfig configures aspects related to mesh expansion
 type MeshExpansionConfig struct {
 	// .Values.global.meshExpansion.useILB, true if not null, otherwise uses ingress gateway
 	ILBGateway *ILBGatewayConfig `json:"ilbGateway,omitempty"`
 }
 
+// ILBGatewayConfig configures an internal load balancer gateway for use with mesh expansion.
 type ILBGatewayConfig struct {
 	// ports for ILB gateway are hard coded
 	// service type is hard-coded to LoadBalancer
@@ -52,9 +56,10 @@ type ILBGatewayConfig struct {
 	Runtime ComponentRuntimeConfig `json:"runtime,omitempty"`
 }
 
+// MeshNetworkConfig configures mesh networks for a multi-cluster mesh.
 type MeshNetworkConfig struct {
 	Endpoints []MeshEndpointConfig `json:"endpoints,omitempty"`
-	Gateways  []MeshGatewayConfig `json:"gateways,omitempty"`
+	Gateways  []MeshGatewayConfig  `json:"gateways,omitempty"`
 }
 
 // MeshEndpointConfig specifies the endpoint of a mesh network.  Only one of
@@ -69,5 +74,5 @@ type MeshEndpointConfig struct {
 type MeshGatewayConfig struct {
 	Service string `json:"service,omitempty"`
 	Address string `json:"address,omitempty"`
-	Port    int32 `json:"port,omitempty"`
+	Port    int32  `json:"port,omitempty"`
 }

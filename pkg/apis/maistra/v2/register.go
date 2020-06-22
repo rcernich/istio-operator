@@ -11,7 +11,9 @@ import (
 )
 
 const (
-	APIGroup   = "maistra.io"
+	// APIGroup for maistr.io
+	APIGroup = "maistra.io"
+	// APIVersion for v2
 	APIVersion = "v2"
 )
 

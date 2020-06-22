@@ -4,7 +4,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// ProxyConfig configures the default sidecar behavior for workloads.
 type ProxyConfig struct {
+	// Logging configures logging for the sidecar.
 	// XXX: should this be independent of global logging?  previously, this was
 	// only exposed through proxy settings and there was no separate logging for
 	// control plane components (e.g. pilot, mixer, etc.).
@@ -12,9 +14,12 @@ type ProxyConfig struct {
 	Logging LoggingConfig `json:"logging,omitempty"`
 	// Networking represents network settings to be configured for the sidecars.
 	Networking ProxyNetworkingConfig `json:"networking,omitempty"`
-	Runtime    ProxyRuntimeConfig
+	// Runtime is used to customize runtime configuration for the sidecar container.
+	Runtime ProxyRuntimeConfig `json:"runtime,omitempty"`
+	// AdminPort configures the admin port exposed by the sidecar.
 	// maps to defaultConfig.proxyAdminPort, defaults to 15000
 	AdminPort int32
+	// Concurrency configures the number of threads that should be run by the sidecar.
 	// .Values.global.proxy.concurrency, maps to defaultConfig.concurrency
 	// XXX: removed in 1.7
 	// XXX: this is defaulted to 2 in our values.yaml, but should probably be 0
@@ -34,7 +39,7 @@ type ProxyNetworkingConfig struct {
 	// Protocol configures how the sidecar works with applicaiton protocols.
 	Protocol ProxyNetworkProtocolConfig `json:"protocol,omitempty"`
 	// DNS configures aspects of the sidecar's usage of DNS
-	DNS      ProxyDNSConfig `json:"protocol,omitempty"`
+	DNS ProxyDNSConfig `json:"protocol,omitempty"`
 }
 
 // ProxyNetworkInitConfig is used to configure how the pod's networking through
@@ -51,26 +56,34 @@ type ProxyNetworkInitConfig struct {
 	InitContainer *ProxyInitContainerConfig `json:"initContainer,omitempty"`
 }
 
+// ProxyNetworkInitType represents the type of initializer to use for network initialization
 type ProxyNetworkInitType string
 
 const (
-	ProxyNetworkInitTypeCNI           ProxyNetworkInitType = "CNI"
+	// ProxyNetworkInitTypeCNI to use CNI for network initialization
+	ProxyNetworkInitTypeCNI ProxyNetworkInitType = "CNI"
+	// ProxyNetworkInitTypeInitContainer to use an init container for network initialization
 	ProxyNetworkInitTypeInitContainer ProxyNetworkInitType = "InitContainer"
 )
 
+// ProxyCNIConfig configures CNI for network initialization
 type ProxyCNIConfig struct {
-	// TODO: add runtime configuration
-	Runtime *ProxyCNIRuntimeConfig
+	// Runtime configures customization of the CNI containers (e.g. resources)
+	Runtime *ProxyCNIRuntimeConfig `json:"runtime,omitempty"`
 }
 
+// ProxyCNIRuntimeConfig configures execution aspects fo the CNI containers
 type ProxyCNIRuntimeConfig struct {
-	ContainerConfig
+	// ContainerConfig customizes things like resources, etc.
+	ContainerConfig `json:",inline"`
+	// PriorityClassName configures the priority class name for the pods.
 	PriorityClassName string `json:"priorityClassName,omitempty" protobuf:"bytes,24,opt,name=priorityClassName"`
 }
 
+// ProxyInitContainerConfig configures execution aspects for the init container
 type ProxyInitContainerConfig struct {
-	// TODO: add runtime configuration
-	Runtime *ContainerConfig
+	// Runtime configures customization of the init container (e.g. resources)
+	Runtime *ContainerConfig `json:"runtime,omitempty"`
 }
 
 // ProxyTrafficControlConfig configures what and how traffic is routed through
@@ -176,23 +189,33 @@ type ProxyDNSConfig struct {
 	SearchSuffixes []string `json:"searchSuffixes,omitempty"`
 }
 
+// ProxyRuntimeConfig customizes the runtime parameters of the sidecar container.
 type ProxyRuntimeConfig struct {
-	Readiness ProxyReadinessConfig
+	// Readiness configures the readiness probe behavior for the injected pod.
+	Readiness ProxyReadinessConfig `json:"readiness,omitempty"`
+	// Resources configures the resources on the sidecar container.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,8,opt,name=resources"`
 }
 
+// ProxyReadinessConfig configures the readiness probe for the sidecar.
 type ProxyReadinessConfig struct {
+	// RewriteApplicationProbes specifies whether or not the injector should
+	// rewrite application container probes to be routed through the sidecar.
 	// .Values.sidecarInjectorWebhook.rewriteAppHTTPProbe, defaults to false
 	// rewrite probes for application pods to route through sidecar
-	RewriteApplicationProbes bool
+	RewriteApplicationProbes bool `json:"rewriteApplicationProbes,omitempty"`
+	// StatusPort specifies the port number to be used for status.
 	// .Values.global.proxy.statusPort, overridden by status.sidecar.istio.io/port, defaults to 15020
 	// Default port for Pilot agent health checks. A value of 0 will disable health checking.
 	// XXX: this has no affect on which port is actually used for status.
-	StatusPort int32
+	StatusPort int32 `json:"statusPort,omitempty"`
+	// InitialDelaySeconds specifies the initial delay for the readiness probe
 	// .Values.global.proxy.readinessInitialDelaySeconds, overridden by readiness.status.sidecar.istio.io/initialDelaySeconds, defaults to 1
-	InitialDelaySeconds int32
+	InitialDelaySeconds int32 `json:"initialDelaySeconds,omitempty"`
+	// PeriodSeconds specifies the period over which the probe is checked.
 	// .Values.global.proxy.readinessPeriodSeconds, overridden by readiness.status.sidecar.istio.io/periodSeconds, defaults to 2
-	PeriodSeconds int32
+	PeriodSeconds int32 `json:"periodSeconds,omitempty"`
+	// FailureThreshold represents the number of consecutive failures before the container is marked as not ready.
 	// .Values.global.proxy.readinessFailureThreshold, overridden by readiness.status.sidecar.istio.io/failureThreshold, defaults to 30
-	FailureThreshold int32
+	FailureThreshold int32 `json:"failureThreshold,omitempty"`
 }

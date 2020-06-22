@@ -69,9 +69,11 @@ type MixerTelemetryAdaptersConfig struct {
 	Stdio *MixerTelemetryStdioConfig `json:"stdio,omitempty"`
 	// Prometheus enables and configures the prometheus adapter.
 	// .Values.mixer.adapters.prometheus.enabled, defaults to true (non-null)
+	// XXX: should this be defined through prometheus add-on, as opposed to here?
 	Prometheus *MixerTelemetryPrometheusConfig `json:"prometheus,omitempty"`
 	// Stackdriver enables and configures the stackdriver apdater.
 	// .Values.mixer.adapters.stackdriver.enabled, defaults to false (null)
+	// XXX: should this be defined through stackdriver add-on, as opposed to here?
 	Stackdriver *MixerTelemetryStackdriverConfig `json:"stackdriver,omitempty"`
 }
 
@@ -133,9 +135,9 @@ type RemoteTelemetryConfig struct {
 	// Address is the address of the remote telemetry server
 	// .Values.global.remoteTelemetryAddress, maps to MeshConfig.mixerReportServer
 	Address string `json:"address,omitempty"`
-	// CreateServices for the remote server.
+	// CreateService for the remote server.
 	// .Values.global.createRemoteSvcEndpoints
-	CreateServices bool `json:"createServices,omitempty"`
+	CreateService bool `json:"createService,omitempty"`
 	// Batching settings used when sending telemetry.
 	Batching TelemetryBatchingConfig `json:"batching,omitempty"`
 }
@@ -148,9 +150,11 @@ type IstiodTelemetryConfig struct {
 	MetadataExchange *MetadataExchangeConfig `json:"metadataExchange,omitempty"`
 	// PrometheusFilter configures the prometheus filter for v2 telemetry.
 	// .Values.telemetry.v2.prometheus.enabled
+	// XXX: should this be defined through prometheus add-on, as opposed to here?
 	PrometheusFilter *PrometheusFilterConfig `json:"prometheusFilter,omitempty"`
 	// StackDriverFilter configures the stackdriver filter for v2 telemetry.
 	// .Values.telemetry.v2.stackdriver.enabled
+	// XXX: should this be defined through stackdriver add-on, as opposed to here?
 	StackDriverFilter *StackDriverFilterConfig `json:"stackDriverFilter,omitempty"`
 	// AccessLogTelemetryFilter configures the access logging filter for v2 telemetry.
 	// .Values.telemetry.v2.accessLogPolicy.enabled

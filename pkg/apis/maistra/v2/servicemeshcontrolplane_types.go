@@ -61,12 +61,16 @@ type ControlPlaneSpec struct {
 	// previously exposed through .Values.global.proxy
 	Proxy *ProxyConfig `json:"proxy,omitempty"`
 	// Security configures aspects of security for the control plane.
-	Security  *SecurityConfig `json:"security,omitempty"`
+	Security *SecurityConfig `json:"security,omitempty"`
 	// Telemetry configures telemetry for the mesh.
 	// .Values.mixer.telemetry.enabled, true if not null.  1.6, .Values.telemetry.enabled
 	Telemetry *TelemetryConfig `json:"telemetry,omitempty"`
-	Gateways  *GatewaysConfig
-	// Runtime configuration for pilot (and galley, pre 1.2)
-	Runtime *ControlPlaneRuntimeConfig
-	Addons  *AddonsConfig
+	// Gateways configures gateways for the mesh
+	// .Values.gateways.*
+	Gateways *GatewaysConfig `json:"gateways,omitempty"`
+	// Runtime configuration for pilot (and galley, etc., pre 1.2)
+	Runtime *ControlPlaneRuntimeConfig `json:"runtime,omitempty"`
+	// Addons is used to configure additional features beyond core control plane
+	// components, e.g. visualization, metric storage, etc.
+	Addons *AddonsConfig `json:"addons,omitempty"`
 }
