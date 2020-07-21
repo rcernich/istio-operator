@@ -1,24 +1,17 @@
 package v2
 
-import (
-	corev1 "k8s.io/api/core/v1"
-)
-
 // ProxyConfig configures the default sidecar behavior for workloads.
 type ProxyConfig struct {
 	// Logging configures logging for the sidecar.
-	// XXX: should this be independent of global logging?  previously, this was
-	// only exposed through proxy settings and there was no separate logging for
-	// control plane components (e.g. pilot, mixer, etc.).
 	// e.g. .Values.global.proxy.logLevel
 	// +optional
-	Logging ProxyLoggingConfig `json:"logging,omitempty"`
+	Logging *ProxyLoggingConfig `json:"logging,omitempty"`
 	// Networking represents network settings to be configured for the sidecars.
 	// +optional
-	Networking ProxyNetworkingConfig `json:"networking,omitempty"`
+	Networking *ProxyNetworkingConfig `json:"networking,omitempty"`
 	// Runtime is used to customize runtime configuration for the sidecar container.
 	// +optional
-	Runtime ProxyRuntimeConfig `json:"runtime,omitempty"`
+	Runtime *ProxyRuntimeConfig `json:"runtime,omitempty"`
 	// AdminPort configures the admin port exposed by the sidecar.
 	// maps to defaultConfig.proxyAdminPort, defaults to 15000
 	// +optional
@@ -36,7 +29,7 @@ type ProxyNetworkingConfig struct {
 	// ClusterDomain represents the domain for the cluster, defaults to cluster.local
 	// .Values.global.proxy.clusterDomain
 	// +optional
-	ClusterDomain string  `json:"clusterDomain,omitempty"`
+	ClusterDomain string `json:"clusterDomain,omitempty"`
 	// maps to meshConfig.defaultConfig.connectionTimeout, defaults to 10s
 	// XXX: currently not exposed through values.yaml
 	// +optional
@@ -44,23 +37,21 @@ type ProxyNetworkingConfig struct {
 	// Initialization is used to specify how the pod's networking through the
 	// proxy is initialized.  This configures the use of CNI or an init container.
 	// +optional
-	Initialization ProxyNetworkInitConfig `json:"initialization,omitempty"`
+	Initialization *ProxyNetworkInitConfig `json:"initialization,omitempty"`
 	// TrafficControl configures what network traffic is routed through the proxy.
 	// +optional
-	TrafficControl ProxyTrafficControlConfig `json:"trafficControl,omitempty"`
+	TrafficControl *ProxyTrafficControlConfig `json:"trafficControl,omitempty"`
 	// Protocol configures how the sidecar works with applicaiton protocols.
 	// +optional
-	Protocol ProxyNetworkProtocolConfig `json:"protocol,omitempty"`
+	Protocol *ProxyNetworkProtocolConfig `json:"protocol,omitempty"`
 	// DNS configures aspects of the sidecar's usage of DNS
 	// +optional
-	DNS ProxyDNSConfig `json:"dns,omitempty"`
+	DNS *ProxyDNSConfig `json:"dns,omitempty"`
 }
 
 // ProxyNetworkInitConfig is used to configure how the pod's networking through
 // the proxy is initialized.
 type ProxyNetworkInitConfig struct {
-	// Type of the network initialization implementation.
-	Type ProxyNetworkInitType `json:"type,omitempty"`
 	// CNI configures the use of CNI for initializing the pod's networking.
 	// istio_cni.enabled = true, if CNI is used
 	// +optional
@@ -224,21 +215,24 @@ type ProxyDNSConfig struct {
 	//    - "{{ valueOrDefault .DeploymentMeta.Namespace \"default\" }}.global"
 	// +optional
 	SearchSuffixes []string `json:"searchSuffixes,omitempty"`
-    // RefreshRate configures the DNS refresh rate for Envoy cluster of type STRICT_DNS
+	// RefreshRate configures the DNS refresh rate for Envoy cluster of type STRICT_DNS
 	// This must be given it terms of seconds. For example, 300s is valid but 5m is invalid.
 	// .Values.global.proxy.dnsRefreshRate, default 300s
 	// +optional
-	RefreshRate string  `json:"refreshRate,omitempty"`
+	RefreshRate string `json:"refreshRate,omitempty"`
 }
 
 // ProxyRuntimeConfig customizes the runtime parameters of the sidecar container.
 type ProxyRuntimeConfig struct {
 	// Readiness configures the readiness probe behavior for the injected pod.
 	// +optional
-	Readiness ProxyReadinessConfig `json:"readiness,omitempty"`
-	// Resources configures the resources on the sidecar container.
+	Readiness *ProxyReadinessConfig `json:"readiness,omitempty"`
+	// Proxy configures the runtime for the sidecar container.
 	// +optional
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Proxy *ContainerConfig `json:"proxy,omitempty"`
+	// XXX: currently, runtime settings for this are configured through .Values.global.proxy_init
+	// Validation configures the runtime for the istio-validation init container
+	//Validation *ContainerConfig `json:"validation,omitempty"`
 }
 
 // ProxyReadinessConfig configures the readiness probe for the sidecar.

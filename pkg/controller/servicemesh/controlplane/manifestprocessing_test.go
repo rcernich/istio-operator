@@ -20,7 +20,7 @@ import (
 
 func TestReadinessWhenCacheNotSynced(t *testing.T) {
 	controlPlane := newControlPlane()
-	controlPlane.Spec.Template = "maistra"
+	controlPlane.Spec.Profile = "maistra"
 	controlPlane.Status.ComponentStatus = []status.ComponentStatus{
 		{
 			StatusType: status.StatusType{

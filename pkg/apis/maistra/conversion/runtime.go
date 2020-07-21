@@ -15,17 +15,17 @@ func populateControlPlaneRuntimeValues(runtime *v2.ControlPlaneRuntimeConfig, va
 		// defaultNodeSelector, defaultTolerations, defaultPodDisruptionBudget, priorityClassName
 		deployment := runtime.Defaults.Deployment
 		if deployment != nil {
-			if deployment.Disruption != nil {
+			if deployment.PodDisruption != nil {
 				if err := setHelmBoolValue(values, "global.defaultPodDisruptionBudget.enabled", true); err != nil {
 					return err
 				}
-				if deployment.Disruption.MinAvailable != nil {
-					if err := setHelmStringValue(values, "global.defaultPodDisruptionBudget.minAvailable", deployment.Disruption.MinAvailable.String()); err != nil {
+				if deployment.PodDisruption.MinAvailable != nil {
+					if err := setHelmStringValue(values, "global.defaultPodDisruptionBudget.minAvailable", deployment.PodDisruption.MinAvailable.String()); err != nil {
 						return err
 					}
 				}
-				if deployment.Disruption.MaxUnavailable != nil {
-					if err := setHelmStringValue(values, "global.defaultPodDisruptionBudget.maxUnavailable", deployment.Disruption.MaxUnavailable.String()); err != nil {
+				if deployment.PodDisruption.MaxUnavailable != nil {
+					if err := setHelmStringValue(values, "global.defaultPodDisruptionBudget.maxUnavailable", deployment.PodDisruption.MaxUnavailable.String()); err != nil {
 						return err
 					}
 				}
@@ -142,14 +142,21 @@ func populateRuntimeValues(runtime *v2.ComponentRuntimeConfig, values map[string
 	if runtime == nil {
 		return nil
 	}
-	if err := populateDeploymentHelmValues(&runtime.Deployment, values); err != nil {
+	if err := populateDeploymentHelmValues(runtime.Deployment, values); err != nil {
 		return err
 	}
-	if err := populatePodHelmValues(&runtime.Pod, values); err != nil {
+	if err := populatePodHelmValues(runtime.Pod, values); err != nil {
 		return err
 	}
-	if err := populateAutoscalingHelmValues(runtime.Deployment.AutoScaling, values); err != nil {
-		return err
+	if runtime.Deployment == nil {
+		// populate any defaults, e.g. enabled=false
+		if err := populateAutoscalingHelmValues(nil, values); err != nil {
+			return err
+		}
+	} else {
+		if err := populateAutoscalingHelmValues(runtime.Deployment.AutoScaling, values); err != nil {
+			return err
+		}
 	}
 
 	return nil

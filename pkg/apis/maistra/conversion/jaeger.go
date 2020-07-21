@@ -126,17 +126,15 @@ func populateJaegerAddonValues(jaeger *v2.JaegerTracerConfig, values map[string]
 			}
 		}
 
-		if runtime.Pod.Containers != nil {
-			if defaultResources, ok := jaeger.Install.Runtime.Pod.Containers["default"]; ok {
-				if resourcesValues, err := toValues(defaultResources); err == nil {
-					if len(resourcesValues) > 0 {
-						if err := setHelmValue(jaegerValues, "resources", resourcesValues); err != nil {
-							return err
-						}
+		if runtime.Container != nil {
+			if resourcesValues, err := toValues(runtime.Container.Resources); err == nil {
+				if len(resourcesValues) > 0 {
+					if err := setHelmValue(jaegerValues, "resources", resourcesValues); err != nil {
+						return err
 					}
-				} else {
-					return err
 				}
+			} else {
+				return err
 			}
 		}
 	}

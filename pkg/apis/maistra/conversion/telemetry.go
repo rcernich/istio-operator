@@ -57,24 +57,19 @@ func populateMixerTelemetryValues(in *v2.ControlPlaneSpec, istiod bool, values m
 		return err
 	}
 
-	batchingValues := make(map[string]interface{})
-	if err := populateTelemetryBatchingValues(&mixer.Batching, batchingValues); err != nil {
-		return nil
-	}
-
 	v1TelemetryValues := make(map[string]interface{})
 	if err := setHelmBoolValue(v1TelemetryValues, "enabled", true); err != nil {
 		return err
+	}
+
+	if err := populateTelemetryBatchingValues(mixer.Batching, v1TelemetryValues); err != nil {
+		return nil
 	}
 
 	if mixer.SessionAffinity != nil {
 		if err := setHelmBoolValue(v1TelemetryValues, "sessionAffinityEnabled", *mixer.SessionAffinity); err != nil {
 			return err
 		}
-	}
-
-	if err := populateTelemetryBatchingValues(&mixer.Batching, v1TelemetryValues); err != nil {
-		return nil
 	}
 
 	if mixer.Adapters != nil {
@@ -167,23 +162,22 @@ func populateMixerTelemetryValues(in *v2.ControlPlaneSpec, istiod bool, values m
 		}
 
 		// set image and resources
-		if runtime.Pod.Containers != nil {
+		if runtime.Container != nil {
 			// Mixer container specific config
-			if mixerContainer, ok := runtime.Pod.Containers["mixer"]; ok {
-				if mixerContainer.Image != "" {
+				if runtime.Container.Image != "" {
 					if istiod {
-						if err := setHelmStringValue(v1TelemetryValues, "image", mixerContainer.Image); err != nil {
+						if err := setHelmStringValue(v1TelemetryValues, "image", runtime.Container.Image); err != nil {
 							return err
 						}
 					} else {
 						// XXX: this applies to both policy and telemetry in pre 1.6
-						if err := setHelmStringValue(values, "mixer.image", mixerContainer.Image); err != nil {
+						if err := setHelmStringValue(values, "mixer.image", runtime.Container.Image); err != nil {
 							return err
 						}
 					}
 				}
-				if mixerContainer.Resources != nil {
-					if resourcesValues, err := toValues(mixerContainer.Resources); err == nil {
+				if runtime.Container.Resources != nil {
+					if resourcesValues, err := toValues(runtime.Container.Resources); err == nil {
 						if len(resourcesValues) > 0 {
 							if err := setHelmValue(v1TelemetryValues, "resources", resourcesValues); err != nil {
 								return err
@@ -193,7 +187,6 @@ func populateMixerTelemetryValues(in *v2.ControlPlaneSpec, istiod bool, values m
 						return err
 					}
 				}
-			}
 		}
 	}
 
@@ -256,13 +249,16 @@ func populateMixerTelemetryValues(in *v2.ControlPlaneSpec, istiod bool, values m
 }
 
 func populateTelemetryBatchingValues(in *v2.TelemetryBatchingConfig, values map[string]interface{}) error {
+	if in == nil {
+		return nil
+	}
 	if in.MaxTime != "" {
-		if err := setHelmStringValue(values, "mixer.telemetry.reportBatchMaxTime", in.MaxTime); err != nil {
+		if err := setHelmStringValue(values, "reportBatchMaxTime", in.MaxTime); err != nil {
 			return err
 		}
 	}
 	if in.MaxEntries != nil {
-		return setHelmIntValue(values, "mixer.telemetry.reportBatchMaxEntries", int64(*in.MaxEntries))
+		return setHelmIntValue(values, "reportBatchMaxEntries", int64(*in.MaxEntries))
 	}
 	return nil
 }
@@ -291,7 +287,7 @@ func populateRemoteTelemetryValues(in *v2.ControlPlaneSpec, istiod bool, values 
 		return err
 	}
 
-	if err := populateTelemetryBatchingValues(&remote.Batching, v1TelemetryValues); err != nil {
+	if err := populateTelemetryBatchingValues(remote.Batching, v1TelemetryValues); err != nil {
 		return nil
 	}
 

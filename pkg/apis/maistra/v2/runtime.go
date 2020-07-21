@@ -30,23 +30,24 @@ type ControlPlaneRuntimeConfig struct {
 
 // ComponentRuntimeConfig allows for partial customization of a component's
 // runtime configuration (Deployment, PodTemplate, auto scaling, pod disruption, etc.)
-// XXX: not sure if this needs a separate Container field for component container defaults, e.g. image name, etc.
 type ComponentRuntimeConfig struct {
 	// Deployment specific overrides
 	// +optional
-	Deployment DeploymentRuntimeConfig `json:"deployment,omitempty"`
+	Deployment *DeploymentRuntimeConfig `json:"deployment,omitempty"`
+
 	// Pod specific overrides
 	// +optional
-	Pod PodRuntimeConfig `json:"pod,omitempty"`
+	Pod *PodRuntimeConfig `json:"pod,omitempty"`
+
+	// .Values.*.resource, imagePullPolicy, etc.
+	// +optional
+	Container *ContainerConfig `json:"container,omitempty"`
 }
 
 // DeploymentRuntimeConfig allow customization of a component's Deployment
 // resource, including additional labels/annotations, replica count, autoscaling,
 // rollout strategy, etc.
 type DeploymentRuntimeConfig struct {
-	// Metadata specifies additional labels and annotations to be applied to the deployment
-	// +optional
-	Metadata MetadataConfig `json:"metadata,omitempty"`
 	// Number of desired pods. This is a pointer to distinguish between explicit
 	// zero and not specified. Defaults to 1.
 	// +optional
@@ -73,7 +74,7 @@ type CommonDeploymentRuntimeConfig struct {
 	// XXX: this is currently a global setting, not per component.  perhaps
 	// this should only be available on the defaults?
 	// +optional
-	Disruption *PodDisruptionBudget `json:"disruption,omitempty"`
+	PodDisruption *PodDisruptionBudget `json:"podDisruption,omitempty"`
 }
 
 // AutoScalerConfig is used to configure autoscaling for a deployment
@@ -106,11 +107,6 @@ type PodRuntimeConfig struct {
 	// NodeAffinity is not supported at this time
 	// PodAffinity is not supported at this time
 	Affinity *Affinity `json:"affinity,omitempty"`
-
-	// XXX: is it too cheesy to use 'default' name for defaults?  default would apply to all containers
-	// .Values.*.resource, imagePullPolicy, etc.
-	// +optional
-	Containers map[string]ContainerConfig `json:"containers,omitempty"`
 }
 
 // CommonPodRuntimeConfig represents pod settings common to both defaults and

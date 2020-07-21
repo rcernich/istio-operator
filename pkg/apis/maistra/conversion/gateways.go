@@ -218,19 +218,17 @@ func gatewayConfigToValues(in *v2.GatewayConfig) (map[string]interface{}, error)
 			return nil, err
 		}
 
-		if runtime.Pod.Containers != nil {
+		if runtime.Container != nil {
 			// Proxy container specific config
-			if proxyContainer, ok := runtime.Pod.Containers["istio-proxy"]; ok {
-				if proxyContainer.Resources != nil {
-					if resourcesValues, err := toValues(proxyContainer.Resources); err == nil {
-						if len(resourcesValues) > 0 {
-							if err := setHelmValue(values, "resources", resourcesValues); err != nil {
-								return nil, err
-							}
+			if runtime.Container.Resources != nil {
+				if resourcesValues, err := toValues(runtime.Container.Resources); err == nil {
+					if len(resourcesValues) > 0 {
+						if err := setHelmValue(values, "resources", resourcesValues); err != nil {
+							return nil, err
 						}
-					} else {
-						return nil, err
 					}
+				} else {
+					return nil, err
 				}
 			}
 		}
@@ -293,33 +291,29 @@ func gatewayIngressConfigToValues(in *v2.IngressGatewayConfig) (map[string]inter
 	}
 
 	// gateway SDS
-	if in.EnableSDS != nil {
-		if err := setHelmBoolValue(values, "sds.enable", *in.EnableSDS); err != nil {
-			return nil, err
+	if in.SDS != nil {
+		if in.SDS.Enabled != nil {
+			if err := setHelmBoolValue(values, "sds.enable", *in.SDS.Enabled); err != nil {
+				return nil, err
+			}
 		}
-	}
 
-	if in.Runtime != nil {
-		runtime := in.Runtime
-
-		if runtime.Pod.Containers != nil {
+		if in.SDS.Runtime != nil {
 			// SDS container specific config
-			if sdsContainer, ok := runtime.Pod.Containers["ingress-sds"]; ok {
-				if sdsContainer.Image != "" {
-					if err := setHelmStringValue(values, "sds.image", sdsContainer.Image); err != nil {
-						return nil, err
-					}
+			if in.SDS.Runtime.Image != "" {
+				if err := setHelmStringValue(values, "sds.image", in.SDS.Runtime.Image); err != nil {
+					return nil, err
 				}
-				if sdsContainer.Resources != nil {
-					if resourcesValues, err := toValues(sdsContainer.Resources); err == nil {
-						if len(resourcesValues) > 0 {
-							if err := setHelmValue(values, "sds.resources", resourcesValues); err != nil {
-								return nil, err
-							}
+			}
+			if in.SDS.Runtime.Resources != nil {
+				if resourcesValues, err := toValues(in.SDS.Runtime.Resources); err == nil {
+					if len(resourcesValues) > 0 {
+						if err := setHelmValue(values, "sds.resources", resourcesValues); err != nil {
+							return nil, err
 						}
-					} else {
-						return nil, err
 					}
+				} else {
+					return nil, err
 				}
 			}
 		}

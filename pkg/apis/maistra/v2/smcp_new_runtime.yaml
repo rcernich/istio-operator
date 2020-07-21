@@ -93,13 +93,6 @@ spec:
     mixer: # legacy v1
       enableChecks: false # default
       failOpen: false # default
-      runtime:
-        # similar to above for ilbGateway, with the following differences
-        container:
-          # these settings overlap with telemetry pre-1.6, e.g. mixer.image
-          # and mixer.resources settings apply to both policy and telemetry
-          image: mixer # default mixer image
-          resources: {} # mixer resources
     # or
     remote:
       address: my-remote-policy.example.com
@@ -163,22 +156,6 @@ spec:
       clusterDomain: cluster.local
       connectionTimeout: 10s
       initialization:
-        cni:
-          runtime:
-            # differs from most other runtime structures.  only the following are supported
-            priorityClassName: ""
-            imagePullPolicy: Always
-            imagePullSecrets: []
-            resources: {}
-        initContainer:
-          runtime:
-            # differs from most other runtime structures.  only the following are supported
-            image: proxy-init
-            imageRegistry: registry.redhat.io
-            imageTag: "2.0"
-            imagePullPolicy: Always
-            imagePullSecrets: []
-            resources: {}
       trafficControl:
         inbound:
           interceptionMode: REDIRECT
@@ -202,16 +179,12 @@ spec:
           # "global",
           # "{{ valueOrDefault .DeploymentMeta.Namespace \"istio-system\" }}.global",
         ]
-    runtime:
-      readiness:
-        rewriteApplicationProbes: false
-        statusPort: 15020
-        initialDelaySeconds: 1
-        periodSeconds: 2
-        failureThreshold: 30
-      proxy:
-        image: proxyv2
-        resources: {} # requirements and limits
+    readiness:
+      rewriteApplicationProbes: false
+      statusPort: 15020
+      initialDelaySeconds: 1
+      periodSeconds: 2
+      failureThreshold: 30
 
   security:
     # this is the section i'm most unsure about
@@ -304,6 +277,25 @@ spec:
           requirements: {}
     citadel: {} # similar to pilot above
     galley: {} # similar to pilot above
+    mixerPolicy: {} # similar to pilot above
+    mixerTelemetry: {} # similar to pilot above
+    cni:
+      # differs from most other runtime structures.  only the following are supported
+      priorityClassName: ""
+      imagePullPolicy: Always
+      imagePullSecrets: []
+      resources: {}
+    proxy:
+      image: proxyv2
+      resources: {} # requirements and limits
+    proxyInit:
+      # differs from most other runtime structures.  only the following are supported
+      image: proxy-init
+      imageRegistry: registry.redhat.io
+      imageTag: "2.0"
+      imagePullPolicy: Always
+      imagePullSecrets: []
+      resources: {}
     # note, mixer runtime is configured as part of policy.mixer or telemetry.mixer
     # default runtime settings
     defaults: # merged into any component specific overrides. component specific overrides take precedence

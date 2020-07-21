@@ -51,10 +51,10 @@ type ControlPlaneSpec struct {
 	// is used by istio.io/rev labels/annotations to specify which control plane
 	// workloads should be connecting with.
 
-	// Template selects the template to use for default values. Defaults to
-	// "default" when not set.
+	// Profile selects the profile to use for default values. Defaults to
+	// "default" profile when not set.
 	// +optional
-	Template string `json:"template,omitempty"`
+	Profile string `json:"profile,omitempty"`
 	// Version specifies what Maistra version of the control plane to install.
 	// When creating a new ServiceMeshControlPlane with an empty version, the
 	// admission webhook sets the version to the current version.

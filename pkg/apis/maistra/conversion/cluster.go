@@ -24,7 +24,7 @@ func populateClusterValues(in *v2.ControlPlaneSpec, values map[string]interface{
 		// TODO: figure out how to get the install namespace
 		var namespace string
 		clusterDomain := clusterDomainDefault
-		if in.Proxy.Networking.ClusterDomain != "" {
+		if in.Proxy != nil && in.Proxy.Networking != nil && in.Proxy.Networking.ClusterDomain != "" {
 			clusterDomain = in.Proxy.Networking.ClusterDomain
 		}
 		hasClusterName := len(in.Cluster.Name) > 0
@@ -142,9 +142,19 @@ func populateClusterValues(in *v2.ControlPlaneSpec, values map[string]interface{
 				}
 			}
 			// Configure DNS search suffixes for "global"
-			if in.Proxy != nil {
-				foundGlobal := false
-				foundDeploymentMetadata := false
+			foundGlobal := false
+			foundDeploymentMetadata := false
+			if in.Proxy == nil {
+				in.Proxy = &v2.ProxyConfig{
+					Networking: &v2.ProxyNetworkingConfig{
+						DNS: &v2.ProxyDNSConfig{},
+					},
+				}
+			} else if in.Proxy.Networking == nil {
+				in.Proxy.Networking = &v2.ProxyNetworkingConfig{}
+			} else if in.Proxy.Networking.DNS == nil {
+				in.Proxy.Networking.DNS = &v2.ProxyDNSConfig{}
+			} else {
 				for _, ss := range in.Proxy.Networking.DNS.SearchSuffixes {
 					if ss == searchSuffixGlobal {
 						foundGlobal = true
@@ -152,12 +162,12 @@ func populateClusterValues(in *v2.ControlPlaneSpec, values map[string]interface{
 						foundDeploymentMetadata = true
 					}
 				}
-				if !foundGlobal {
-					in.Proxy.Networking.DNS.SearchSuffixes = append(in.Proxy.Networking.DNS.SearchSuffixes, searchSuffixGlobal)
-				}
-				if !foundDeploymentMetadata {
-					in.Proxy.Networking.DNS.SearchSuffixes = append(in.Proxy.Networking.DNS.SearchSuffixes, fmt.Sprintf(searchSuffixNamespaceGlobalTemplate, namespace))
-				}
+			}
+			if !foundGlobal {
+				in.Proxy.Networking.DNS.SearchSuffixes = append(in.Proxy.Networking.DNS.SearchSuffixes, searchSuffixGlobal)
+			}
+			if !foundDeploymentMetadata {
+				in.Proxy.Networking.DNS.SearchSuffixes = append(in.Proxy.Networking.DNS.SearchSuffixes, fmt.Sprintf(searchSuffixNamespaceGlobalTemplate, namespace))
 			}
 		}
 	}

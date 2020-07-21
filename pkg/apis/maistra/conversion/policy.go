@@ -100,31 +100,28 @@ func populateMixerPolicyValues(in *v2.ControlPlaneSpec, istiod bool, values map[
 		}
 
 		// set image and resources
-		if runtime.Pod.Containers != nil {
-			// Mixer container specific config
-			if mixerContainer, ok := runtime.Pod.Containers["mixer"]; ok {
-				if mixerContainer.Image != "" {
-					if istiod {
-						if err := setHelmStringValue(policyValues, "image", mixerContainer.Image); err != nil {
-							return err
-						}
-					} else {
-						// XXX: this applies to both policy and telemetry in pre 1.6
-						if err := setHelmStringValue(values, "mixer.image", mixerContainer.Image); err != nil {
-							return err
-						}
-					}
-				}
-				if mixerContainer.Resources != nil {
-					if resourcesValues, err := toValues(mixerContainer.Resources); err == nil {
-						if len(resourcesValues) > 0 {
-							if err := setHelmValue(policyValues, "resources", resourcesValues); err != nil {
-								return err
-							}
-						}
-					} else {
+		if runtime.Container != nil {
+			if runtime.Container.Image != "" {
+				if istiod {
+					if err := setHelmStringValue(policyValues, "image", runtime.Container.Image); err != nil {
 						return err
 					}
+				} else {
+					// XXX: this applies to both policy and telemetry in pre 1.6
+					if err := setHelmStringValue(values, "mixer.image", runtime.Container.Image); err != nil {
+						return err
+					}
+				}
+			}
+			if runtime.Container.Resources != nil {
+				if resourcesValues, err := toValues(runtime.Container.Resources); err == nil {
+					if len(resourcesValues) > 0 {
+						if err := setHelmValue(policyValues, "resources", resourcesValues); err != nil {
+							return err
+						}
+					}
+				} else {
+					return err
 				}
 			}
 		}

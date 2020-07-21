@@ -61,24 +61,24 @@ func populateKialiAddonValues(kiali *v2.KialiAddonConfig, values map[string]inte
 			return err
 		}
 
-		if kialiContainer, ok := runtime.Pod.Containers["kiali"]; ok {
-			if kialiContainer.Image != "" {
-				if err := setHelmStringValue(kialiValues, "image", kialiContainer.Image); err != nil {
+		if runtime.Container != nil {
+			if runtime.Container.Image != "" {
+				if err := setHelmStringValue(kialiValues, "image", runtime.Container.Image); err != nil {
 					return err
 				}
 			}
-			if kialiContainer.ImageRegistry != "" {
-				if err := setHelmStringValue(kialiValues, "hub", kialiContainer.ImageRegistry); err != nil {
+			if runtime.Container.ImageRegistry != "" {
+				if err := setHelmStringValue(kialiValues, "hub", runtime.Container.ImageRegistry); err != nil {
 					return err
 				}
 			}
-			if kialiContainer.ImageTag != "" {
-				if err := setHelmStringValue(kialiValues, "tag", kialiContainer.ImageTag); err != nil {
+			if runtime.Container.ImageTag != "" {
+				if err := setHelmStringValue(kialiValues, "tag", runtime.Container.ImageTag); err != nil {
 					return err
 				}
 			}
-			if kialiContainer.ImagePullPolicy != "" {
-				if err := setHelmStringValue(kialiValues, "imagePullPolicy", string(kialiContainer.ImagePullPolicy)); err != nil {
+			if runtime.Container.ImagePullPolicy != "" {
+				if err := setHelmStringValue(kialiValues, "imagePullPolicy", string(runtime.Container.ImagePullPolicy)); err != nil {
 					return err
 				}
 			}

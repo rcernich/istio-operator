@@ -22,3 +22,14 @@ go run -mod=vendor k8s.io/code-generator/cmd/deepcopy-gen \
     -i github.com/maistra/istio-operator/pkg/apis/maistra/status \
     --go-header-file "./build/codegen/boilerplate.go.txt" \
     -O zz_generated.deepcopy.go
+
+go run -mod=vendor k8s.io/code-generator/cmd/deepcopy-gen \
+    -i github.com/maistra/istio-operator/pkg/apis/maistra/status \
+    --go-header-file "./build/codegen/boilerplate.go.txt" \
+    -O zz_generated.deepcopy.go
+
+go run --mod=vendor k8s.io/code-generator/cmd/conversion-gen/ \
+    -i github.com/maistra/istio-operator/pkg/apis/maistra/conversion \
+    --go-header-file "./build/codegen/boilerplate.go.txt" \
+    -p github.com/maistra/istio-operator/pkg/maistra/conversion \
+    -O zz_generated.conversion.go

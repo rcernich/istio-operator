@@ -39,7 +39,7 @@ type MixerTelemetryConfig struct {
 	SessionAffinity *bool `json:"sessionAffinity,omitempty"`
 	// Batching settings used when sending telemetry.
 	// +optional
-	Batching TelemetryBatchingConfig `json:"batching,omitempty"`
+	Batching *TelemetryBatchingConfig `json:"batching,omitempty"`
 	// Runtime configuration to apply to the mixer telemetry deployment.
 	// +optional
 	Runtime *ComponentRuntimeConfig `json:"runtime,omitempty"`
@@ -168,7 +168,7 @@ type RemoteTelemetryConfig struct {
 	CreateService bool `json:"createService,omitempty"`
 	// Batching settings used when sending telemetry.
 	// +optional
-	Batching TelemetryBatchingConfig `json:"batching,omitempty"`
+	Batching *TelemetryBatchingConfig `json:"batching,omitempty"`
 }
 
 // IstiodTelemetryConfig configures v2 telemetry using istiod

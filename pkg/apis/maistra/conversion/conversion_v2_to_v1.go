@@ -18,6 +18,8 @@ func Convert_v2_ControlPlaneSpec_To_v1_ControlPlaneSpec(in *v2.ControlPlaneSpec,
 	// Make a copy so we can modify fields as needed
 	in = in.DeepCopy()
 
+	out.Template = in.Profile
+
 	// Initialize output
 	values := make(map[string]interface{})
 
