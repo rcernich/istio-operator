@@ -147,17 +147,17 @@ func populateDefaultContainerValues(containers map[string]v2.ContainerConfig, va
 	return nil
 }
 
-func populateRuntimeValues(runtime *v2.ComponentRuntimeConfig, values map[string]interface{}) error {
+func populateRuntimeValues(runtime *v2.ComponentRuntimeConfig, componentValues map[string]interface{}) error {
 	if runtime == nil {
 		return nil
 	}
-	if err := populateDeploymentHelmValues(runtime.Deployment, values); err != nil {
+	if err := populateDeploymentHelmValues(runtime.Deployment, componentValues); err != nil {
 		return err
 	}
-	if err := populatePodHelmValues(runtime.Pod, values); err != nil {
+	if err := populatePodHelmValues(runtime.Pod, componentValues); err != nil {
 		return err
 	}
-	if err := populateContainerConfigValues(runtime.Container, values); err != nil {
+	if err := populateContainerConfigValues(runtime.Container, componentValues); err != nil {
 		return err
 	}
 	if runtime.Deployment != nil {
@@ -166,12 +166,12 @@ func populateRuntimeValues(runtime *v2.ComponentRuntimeConfig, values map[string
 	return nil
 }
 
-func populateDeploymentHelmValues(deployment *v2.DeploymentRuntimeConfig, values map[string]interface{}) error {
+func populateDeploymentHelmValues(deployment *v2.DeploymentRuntimeConfig, componentValues map[string]interface{}) error {
 	if deployment == nil {
 		return nil
 	}
 	if deployment.Replicas != nil {
-		if err := setHelmIntValue(values, "replicaCount", int64(*deployment.Replicas)); err != nil {
+		if err := setHelmIntValue(componentValues, "replicaCount", int64(*deployment.Replicas)); err != nil {
 			return err
 		}
 	}
@@ -179,57 +179,57 @@ func populateDeploymentHelmValues(deployment *v2.DeploymentRuntimeConfig, values
 	if deployment.Strategy != nil && deployment.Strategy.RollingUpdate != nil {
 		if deployment.Strategy.RollingUpdate.MaxSurge != nil {
 			if deployment.Strategy.RollingUpdate.MaxSurge.Type == intstr.Int {
-				if err := setHelmIntValue(values, "rollingMaxSurge", int64(deployment.Strategy.RollingUpdate.MaxSurge.IntValue())); err != nil {
+				if err := setHelmIntValue(componentValues, "rollingMaxSurge", int64(deployment.Strategy.RollingUpdate.MaxSurge.IntValue())); err != nil {
 					return err
 				}
 			} else {
-				if err := setHelmStringValue(values, "rollingMaxSurge", deployment.Strategy.RollingUpdate.MaxSurge.String()); err != nil {
+				if err := setHelmStringValue(componentValues, "rollingMaxSurge", deployment.Strategy.RollingUpdate.MaxSurge.String()); err != nil {
 					return err
 				}
 			}
 		}
 		if deployment.Strategy.RollingUpdate.MaxUnavailable != nil {
 			if deployment.Strategy.RollingUpdate.MaxUnavailable.Type == intstr.Int {
-				if err := setHelmIntValue(values, "rollingMaxUnavailable", int64(deployment.Strategy.RollingUpdate.MaxUnavailable.IntValue())); err != nil {
+				if err := setHelmIntValue(componentValues, "rollingMaxUnavailable", int64(deployment.Strategy.RollingUpdate.MaxUnavailable.IntValue())); err != nil {
 					return err
 				}
 			} else {
-				if err := setHelmStringValue(values, "rollingMaxUnavailable", deployment.Strategy.RollingUpdate.MaxUnavailable.String()); err != nil {
+				if err := setHelmStringValue(componentValues, "rollingMaxUnavailable", deployment.Strategy.RollingUpdate.MaxUnavailable.String()); err != nil {
 					return err
 				}
 			}
 		}
 	}
-	if err := populateAutoscalingHelmValues(deployment.AutoScaling, values); err != nil {
+	if err := populateAutoscalingHelmValues(deployment.AutoScaling, componentValues); err != nil {
 		return err
 	}
 	return nil
 }
 
-func populatePodHelmValues(pod *v2.PodRuntimeConfig, values map[string]interface{}) error {
+func populatePodHelmValues(pod *v2.PodRuntimeConfig, componentValues map[string]interface{}) error {
 	if pod == nil {
 		return nil
 	}
 	if len(pod.Metadata.Annotations) > 0 {
-		if err := setHelmStringMapValue(values, "podAnnotations", pod.Metadata.Annotations); err != nil {
+		if err := setHelmStringMapValue(componentValues, "podAnnotations", pod.Metadata.Annotations); err != nil {
 			return err
 		}
 	}
 	if len(pod.Metadata.Labels) > 0 {
-		if err := setHelmStringMapValue(values, "podLabels", pod.Metadata.Labels); err != nil {
+		if err := setHelmStringMapValue(componentValues, "podLabels", pod.Metadata.Labels); err != nil {
 			return err
 		}
 	}
 	if pod.PriorityClassName != "" {
 		// XXX: this is only available with global.priorityClassName
-		if err := setHelmStringValue(values, "priorityClassName", pod.PriorityClassName); err != nil {
+		if err := setHelmStringValue(componentValues, "priorityClassName", pod.PriorityClassName); err != nil {
 			return err
 		}
 	}
 
 	// Scheduling
 	if len(pod.NodeSelector) > 0 {
-		if err := setHelmStringMapValue(values, "nodeSelector", pod.NodeSelector); err != nil {
+		if err := setHelmStringMapValue(componentValues, "nodeSelector", pod.NodeSelector); err != nil {
 			return err
 		}
 	}
@@ -239,7 +239,7 @@ func populatePodHelmValues(pod *v2.PodRuntimeConfig, values map[string]interface
 		if len(pod.Affinity.PodAntiAffinity.RequiredDuringScheduling) > 0 {
 			podAntiAffinityLabelSelector := convertAntiAffinityTermsToHelmValues(pod.Affinity.PodAntiAffinity.RequiredDuringScheduling)
 			if len(podAntiAffinityLabelSelector) > 0 {
-				if err := setHelmValue(values, "podAntiAffinityLabelSelector", podAntiAffinityLabelSelector); err != nil {
+				if err := setHelmValue(componentValues, "podAntiAffinityLabelSelector", podAntiAffinityLabelSelector); err != nil {
 					return err
 				}
 			}
@@ -247,7 +247,7 @@ func populatePodHelmValues(pod *v2.PodRuntimeConfig, values map[string]interface
 		if len(pod.Affinity.PodAntiAffinity.PreferredDuringScheduling) > 0 {
 			podAntiAffinityTermLabelSelector := convertAntiAffinityTermsToHelmValues(pod.Affinity.PodAntiAffinity.PreferredDuringScheduling)
 			if len(podAntiAffinityTermLabelSelector) > 0 {
-				if err := setHelmValue(values, "podAntiAffinityTermLabelSelector", podAntiAffinityTermLabelSelector); err != nil {
+				if err := setHelmValue(componentValues, "podAntiAffinityTermLabelSelector", podAntiAffinityTermLabelSelector); err != nil {
 					return err
 				}
 			}
@@ -260,7 +260,7 @@ func populatePodHelmValues(pod *v2.PodRuntimeConfig, values map[string]interface
 		}
 		if tolerations, err := sliceToValues(untypedSlice); err == nil {
 			if len(tolerations) > 0 {
-				if err := setHelmValue(values, "tolerations", tolerations); err != nil {
+				if err := setHelmValue(componentValues, "tolerations", tolerations); err != nil {
 					return err
 				}
 			}
@@ -284,27 +284,27 @@ func convertAntiAffinityTermsToHelmValues(terms []v2.PodAntiAffinityTerm) []inte
 	return termsValues
 }
 
-func populateAutoscalingHelmValues(autoScalerConfg *v2.AutoScalerConfig, values map[string]interface{}) error {
+func populateAutoscalingHelmValues(autoScalerConfg *v2.AutoScalerConfig, componentValues map[string]interface{}) error {
 	if autoScalerConfg == nil {
-		if err := setHelmBoolValue(values, "autoscaleEnabled", false); err != nil {
+		if err := setHelmBoolValue(componentValues, "autoscaleEnabled", false); err != nil {
 			return err
 		}
 	} else {
-		if err := setHelmBoolValue(values, "autoscaleEnabled", true); err != nil {
+		if err := setHelmBoolValue(componentValues, "autoscaleEnabled", true); err != nil {
 			return err
 		}
 		if autoScalerConfg.MinReplicas != nil {
-			if err := setHelmIntValue(values, "autoscaleMin", int64(*autoScalerConfg.MinReplicas)); err != nil {
+			if err := setHelmIntValue(componentValues, "autoscaleMin", int64(*autoScalerConfg.MinReplicas)); err != nil {
 				return err
 			}
 		}
 		if autoScalerConfg.MaxReplicas != nil {
-			if err := setHelmIntValue(values, "autoscaleMax", int64(*autoScalerConfg.MaxReplicas)); err != nil {
+			if err := setHelmIntValue(componentValues, "autoscaleMax", int64(*autoScalerConfg.MaxReplicas)); err != nil {
 				return err
 			}
 		}
 		if autoScalerConfg.TargetCPUUtilizationPercentage != nil {
-			if err := setHelmIntValue(values, "cpu.targetAverageUtilization", int64(*autoScalerConfg.TargetCPUUtilizationPercentage)); err != nil {
+			if err := setHelmIntValue(componentValues, "cpu.targetAverageUtilization", int64(*autoScalerConfg.TargetCPUUtilizationPercentage)); err != nil {
 				return err
 			}
 		}
@@ -312,12 +312,12 @@ func populateAutoscalingHelmValues(autoScalerConfg *v2.AutoScalerConfig, values 
 	return nil
 }
 
-func populateContainerConfigValues(containerConfig *v2.ContainerConfig, values map[string]interface{}) error {
+func populateContainerConfigValues(containerConfig *v2.ContainerConfig, componentValues map[string]interface{}) error {
 	if containerConfig == nil {
 		return nil
 	}
 	if containerConfig.ImagePullPolicy != "" {
-		if err := setHelmStringValue(values, "imagePullPolicy", string(containerConfig.ImagePullPolicy)); err != nil {
+		if err := setHelmStringValue(componentValues, "imagePullPolicy", string(containerConfig.ImagePullPolicy)); err != nil {
 			return err
 		}
 	}
@@ -326,29 +326,29 @@ func populateContainerConfigValues(containerConfig *v2.ContainerConfig, values m
 		for _, secret := range containerConfig.ImagePullSecrets {
 			pullSecretsValues = append(pullSecretsValues, secret.Name)
 		}
-		if err := setHelmStringSliceValue(values, "imagePullSecrets", pullSecretsValues); err != nil {
+		if err := setHelmStringSliceValue(componentValues, "imagePullSecrets", pullSecretsValues); err != nil {
 			return err
 		}
 	}
 	if containerConfig.ImageRegistry != "" {
-		if err := setHelmStringValue(values, "hub", containerConfig.ImageRegistry); err != nil {
+		if err := setHelmStringValue(componentValues, "hub", containerConfig.ImageRegistry); err != nil {
 			return err
 		}
 	}
 	if containerConfig.Image != "" {
-		if err := setHelmStringValue(values, "image", containerConfig.Image); err != nil {
+		if err := setHelmStringValue(componentValues, "image", containerConfig.Image); err != nil {
 			return err
 		}
 	}
 	if containerConfig.ImageTag != "" {
-		if err := setHelmStringValue(values, "tag", containerConfig.ImageTag); err != nil {
+		if err := setHelmStringValue(componentValues, "tag", containerConfig.ImageTag); err != nil {
 			return err
 		}
 	}
 	if containerConfig.Resources != nil {
 		if resourcesValues, err := toValues(containerConfig.Resources); err == nil {
 			if len(resourcesValues) > 0 {
-				if err := setHelmValue(values, "resources", resourcesValues); err != nil {
+				if err := setHelmValue(componentValues, "resources", resourcesValues); err != nil {
 					return err
 				}
 			}
@@ -793,27 +793,27 @@ func populateCommonContainerConfig(in *v1.HelmValues, out *v2.CommonContainerCon
 	return setContainer, nil
 }
 
-func populateComponentServiceValues(serviceConfig *v2.ComponentServiceConfig, values map[string]interface{}) error {
+func populateComponentServiceValues(serviceConfig *v2.ComponentServiceConfig, componentServiceValues map[string]interface{}) error {
 	if len(serviceConfig.Metadata.Annotations) > 0 {
-		if err := setHelmStringMapValue(values, "service.annotations", serviceConfig.Metadata.Annotations); err != nil {
+		if err := setHelmStringMapValue(componentServiceValues, "service.annotations", serviceConfig.Metadata.Annotations); err != nil {
 			return err
 		}
 	}
 	if len(serviceConfig.Metadata.Labels) > 0 {
-		if err := setHelmStringMapValue(values, "service.labels", serviceConfig.Metadata.Labels); err != nil {
+		if err := setHelmStringMapValue(componentServiceValues, "service.labels", serviceConfig.Metadata.Labels); err != nil {
 			return err
 		}
 	}
 	if serviceConfig.NodePort != nil {
 		if *serviceConfig.NodePort == 0 {
-			if err := setHelmBoolValue(values, "service.nodePort.enabled", false); err != nil {
+			if err := setHelmBoolValue(componentServiceValues, "service.nodePort.enabled", false); err != nil {
 				return err
 			}
 		} else {
-			if err := setHelmBoolValue(values, "service.nodePort.enabled", true); err != nil {
+			if err := setHelmBoolValue(componentServiceValues, "service.nodePort.enabled", true); err != nil {
 				return err
 			}
-			if err := setHelmIntValue(values, "service.nodePort.port", int64(*serviceConfig.NodePort)); err != nil {
+			if err := setHelmIntValue(componentServiceValues, "service.nodePort.port", int64(*serviceConfig.NodePort)); err != nil {
 				return err
 			}
 		}
@@ -821,7 +821,7 @@ func populateComponentServiceValues(serviceConfig *v2.ComponentServiceConfig, va
 	ingressValues := make(map[string]interface{})
 	if err := populateAddonIngressValues(serviceConfig.Ingress, ingressValues); err == nil {
 		if len(ingressValues) > 0 {
-			if err := setHelmValue(values, "ingress", ingressValues); err != nil {
+			if err := setHelmValue(componentServiceValues, "ingress", ingressValues); err != nil {
 				return err
 			}
 		}

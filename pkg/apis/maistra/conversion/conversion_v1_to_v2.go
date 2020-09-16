@@ -31,8 +31,8 @@ func Convert_v1_ControlPlaneSpec_To_v2_ControlPlaneSpec(in *v1.ControlPlaneSpec,
 		return err
 	}
 
-	// Logging
-	if err := populateControlPlaneLoggingConfig(in.Istio, out); err != nil {
+	// General
+	if err := populateGeneralConfig(in.Istio, out); err != nil {
 		return err
 	}
 

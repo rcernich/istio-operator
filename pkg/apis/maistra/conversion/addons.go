@@ -30,6 +30,9 @@ func populateAddonsValues(in *v2.ControlPlaneSpec, values map[string]interface{}
 		if err := setHelmBoolValue(values, "tracing.enabled", false); err != nil {
 			return err
 		}
+		if err := setHelmBoolValue(values, "global.enableTracing", false); err != nil {
+			return err
+		}
 		if err := setHelmStringValue(values, "tracing.provider", "none"); err != nil {
 			return err
 		}
@@ -38,6 +41,9 @@ func populateAddonsValues(in *v2.ControlPlaneSpec, values map[string]interface{}
 			return err
 		}
 		if err := setHelmBoolValue(values, "tracing.enabled", true); err != nil {
+			return err
+		}
+		if err := setHelmBoolValue(values, "global.enableTracing", true); err != nil {
 			return err
 		}
 		if err := setHelmStringValue(values, "global.proxy.tracer", "jaeger"); err != nil {
@@ -63,12 +69,12 @@ func populateAddonsValues(in *v2.ControlPlaneSpec, values map[string]interface{}
 	return nil
 }
 
-func populateAddonIngressValues(ingress *v2.ComponentIngressConfig, values map[string]interface{}) error {
+func populateAddonIngressValues(ingress *v2.ComponentIngressConfig, addonIngressValues map[string]interface{}) error {
 	if ingress == nil {
 		return nil
 	}
 	if ingress.Enabled != nil {
-		if err := setHelmBoolValue(values, "enabled", *ingress.Enabled); err != nil {
+		if err := setHelmBoolValue(addonIngressValues, "enabled", *ingress.Enabled); err != nil {
 			return err
 		}
 		if !*ingress.Enabled {
@@ -77,27 +83,27 @@ func populateAddonIngressValues(ingress *v2.ComponentIngressConfig, values map[s
 	}
 
 	if ingress.ContextPath != "" {
-		if err := setHelmStringValue(values, "contextPath", ingress.ContextPath); err != nil {
+		if err := setHelmStringValue(addonIngressValues, "contextPath", ingress.ContextPath); err != nil {
 			return err
 		}
 	}
 	if len(ingress.Hosts) > 0 {
-		if err := setHelmStringSliceValue(values, "hosts", ingress.Hosts); err != nil {
+		if err := setHelmStringSliceValue(addonIngressValues, "hosts", ingress.Hosts); err != nil {
 			return err
 		}
 	}
 	if len(ingress.Metadata.Annotations) > 0 {
-		if err := setHelmStringMapValue(values, "annotations", ingress.Metadata.Annotations); err != nil {
+		if err := setHelmStringMapValue(addonIngressValues, "annotations", ingress.Metadata.Annotations); err != nil {
 			return err
 		}
 	}
 	if len(ingress.Metadata.Labels) > 0 {
-		if err := setHelmStringMapValue(values, "labels", ingress.Metadata.Labels); err != nil {
+		if err := setHelmStringMapValue(addonIngressValues, "labels", ingress.Metadata.Labels); err != nil {
 			return err
 		}
 	}
 	if len(ingress.TLS.GetContent()) > 0 {
-		if err := setHelmValue(values, "tls", ingress.TLS.GetContent()); err != nil {
+		if err := setHelmValue(addonIngressValues, "tls", ingress.TLS.GetContent()); err != nil {
 			return err
 		}
 	}

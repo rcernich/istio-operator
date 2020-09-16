@@ -32,8 +32,8 @@ func Convert_v2_ControlPlaneSpec_To_v1_ControlPlaneSpec(in *v2.ControlPlaneSpec,
 		return err
 	}
 
-	// Logging
-	if err := populateControlPlaneLogging(in.Logging, values); err != nil {
+	// General
+	if err := populateGeneralValues(in.General, values); err != nil {
 		return err
 	}
 

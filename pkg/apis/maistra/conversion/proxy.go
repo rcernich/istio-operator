@@ -134,17 +134,20 @@ func populateProxyValues(in *v2.ControlPlaneSpec, values map[string]interface{})
 		}
 
 		// Protocol
-		if proxy.Networking.Protocol != nil {
-			if proxy.Networking.Protocol.DetectionTimeout != "" {
-				if err := setHelmStringValue(proxyValues, "protocolDetectionTimeout", proxy.Networking.Protocol.DetectionTimeout); err != nil {
+		if proxy.Networking.Protocol != nil && proxy.Networking.Protocol.AutoDetect != nil {
+			autoDetect := proxy.Networking.Protocol.AutoDetect
+			if autoDetect.Timeout != "" {
+				if err := setHelmStringValue(proxyValues, "protocolDetectionTimeout", autoDetect.Timeout); err != nil {
 					return err
 				}
 			}
-			if proxy.Networking.Protocol.Debug != nil {
-				if err := setHelmBoolValue(values, "pilot.enableProtocolSniffingForInbound", proxy.Networking.Protocol.Debug.EnableInboundSniffing); err != nil {
+			if autoDetect.Inbound != nil {
+				if err := setHelmBoolValue(values, "pilot.enableProtocolSniffingForInbound", *autoDetect.Inbound); err != nil {
 					return err
 				}
-				if err := setHelmBoolValue(values, "pilot.enableProtocolSniffingForOutbound", proxy.Networking.Protocol.Debug.EnableOutboundSniffing); err != nil {
+			}
+			if autoDetect.Outbound != nil {
+				if err := setHelmBoolValue(values, "pilot.enableProtocolSniffingForOutbound", *autoDetect.Outbound); err != nil {
 					return err
 				}
 			}
@@ -162,6 +165,52 @@ func populateProxyValues(in *v2.ControlPlaneSpec, values map[string]interface{})
 					return err
 				}
 			}
+		}
+	}
+
+	// Access logging
+	if proxy.AccessLogging != nil {
+		if proxy.AccessLogging.File != nil {
+			file := proxy.AccessLogging.File
+			if file.Name != "" {
+				if err := setHelmStringValue(proxyValues, "accessLogFile", file.Name); err != nil {
+					return err
+				}
+			}
+			if file.Encoding != "" {
+				if err := setHelmStringValue(proxyValues, "accessLogEncoding", file.Encoding); err != nil {
+					return err
+				}
+			}
+			if file.Format != "" {
+				if err := setHelmStringValue(proxyValues, "accessLogFormat", file.Format); err != nil {
+					return err
+				}
+			}
+		}
+		if proxy.AccessLogging.EnvoyService != nil {
+			accessLogServiceValues := map[string]interface{}{}
+			if err := populateProxyEnvoyServiceValues(proxy.AccessLogging.EnvoyService, accessLogServiceValues); err == nil && len(accessLogServiceValues) > 0 {
+				if err := setHelmValue(proxyValues, "envoyAccessLogService", accessLogServiceValues); err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		}
+	}
+
+	// Metrics service
+	if proxy.EnvoyMetricsService != nil {
+		metricsServiceValues := map[string]interface{}{}
+		if err := populateProxyEnvoyServiceValues(proxy.EnvoyMetricsService, metricsServiceValues); err == nil {
+			if len(metricsServiceValues) > 0 {
+				if err := setHelmValue(proxyValues, "envoyMetricsService", metricsServiceValues); err != nil {
+					return err
+				}
+			}
+		} else {
+			return err
 		}
 	}
 
@@ -205,6 +254,51 @@ func populateProxyValues(in *v2.ControlPlaneSpec, values map[string]interface{})
 		}
 	}
 
+	return nil
+}
+
+func populateProxyEnvoyServiceValues(service *v2.ProxyEnvoyServiceConfig, envoyServiceValues map[string]interface{}) error {
+	if service.Enabled != nil {
+		if err := setHelmBoolValue(envoyServiceValues, "enabled", *service.Enabled); err != nil {
+			return err
+		}
+	}
+	if service.Address != "" {
+		hostPort := strings.SplitN(service.Address, ":", 2)
+		host := hostPort[0]
+		port := "80"
+		if len(hostPort) > 1 {
+			port = hostPort[1]
+		}
+		if err := setHelmStringValue(envoyServiceValues, "host", host); err != nil {
+			return err
+		}
+		if err := setHelmStringValue(envoyServiceValues, "port", port); err != nil {
+			return err
+		}
+	}
+	if service.TCPKeepalive != nil {
+		if tcpKeepalive, err := toValues(service.TCPKeepalive); err == nil {
+			if len(tcpKeepalive) > 0 {
+				if err := setHelmValue(envoyServiceValues, "tcpKeepalive", tcpKeepalive); err != nil {
+					return err
+				}
+			}
+		} else {
+			return err
+		}
+	}
+	if service.TLSSettings != nil {
+		if tlsSettings, err := toValues(service.TLSSettings); err == nil {
+			if len(tlsSettings) > 0 {
+				if err := setHelmValue(envoyServiceValues, "tlsSettings", tlsSettings); err != nil {
+					return err
+				}
+			}
+		} else {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -381,35 +475,30 @@ func populateProxyConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	}
 
 	// Protocol
-	protocol := &v2.ProxyNetworkProtocolConfig{}
-	setProtocol := true
+	autoDetect := &v2.ProxyNetworkAutoProtocolDetectionConfig{}
+	setProtocol := false
 	if protocolDetectionTimeout, ok, err := proxyValues.GetString("protocolDetectionTimeout"); ok && protocolDetectionTimeout != "" {
-		protocol.DetectionTimeout = protocolDetectionTimeout
+		autoDetect.Timeout = protocolDetectionTimeout
 		setProtocol = true
 	} else if err != nil {
 		return err
 	}
-	// Protocol Debug
-	protocolDebugConfig := &v2.ProxyNetworkProtocolDebugConfig{}
-	setProtocolDebug := false
 	if enableProtocolSniffingForInbound, ok, err := in.GetBool("pilot.enableProtocolSniffingForInbound"); ok {
-		protocolDebugConfig.EnableInboundSniffing = enableProtocolSniffingForInbound
-		setProtocolDebug = true
+		autoDetect.Inbound = &enableProtocolSniffingForInbound
+		setProtocol = true
 	} else if err != nil {
 		return err
 	}
 	if enableProtocolSniffingForOutbound, ok, err := in.GetBool("pilot.enableProtocolSniffingForOutbound"); ok {
-		protocolDebugConfig.EnableOutboundSniffing = enableProtocolSniffingForOutbound
-		setProtocolDebug = true
+		autoDetect.Outbound = &enableProtocolSniffingForOutbound
+		setProtocol = true
 	} else if err != nil {
 		return err
 	}
-	if setProtocolDebug {
-		protocol.Debug = protocolDebugConfig
-		setProtocol = true
-	}
 	if setProtocol {
-		networking.Protocol = protocol
+		networking.Protocol = &v2.ProxyNetworkProtocolConfig{
+			AutoDetect: autoDetect,
+		}
 		setNetworking = true
 	}
 
@@ -449,6 +538,62 @@ func populateProxyConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	if setNetworking {
 		proxy.Networking = networking
 		setProxy = true
+	}
+
+	// Access logging
+	accessLogging := &v2.ProxyAccessLoggingConfig{}
+	setAccessLogging := false
+	fileAccessLog := &v2.ProxyFileAccessLogConfig{}
+	setFileAccessLog := false
+	if accessLogFile, ok, err := proxyValues.GetString("accessLogFile"); ok && accessLogFile != "" {
+		fileAccessLog.Name = accessLogFile
+		setFileAccessLog = true
+	} else if err != nil {
+		return err
+	}
+	if accessLogEncoding, ok, err := proxyValues.GetString("accessLogEncoding"); ok && accessLogEncoding != "" {
+		fileAccessLog.Encoding = accessLogEncoding
+		setFileAccessLog = true
+	} else if err != nil {
+		return err
+	}
+	if accessLogFormat, ok, err := proxyValues.GetString("accessLogFormat"); ok && accessLogFormat != "" {
+		fileAccessLog.Format = accessLogFormat
+		setFileAccessLog = true
+	} else if err != nil {
+		return err
+	}
+	if setFileAccessLog {
+		accessLogging.File = fileAccessLog
+		setAccessLogging = true
+	}
+	if accessLogServiceValues, ok, err := proxyValues.GetMap("envoyAccessLogService"); ok && len(accessLogServiceValues) > 0 {
+		accessLogService := &v2.ProxyEnvoyServiceConfig{}
+		if updated, err := populateProxyEnvoyServiceConfig(v1.NewHelmValues(accessLogServiceValues), accessLogService); updated {
+			accessLogging.EnvoyService = accessLogService
+			setAccessLogging = true
+		} else if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	if setAccessLogging {
+		proxy.AccessLogging = accessLogging
+		setProxy = true
+	}
+
+	// Metrics service
+	if metricsServiceValues, ok, err := proxyValues.GetMap("envoyMetricsService"); ok && len(metricsServiceValues) > 0 {
+		metricsService := &v2.ProxyEnvoyServiceConfig{}
+		if updated, err := populateProxyEnvoyServiceConfig(v1.NewHelmValues(metricsServiceValues), metricsService); updated {
+			proxy.EnvoyMetricsService = metricsService
+			setProxy = true
+		} else if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
 	}
 
 	// Runtime
@@ -508,4 +653,46 @@ func populateProxyConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	}
 
 	return nil
+}
+
+func populateProxyEnvoyServiceConfig(in *v1.HelmValues, out *v2.ProxyEnvoyServiceConfig) (bool, error) {
+	updated := false
+	if enabled, ok, err := in.GetBool("enabled"); ok {
+		out.Enabled = &enabled
+		updated = true
+	} else if err != nil {
+		return false, err
+	}
+	if address, ok, err := in.GetString("host"); ok {
+		if port, ok, err := in.GetString("port"); ok {
+			if port != "" {
+				address = fmt.Sprintf("%s:%s", address, port)
+			}
+		} else if err != nil {
+			return false, err
+		}
+		out.Address = address
+		updated = true
+	} else if err != nil {
+		return false, err
+	}
+	if tcpKeepaliveValues, ok, err := in.GetMap("tcpKeepalive"); ok && len(tcpKeepaliveValues) > 0 {
+		out.TCPKeepalive = &v2.EnvoyServiceTCPKeepalive{}
+		updated = true
+		if err := fromValues(tcpKeepaliveValues, out.TCPKeepalive); err != nil {
+			return false, err
+		}
+	} else if err != nil {
+		return false, err
+	}
+	if tlsSettingsValues, ok, err := in.GetMap("tlsSettings"); ok && len(tlsSettingsValues) > 0 {
+		out.TLSSettings = &v2.EnvoyServiceClientTLSSettings{}
+		updated = true
+		if err := fromValues(tlsSettingsValues, out.TLSSettings); err != nil {
+			return false, err
+		}
+	} else if err != nil {
+		return false, err
+	}
+	return updated, nil
 }
