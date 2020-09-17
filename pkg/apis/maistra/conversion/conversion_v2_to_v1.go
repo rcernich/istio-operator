@@ -1,6 +1,8 @@
 package conversion
 
 import (
+	"fmt"
+
 	conversion "k8s.io/apimachinery/pkg/conversion"
 
 	"github.com/maistra/istio-operator/pkg/apis/maistra/status"
@@ -19,7 +21,7 @@ func Convert_v2_ControlPlaneSpec_To_v1_ControlPlaneSpec(in *v2.ControlPlaneSpec,
 	if len(in.Profiles) == 1 {
 		out.Template = in.Profiles[0]
 	}
-	
+
 	// Make a copy so we can modify fields as needed
 	in = in.DeepCopy()
 
@@ -62,15 +64,25 @@ func Convert_v2_ControlPlaneSpec_To_v1_ControlPlaneSpec(in *v2.ControlPlaneSpec,
 		return err
 	}
 
-	// Runtime
-	if err := populateControlPlaneRuntimeValues(in.Runtime, values); err != nil {
-		return err
-	}
-
 	// Addons
 	if err := populateAddonsValues(in, values); err != nil {
 		return err
 	}
+
+	// Runtime - must run last as this will add values to existing child maps
+	if err := populateControlPlaneRuntimeValues(in.Runtime, values); err != nil {
+		return err
+	}
+
+	// Need to move 3scale out of Istio values into ThreeScale field
+	if rawThreeScaleValues, ok := values["3scale"]; ok && rawThreeScaleValues != nil {
+		if threeScaleValues, ok := rawThreeScaleValues.(map[string]interface{}); ok {
+			out.ThreeScale = v1.NewHelmValues(threeScaleValues)
+		} else {
+			return fmt.Errorf("could not convert 3scale values to map[string]interface{}")
+		}
+	}
+	delete(values, "3scale")
 
 	out.Istio = v1.NewHelmValues(values)
 

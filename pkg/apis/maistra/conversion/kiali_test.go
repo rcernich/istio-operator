@@ -295,6 +295,7 @@ var kialiTestCases = []conversionTestCase{
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"kiali": map[string]interface{}{
 				"resourceName": "my-kiali",
+				"contextPath": "/kiali",
 				"ingress": map[string]interface{}{
 					"enabled":     true,
 					"contextPath": "/kiali",

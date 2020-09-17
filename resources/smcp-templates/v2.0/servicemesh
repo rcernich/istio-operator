@@ -31,7 +31,7 @@ spec:
       prometheus:
         container:
           image: prometheus-rhel8
-      threeScale:
+      3scale:
         container:
           registry: registry.redhat.io/openshift-service-mesh
           image: 3scale-istio-adapter-rhel8

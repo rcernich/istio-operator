@@ -26,48 +26,56 @@ func Convert_v1_ControlPlaneSpec_To_v2_ControlPlaneSpec(in *v1.ControlPlaneSpec,
 		out.Profiles = []string{in.Template}
 	}
 
+	// copy to preserve input
+	values := in.Istio.DeepCopy()
+
+	// adjustments for 3scale
+	if in.ThreeScale != nil {
+		values.SetField("3scale", in.ThreeScale.DeepCopy().GetContent())
+	}
+
 	// Cluster settings
-	if err := populateClusterConfig(in.Istio, out); err != nil {
+	if err := populateClusterConfig(values, out); err != nil {
 		return err
 	}
 
 	// General
-	if err := populateGeneralConfig(in.Istio, out); err != nil {
+	if err := populateGeneralConfig(values, out); err != nil {
 		return err
 	}
 
 	// Policy
-	if err := populatePolicyConfig(in.Istio, out, version); err != nil {
+	if err := populatePolicyConfig(values, out, version); err != nil {
 		return err
 	}
 
 	// Proxy
-	if err := populateProxyConfig(in.Istio, out); err != nil {
+	if err := populateProxyConfig(values, out); err != nil {
 		return err
 	}
 
 	// Security
-	if err := populateSecurityConfig(in.Istio, out); err != nil {
+	if err := populateSecurityConfig(values, out); err != nil {
 		return err
 	}
 
 	// Telemetry
-	if err := populateTelemetryConfig(in.Istio, out, version); err != nil {
+	if err := populateTelemetryConfig(values, out, version); err != nil {
 		return err
 	}
 
 	// Gateways
-	if err := populateGatewaysConfig(in.Istio, out); err != nil {
+	if err := populateGatewaysConfig(values, out); err != nil {
 		return err
 	}
 
 	// Runtime
-	if _, err := populateControlPlaneRuntimeConfig(in.Istio, out); err != nil {
+	if _, err := populateControlPlaneRuntimeConfig(values, out); err != nil {
 		return err
 	}
 
 	// Addons
-	if err := populateAddonsConfig(in.Istio, out); err != nil {
+	if err := populateAddonsConfig(values, out); err != nil {
 		return err
 	}
 

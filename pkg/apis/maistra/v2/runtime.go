@@ -52,6 +52,8 @@ const (
 	ControlPlaneComponentNameKiali ControlPlaneComponentName = "kiali"
 	// ControlPlaneComponentNameGrafana - grafana
 	ControlPlaneComponentNameGrafana ControlPlaneComponentName = "grafana"
+	// ControlPlaneComponentNameThreeScale - 3scale
+	ControlPlaneComponentNameThreeScale ControlPlaneComponentName = "3scale"
 )
 
 // ControlPlaneComponentNames - supported runtime components
@@ -69,6 +71,7 @@ var ControlPlaneComponentNames = []ControlPlaneComponentName{
 	ControlPlaneComponentNamePrometheus,
 	ControlPlaneComponentNameKiali,
 	ControlPlaneComponentNameGrafana,
+	ControlPlaneComponentNameThreeScale,
 }
 
 // ComponentRuntimeConfig allows for partial customization of a component's
@@ -263,7 +266,7 @@ type ComponentServiceConfig struct {
 	// +optional
 	Metadata MetadataConfig `json:"metadata,omitempty"`
 	// NodePort specifies a NodePort for the component's Service.
-	// .Values.prometheus.service.nodePort.port, ...enabled is true if not null
+	// .Values.<component>.service.nodePort.port, ...enabled is true if not null
 	// +optional
 	NodePort *int32 `json:"nodePort,omitempty"`
 	// Ingress specifies details for accessing the component's service through

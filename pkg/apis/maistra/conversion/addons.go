@@ -49,7 +49,7 @@ func populateAddonsValues(in *v2.ControlPlaneSpec, values map[string]interface{}
 		if err := setHelmStringValue(values, "global.proxy.tracer", "jaeger"); err != nil {
 			return err
 		}
-		case "":
+	case "":
 		// nothing to do
 	default:
 		return fmt.Errorf("Unknown tracer type: %s", in.Addons.Tracing.Type)
@@ -63,6 +63,14 @@ func populateAddonsValues(in *v2.ControlPlaneSpec, values map[string]interface{}
 	if in.Addons.Visualization.Grafana != nil {
 		if err := populateGrafanaAddonValues(in.Addons.Visualization.Grafana, values); err != nil {
 			return err
+		}
+	}
+
+	if in.Addons.Misc != nil {
+		if in.Addons.Misc.ThreeScale != nil {
+			if err := populateThreeScaleAddonValues(in.Addons.Misc.ThreeScale, values); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -124,11 +132,26 @@ func populateAddonsConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	if err := populateGrafanaAddonConfig(in, addonsConfig); err != nil {
 		return err
 	}
+	if err := populateMiscAddonsConfig(in, addonsConfig); err != nil {
+		return err
+	}
 
 	if addonsConfig.Metrics.Prometheus != nil || addonsConfig.Tracing.Type != "" ||
 		addonsConfig.Tracing.Jaeger != nil || addonsConfig.Visualization.Grafana != nil ||
-		addonsConfig.Visualization.Kiali != nil {
+		addonsConfig.Visualization.Kiali != nil || addonsConfig.Misc != nil {
 		out.Addons = addonsConfig
+	}
+	return nil
+}
+
+func populateMiscAddonsConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
+	miscConfig := &v2.MiscAddonsConfig{}
+	if err := populateThreeScaleAddonConfig(in, miscConfig); err != nil {
+		return err
+	}
+
+	if miscConfig.ThreeScale != nil {
+		out.Misc = miscConfig
 	}
 	return nil
 }

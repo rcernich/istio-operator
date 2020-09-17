@@ -59,6 +59,13 @@ func populateKialiAddonValues(kiali *v2.KialiAddonConfig, values map[string]inte
 	if err := populateComponentServiceValues(&kiali.Install.Service, kialiValues); err != nil {
 		return err
 	}
+	if rawContextPath, ok := kialiValues["contextPath"]; ok {
+		if contextPath, ok := rawContextPath.(string); ok {
+			if err := setHelmStringValue(kialiValues, "contextPath", contextPath); err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
@@ -133,6 +140,18 @@ func populateKialiAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 		setInstall = setInstall || applied
 	} else {
 		return err
+	}
+	if install.Service.Ingress == nil || install.Service.Ingress.ContextPath == "" {
+		// check old kiali.contextPath
+		if contextPath, ok, err := kialiValues.GetString("contextPath"); ok && contextPath != "" {
+			if install.Service.Ingress == nil {
+				install.Service.Ingress = &v2.ComponentIngressConfig{}
+			}
+			install.Service.Ingress.ContextPath = contextPath
+			setInstall = true
+		} else if err != nil {
+			return err
+		}
 	}
 
 	if setInstall {
