@@ -79,6 +79,19 @@ func populateMixerTelemetryValues(in *v2.ControlPlaneSpec, istiod bool, values m
 		}
 	}
 
+	if mixer.Loadshedding != nil {
+		if mixer.Loadshedding.Mode != "" {
+			if err := setHelmStringValue(v1TelemetryValues, "loadshedding.mode", mixer.Loadshedding.Mode); err != nil {
+				return err
+			}
+		}
+		if mixer.Loadshedding.LatencyThreshold != "" {
+			if err := setHelmStringValue(v1TelemetryValues, "loadshedding.latencyThreshold", mixer.Loadshedding.LatencyThreshold); err != nil {
+				return err
+			}
+		}
+	}
+
 	if mixer.Adapters != nil {
 		telemetryAdaptersValues := make(map[string]interface{})
 		if mixer.Adapters.UseAdapterCRDs != nil {
@@ -503,6 +516,25 @@ func populateMixerTelemetryConfig(in *v1.HelmValues, out *v2.MixerTelemetryConfi
 		setValues = true
 	} else if err != nil {
 		return false, nil
+	}
+
+	loadshedding := &v2.TelemetryLoadSheddingConfig{}
+	setLoadshedding := false
+	if mode, ok, err := v1TelemetryValues.GetString("loadshedding.mode"); ok && mode != "" {
+		loadshedding.Mode = mode
+		setLoadshedding = true
+	} else if err != nil {
+		return false, nil
+	}
+	if latencyThreshold, ok, err := v1TelemetryValues.GetString("loadshedding.latencyThreshold"); ok && latencyThreshold != "" {
+		loadshedding.LatencyThreshold = latencyThreshold
+		setLoadshedding = true
+	} else if err != nil {
+		return false, nil
+	}
+	if setLoadshedding {
+		out.Loadshedding = loadshedding
+		setValues = true
 	}
 
 	batching := &v2.TelemetryBatchingConfig{}

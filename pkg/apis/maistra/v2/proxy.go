@@ -1,5 +1,9 @@
 package v2
 
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 // ProxyConfig configures the default sidecar behavior for workloads.
 type ProxyConfig struct {
 	// Logging configures logging for the sidecar.
@@ -12,11 +16,9 @@ type ProxyConfig struct {
 	// Runtime is used to customize runtime configuration for the sidecar container.
 	// +optional
 	Runtime *ProxyRuntimeConfig `json:"runtime,omitempty"`
-	// AutoInject configures automatic injection of sidecar proxies
-	// .Values.global.proxy.autoInject
-	// .Values.sidecarInjectorWebhook.enableNamespacesByDefault
+	// Injection is used to customize sidecar injection for the mesh.
 	// +optional
-	AutoInject *bool `json:"autoInject,omitempty"`
+	Injection *ProxyInjectionConfig `json:"injection,omitempty"`
 	// AdminPort configures the admin port exposed by the sidecar.
 	// maps to defaultConfig.proxyAdminPort, defaults to 15000
 	// XXX: currently not configurable in charts
@@ -48,6 +50,12 @@ type ProxyNetworkingConfig struct {
 	// XXX: currently not exposed through values.yaml
 	// +optional
 	ConnectionTimeout string `json:"connectionTimeout,omitempty"`
+	// MaxConnectionAge limits how long a sidecar can be connected to pilot.
+	// This may be used to balance load across pilot instances, at the cost of
+	// system churn.
+	// .Values.pilot.keepaliveMaxServerConnectionAge
+	// +optional
+	MaxConnectionAge string `json:"maxConnectionAge,omitempty"`
 	// Initialization is used to specify how the pod's networking through the
 	// proxy is initialized.  This configures the use of CNI or an init container.
 	// +optional
@@ -255,6 +263,31 @@ type ProxyReadinessConfig struct {
 	FailureThreshold int32 `json:"failureThreshold,omitempty"`
 }
 
+// ProxyInjectionConfig configures sidecar injection for the mesh.
+type ProxyInjectionConfig struct {
+	// AutoInject configures automatic injection of sidecar proxies
+	// .Values.global.proxy.autoInject
+	// .Values.sidecarInjectorWebhook.enableNamespacesByDefault
+	// +optional
+	AutoInject *bool `json:"autoInject,omitempty"`
+	// AlwaysInjectSelector allows specification of a label selector that when
+	// matched will always inject a sidecar into the pod.
+	// .Values.sidecarInjectorWebhook.alwaysInjectSelector
+	// +optional
+	AlwaysInjectSelector []metav1.LabelSelector `json:"alwaysInjectSelector,omitempty"`
+	// NeverInjectSelector allows specification of a label selector that when
+	// matched will never inject a sidecar into the pod.  This takes precendence
+	// over AlwaysInjectSelector.
+	// .Values.sidecarInjectorWebhook.neverInjectSelector
+	// +optional
+	NeverInjectSelector []metav1.LabelSelector `json:"neverInjectSelector,omitempty"`
+	// InjectedAnnotations allows specification of additional annotations to be
+	// added to pods that have sidecars injected in them.
+	// .Values.sidecarInjectorWebhook.injectedAnnotations
+	// +optional
+	InjectedAnnotations map[string]string `json:"injectedAnnotations,omitempty"`
+}
+
 // ProxyAccessLoggingConfig configures access logging for proxies.  Multiple
 // access logs can be configured.
 type ProxyAccessLoggingConfig struct {
@@ -350,4 +383,3 @@ type EnvoyServiceClientTLSSettings struct {
 	// +optional
 	SubjectAltNames []string `json:"subjectAltNames,omitempty"`
 }
-

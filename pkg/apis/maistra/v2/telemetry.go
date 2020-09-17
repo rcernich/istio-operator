@@ -39,12 +39,29 @@ type MixerTelemetryConfig struct {
 	// .Values.mixer.telemetry.sessionAffinityEnabled, maps to MeshConfig.sidecarToTelemetrySessionAffinity
 	// +optional
 	SessionAffinity *bool `json:"sessionAffinity,omitempty"`
+	// Loadshedding configuration for telemetry
+	// .Values.mixer.telemetry.loadshedding
+	// +optional
+	Loadshedding *TelemetryLoadSheddingConfig `json:"loadshedding,omitempty"`
 	// Batching settings used when sending telemetry.
 	// +optional
 	Batching *TelemetryBatchingConfig `json:"batching,omitempty"`
 	// Adapters configures the adapters used by mixer telemetry.
 	// +optional
 	Adapters *MixerTelemetryAdaptersConfig `json:"adapters,omitempty"`
+}
+
+// TelemetryLoadSheddingConfig configures how mixer telemetry loadshedding behaves
+type TelemetryLoadSheddingConfig struct {
+	// Mode represents the loadshedding mode applied to mixer when it becomes
+	// overloaded.  Valid values: disabled, logonly or enforce
+	// .Values.mixer.telemetry.loadshedding.mode
+	// +optional
+	Mode string `json:"mode,omitempty"`
+	// LatencyThreshold --
+	// .Values.mixer.telemetry.loadshedding.latencyThreshold
+	// +optional
+	LatencyThreshold string `json:"latencyThreshold,omitempty"`
 }
 
 // TelemetryBatchingConfig configures how telemetry data is batched.
@@ -223,15 +240,15 @@ type PrometheusFilterConfig struct {
 type StackDriverFilterConfig struct {
 	// all default to false
 	// +optional
-	Logging         bool              `json:"logging,omitempty"`
+	Logging bool `json:"logging,omitempty"`
 	// +optional
-	Monitoring      bool              `json:"monitoring,omitempty"`
+	Monitoring bool `json:"monitoring,omitempty"`
 	// +optional
-	Topology        bool              `json:"topology,omitempty"`
+	Topology bool `json:"topology,omitempty"`
 	// +optional
-	DisableOutbound bool              `json:"disableOutbound,omitempty"`
+	DisableOutbound bool `json:"disableOutbound,omitempty"`
 	// +optional
-	ConfigOverride  *v1.HelmValues `json:"configOverride,omitempty"`
+	ConfigOverride *v1.HelmValues `json:"configOverride,omitempty"`
 }
 
 // AccessLogTelemetryFilterConfig for v2 telemetry.

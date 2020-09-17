@@ -344,6 +344,7 @@ var prometheusTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"prometheus": map[string]interface{}{
+				"contextPath": "/prometheus",
 				"ingress": map[string]interface{}{
 					"enabled":     true,
 					"contextPath": "/prometheus",

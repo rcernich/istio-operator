@@ -824,6 +824,13 @@ func populateComponentServiceValues(serviceConfig *v2.ComponentServiceConfig, co
 			if err := setHelmValue(componentServiceValues, "ingress", ingressValues); err != nil {
 				return err
 			}
+			// patch up contextPath, as some addons expect this at root, as
+			// opposed to under ingress
+			if contextPath, ok := ingressValues["contextPath"]; ok {
+				if err := setHelmValue(componentServiceValues, "contextPath", contextPath); err != nil {
+					return err
+				}
+			}
 		}
 	} else {
 		return err
@@ -867,6 +874,15 @@ func populateComponentServiceConfig(in *v1.HelmValues, out *v2.ComponentServiceC
 	if rawIngressValues, ok, err := in.GetMap("ingress"); ok && len(rawIngressValues) > 0 {
 		ingressValues := v1.NewHelmValues(rawIngressValues)
 		ingress := &v2.ComponentIngressConfig{}
+		// patch up contextPath, as some addons have this at root, as opposed to
+		// under ingress
+		if _, hasContextPath := rawIngressValues["contextPath"]; !hasContextPath {
+			if contextPath, ok, err := in.GetString("contextPath"); ok && contextPath != "" {
+				rawIngressValues["contextPath"] = contextPath
+			} else if err != nil {
+				return false, err
+			}
+		}
 		if applied, err := populateAddonIngressConfig(ingressValues, ingress); err != nil {
 			return false, err
 		} else if applied {

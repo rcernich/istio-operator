@@ -64,6 +64,11 @@ func populateMixerPolicyValues(in *v2.ControlPlaneSpec, istiod bool, values map[
 			return err
 		}
 	}
+	if mixer.SessionAffinity != nil {
+		if err := setHelmBoolValue(policyValues, "sessionAffinityEnabled", *mixer.SessionAffinity); err != nil {
+			return err
+		}
+	}
 
 	if mixer.Adapters != nil {
 		policyAdaptersValues := make(map[string]interface{})
@@ -263,6 +268,12 @@ func populateMixerPolicyConfig(in *v1.HelmValues, out *v2.MixerPolicyConfig) (bo
 		setValues = true
 	} else if err != nil {
 		return false, err
+	}
+	if sessionAffinityEnabled, ok, err := policyValues.GetBool("sessionAffinityEnabled"); ok {
+		out.SessionAffinity = &sessionAffinityEnabled
+		setValues = true
+	} else if err != nil {
+		return false, nil
 	}
 
 	var policyAdaptersValues *v1.HelmValues

@@ -149,6 +149,16 @@ func populateTracingAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 		return err
 	}
 
+	if rawSampling, ok, err := in.GetFieldNoCopy("pilot.traceSampling"); ok {
+		if sampling, ok := rawSampling.(float64); ok {
+			out.Tracing.Sampling = &sampling
+		} else {
+			return fmt.Errorf("could not convert pilot.traceSampling value to float64: %T", rawSampling)
+		}
+	} else if err != nil {
+		return err
+	}
+
 	switch out.Tracing.Type {
 	case v2.TracerTypeJaeger:
 		return populateJaegerAddonConfig(in, out)

@@ -25,6 +25,13 @@ func populateAddonsValues(in *v2.ControlPlaneSpec, values map[string]interface{}
 			return err
 		}
 	}
+
+	// Tracing
+	if in.Addons.Tracing.Sampling != nil {
+		if err := setHelmValue(values, "pilot.traceSampling", *in.Addons.Tracing.Sampling); err != nil {
+			return err
+		}
+	}
 	switch in.Addons.Tracing.Type {
 	case v2.TracerTypeNone:
 		if err := setHelmBoolValue(values, "tracing.enabled", false); err != nil {

@@ -12,6 +12,7 @@ import (
 var (
 	jaegerMaxTraces              = int64(15000)
 	jaegerElasticsearchNodeCount = int32(5)
+	traceSampling                = float64(100.0)
 )
 
 var jaegerTestCases = []conversionTestCase{
@@ -21,11 +22,18 @@ var jaegerTestCases = []conversionTestCase{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
 				Tracing: v2.TracingConfig{
-					Type: v2.TracerTypeNone,
+					Type:     v2.TracerTypeNone,
+					Sampling: &traceSampling,
 				},
 			},
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
+			"global": map[string]interface{}{
+				"enableTracing": false,
+			},
+			"pilot": map[string]interface{}{
+				"traceSampling": 100.0,
+			},
 			"tracing": map[string]interface{}{
 				"enabled":  false,
 				"provider": "none",
@@ -57,6 +65,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -92,6 +101,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -129,6 +139,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -170,6 +181,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -213,6 +225,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -258,6 +271,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -305,6 +319,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -354,6 +369,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -403,6 +419,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -450,6 +467,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -509,6 +527,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -565,6 +584,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
@@ -620,6 +640,7 @@ var jaegerTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
+				"enableTracing": true,
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},

@@ -533,6 +533,7 @@ var grafanaTestCases = []conversionTestCase{
 		},
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"grafana": map[string]interface{}{
+				"contextPath": "/grafana",
 				"ingress": map[string]interface{}{
 					"enabled":     true,
 					"contextPath": "/grafana",

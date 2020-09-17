@@ -16,20 +16,6 @@ func populateProxyValues(in *v2.ControlPlaneSpec, values map[string]interface{})
 	proxyValues := make(map[string]interface{})
 
 	// General
-	if proxy.AutoInject != nil {
-		if err := setHelmBoolValue(values, "sidecarInjectorWebhook.enableNamespacesByDefault", *proxy.AutoInject); err != nil {
-			return err
-		}
-		if *proxy.AutoInject {
-			if err := setHelmStringValue(proxyValues, "autoInject", "enabled"); err != nil {
-				return err
-			}
-		} else {
-			if err := setHelmStringValue(proxyValues, "autoInject", "disabled"); err != nil {
-				return err
-			}
-		}
-	}
 	if proxy.Concurrency != nil {
 		if err := setHelmIntValue(proxyValues, "concurrency", int64(*proxy.Concurrency)); err != nil {
 			return err
@@ -57,6 +43,11 @@ func populateProxyValues(in *v2.ControlPlaneSpec, values map[string]interface{})
 		// XXX: proxy.Networking.ConnectionTimeout is not exposed through values
 		if proxy.Networking.ConnectionTimeout != "" {
 			if err := setHelmStringValue(proxyValues, "connectionTimeout", proxy.Networking.ConnectionTimeout); err != nil {
+				return err
+			}
+		}
+		if proxy.Networking.MaxConnectionAge != "" {
+			if err := setHelmStringValue(values, "pilot.keepaliveMaxServerConnectionAge", proxy.Networking.MaxConnectionAge); err != nil {
 				return err
 			}
 		}
@@ -164,6 +155,60 @@ func populateProxyValues(in *v2.ControlPlaneSpec, values map[string]interface{})
 				if err := setHelmStringValue(proxyValues, "dnsRefreshRate", proxy.Networking.DNS.RefreshRate); err != nil {
 					return err
 				}
+			}
+		}
+	}
+
+	// Injection
+	if proxy.Injection != nil {
+		injection := proxy.Injection
+		if injection.AutoInject != nil {
+			if err := setHelmBoolValue(values, "sidecarInjectorWebhook.enableNamespacesByDefault", *injection.AutoInject); err != nil {
+				return err
+			}
+			if *injection.AutoInject {
+				if err := setHelmStringValue(proxyValues, "autoInject", "enabled"); err != nil {
+					return err
+				}
+			} else {
+				if err := setHelmStringValue(proxyValues, "autoInject", "disabled"); err != nil {
+					return err
+				}
+			}
+		}
+		if len(injection.AlwaysInjectSelector) > 0 {
+			untypedSlice := make([]interface{}, len(injection.AlwaysInjectSelector))
+			for index, value := range injection.AlwaysInjectSelector {
+				untypedSlice[index] = value
+			}
+			if alwaysInjectSelector, err := sliceToValues(untypedSlice); err == nil {
+				if err := setHelmValue(values, "sidecarInjectorWebhook.alwaysInjectSelector", alwaysInjectSelector); err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		}
+		if len(injection.NeverInjectSelector) > 0 {
+			untypedSlice := make([]interface{}, len(injection.NeverInjectSelector))
+			for index, value := range injection.NeverInjectSelector {
+				untypedSlice[index] = value
+			}
+			if neverInjectSelector, err := sliceToValues(untypedSlice); err == nil {
+				if err := setHelmValue(values, "sidecarInjectorWebhook.neverInjectSelector", neverInjectSelector); err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		}
+		if len(injection.InjectedAnnotations) > 0 {
+			if injectedAnnotations, err := toValues(injection.InjectedAnnotations); err == nil {
+				if err := setHelmValue(values, "sidecarInjectorWebhook.injectedAnnotations", injectedAnnotations); err != nil {
+					return err
+				}
+			} else {
+				return err
 			}
 		}
 	}
@@ -314,24 +359,6 @@ func populateProxyConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	proxyValues := v1.NewHelmValues(rawProxyValues)
 
 	// General
-	if autoInject, ok, err := proxyValues.GetString("autoInject"); ok {
-		if autoInject == "enabled" {
-			enabled := true
-			proxy.AutoInject = &enabled
-			setProxy = true
-		} else {
-			disabled := false
-			proxy.AutoInject = &disabled
-			setProxy = true
-		}
-	} else if err != nil {
-		return err
-	} else if enableNamespacesByDefault, ok, err := in.GetBool("sidecarInjectorWebhook.enableNamespacesByDefault"); ok {
-		proxy.AutoInject = &enableNamespacesByDefault
-		setProxy = true
-	} else if err != nil {
-		return err
-	}
 	if rawConcurrency, ok, err := proxyValues.GetInt64("concurrency"); ok {
 		concurrency := int32(rawConcurrency)
 		proxy.Concurrency = &concurrency
@@ -366,6 +393,12 @@ func populateProxyConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	}
 	if connectionTimeout, ok, err := proxyValues.GetString("connectionTimeout"); ok {
 		networking.ConnectionTimeout = connectionTimeout
+		setNetworking = true
+	} else if err != nil {
+		return err
+	}
+	if maxConnectionAge, ok, err := in.GetString("pilot.keepaliveMaxServerConnectionAge"); ok {
+		networking.MaxConnectionAge = maxConnectionAge
 		setNetworking = true
 	} else if err != nil {
 		return err
@@ -537,6 +570,56 @@ func populateProxyConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	}
 	if setNetworking {
 		proxy.Networking = networking
+		setProxy = true
+	}
+
+	// Injection
+	injection := &v2.ProxyInjectionConfig{}
+	setInjection := false
+	if autoInject, ok, err := proxyValues.GetString("autoInject"); ok {
+		if autoInject == "enabled" {
+			enabled := true
+			injection.AutoInject = &enabled
+			setInjection = true
+		} else {
+			disabled := false
+			injection.AutoInject = &disabled
+			setInjection = true
+		}
+	} else if err != nil {
+		return err
+	} else if enableNamespacesByDefault, ok, err := in.GetBool("sidecarInjectorWebhook.enableNamespacesByDefault"); ok {
+		injection.AutoInject = &enableNamespacesByDefault
+		setInjection = true
+	} else if err != nil {
+		return err
+	}
+	if alwaysInjectSelector, ok, err := in.GetFieldNoCopy("sidecarInjectorWebhook.alwaysInjectSelector"); ok {
+		if err := fromValues(alwaysInjectSelector, &injection.AlwaysInjectSelector); err != nil {
+			return err
+		}
+		setInjection = true
+	} else if err != nil {
+		return err
+	}
+	if neverInjectSelector, ok, err := in.GetFieldNoCopy("sidecarInjectorWebhook.neverInjectSelector"); ok {
+		if err := fromValues(neverInjectSelector, &injection.NeverInjectSelector); err != nil {
+			return err
+		}
+		setInjection = true
+	} else if err != nil {
+		return err
+	}
+	if injectedAnnotations, ok, err := in.GetFieldNoCopy("sidecarInjectorWebhook.injectedAnnotations"); ok {
+		if err := fromValues(injectedAnnotations, &injection.InjectedAnnotations); err != nil {
+			return err
+		}
+		setInjection = true
+	} else if err != nil {
+		return err
+	}
+	if setInjection {
+		proxy.Injection = injection
 		setProxy = true
 	}
 

@@ -689,6 +689,10 @@ var telemetryTestCases = []conversionTestCase{
 						MaxEntries: &batchMaxEntries100,
 						MaxTime:    "5",
 					},
+					Loadshedding: &v2.TelemetryLoadSheddingConfig{
+						Mode:             "enforce",
+						LatencyThreshold: "100ms",
+					},
 				},
 			},
 		},
@@ -700,6 +704,10 @@ var telemetryTestCases = []conversionTestCase{
 					"reportBatchMaxEntries":  100,
 					"reportBatchMaxTime":     "5",
 					"sessionAffinityEnabled": true,
+					"loadshedding": map[string]interface{}{
+						"mode":             "enforce",
+						"latencyThreshold": "100ms",
+					},
 				},
 			},
 			"telemetry": map[string]interface{}{
@@ -1561,6 +1569,10 @@ var telemetryTestCases = []conversionTestCase{
 						MaxEntries: &batchMaxEntries100,
 						MaxTime:    "5",
 					},
+					Loadshedding: &v2.TelemetryLoadSheddingConfig{
+						Mode:             "enforce",
+						LatencyThreshold: "100ms",
+					},
 				},
 			},
 		},
@@ -1572,6 +1584,10 @@ var telemetryTestCases = []conversionTestCase{
 					"reportBatchMaxEntries":  100,
 					"reportBatchMaxTime":     "5",
 					"sessionAffinityEnabled": true,
+					"loadshedding": map[string]interface{}{
+						"mode":             "enforce",
+						"latencyThreshold": "100ms",
+					},
 				},
 			},
 			"telemetry": map[string]interface{}{

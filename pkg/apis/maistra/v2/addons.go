@@ -31,6 +31,11 @@ type MetricsAddonsConfig struct {
 type TracingConfig struct {
 	// Type represents the type of tracer to be installed.
 	Type TracerType `json:"type,omitempty"`
+	// Sampling sets the mesh-wide trace sampling percentage. Should be between
+	// 0.0 - 100.0. Precision to 0.01
+	// .Values.pilot.traceSampling
+	// +optional
+	Sampling *float64 `json:"sampling,omitempty"`
 	// Jaeger configures Jaeger as the tracer used with the mesh.
 	// .Values.tracing.jaeger.enabled, true if not null
 	// implies other settings related to tracing, e.g. .Values.global.tracer.zipkin.address,

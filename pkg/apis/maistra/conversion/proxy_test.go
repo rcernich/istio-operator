@@ -6,6 +6,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 	v2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
@@ -96,7 +97,6 @@ var proxyTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Proxy: &v2.ProxyConfig{
-				AutoInject:  &featureEnabled,
 				AdminPort:   12345,
 				Concurrency: &proxyConcurrency4,
 			},
@@ -104,13 +104,9 @@ var proxyTestCases = []conversionTestCase{
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
 				"proxy": map[string]interface{}{
-					"autoInject":  "enabled",
 					"concurrency": 4,
 					"adminPort":   12345,
 				},
-			},
-			"sidecarInjectorWebhook": map[string]interface{}{
-				"enableNamespacesByDefault": true,
 			},
 		}),
 		completeIstio: v1.NewHelmValues(map[string]interface{}{
@@ -134,6 +130,7 @@ var proxyTestCases = []conversionTestCase{
 				Networking: &v2.ProxyNetworkingConfig{
 					ClusterDomain:     "example.com",
 					ConnectionTimeout: "30s",
+					MaxConnectionAge:  "30m",
 				},
 			},
 		},
@@ -143,6 +140,9 @@ var proxyTestCases = []conversionTestCase{
 					"clusterDomain":     "example.com",
 					"connectionTimeout": "30s",
 				},
+			},
+			"pilot": map[string]interface{}{
+				"keepaliveMaxServerConnectionAge": "30m",
 			},
 		}),
 		completeIstio: v1.NewHelmValues(map[string]interface{}{
@@ -792,6 +792,107 @@ var proxyTestCases = []conversionTestCase{
 				"proxy": map[string]interface{}{
 					"excludeIPRanges":      "",
 					"excludeOutboundPorts": "",
+				},
+			},
+		}),
+		completeIstio: v1.NewHelmValues(map[string]interface{}{
+			"global": map[string]interface{}{
+				"useMCP": true,
+				"multiCluster": map[string]interface{}{
+					"enabled": false,
+				},
+				"meshExpansion": map[string]interface{}{
+					"enabled": false,
+					"useILB":  false,
+				},
+			},
+		}),
+	},
+	{
+		name: "injection.empty." + versions.V2_0.String(),
+		spec: &v2.ControlPlaneSpec{
+			Version: versions.V2_0.String(),
+			Proxy: &v2.ProxyConfig{
+				Injection: &v2.ProxyInjectionConfig{},
+			},
+		},
+		isolatedIstio: v1.NewHelmValues(map[string]interface{}{}),
+		completeIstio: v1.NewHelmValues(map[string]interface{}{
+			"global": map[string]interface{}{
+				"useMCP": true,
+				"multiCluster": map[string]interface{}{
+					"enabled": false,
+				},
+				"meshExpansion": map[string]interface{}{
+					"enabled": false,
+					"useILB":  false,
+				},
+			},
+		}),
+	},
+	{
+		name: "injection.full." + versions.V2_0.String(),
+		spec: &v2.ControlPlaneSpec{
+			Version: versions.V2_0.String(),
+			Proxy: &v2.ProxyConfig{
+				Injection: &v2.ProxyInjectionConfig{
+					AutoInject: &featureEnabled,
+					AlwaysInjectSelector: []metav1.LabelSelector{
+						{
+							MatchLabels: map[string]string{
+								"some-label": "some-value",
+							},
+						},
+					},
+					NeverInjectSelector: []metav1.LabelSelector{
+						{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      "some-label",
+									Operator: metav1.LabelSelectorOpNotIn,
+									Values: []string{
+										"some-value",
+									},
+								},
+							},
+						},
+					},
+					InjectedAnnotations: map[string]string{
+						"some-annotation": "some-annotation-value",
+					},
+				},
+			},
+		},
+		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
+			"global": map[string]interface{}{
+				"proxy": map[string]interface{}{
+					"autoInject": "enabled",
+				},
+			},
+			"sidecarInjectorWebhook": map[string]interface{}{
+				"enableNamespacesByDefault": true,
+				"alwaysInjectSelector": []interface{}{
+					map[string]interface{}{
+						"matchLabels": map[string]interface{}{
+							"some-label": "some-value",
+						},
+					},
+				},
+				"neverInjectSelector": []interface{}{
+					map[string]interface{}{
+						"matchExpressions": []interface{}{
+							map[string]interface{}{
+								"key":      "some-label",
+								"operator": "NotIn",
+								"values": []interface{}{
+									"some-value",
+								},
+							},
+						},
+					},
+				},
+				"injectedAnnotations": map[string]interface{}{
+					"some-annotation": "some-annotation-value",
 				},
 			},
 		}),
