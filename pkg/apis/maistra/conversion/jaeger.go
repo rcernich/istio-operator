@@ -86,7 +86,7 @@ func populateJaegerAddonValues(jaeger *v2.JaegerTracerConfig, values map[string]
 				}
 				if len(jaeger.Install.Storage.Elasticsearch.IndexCleaner.GetContent()) > 0 {
 					if cleanerValues, err := toValues(jaeger.Install.Storage.Elasticsearch.IndexCleaner.GetContent()); err == nil {
-						if err := setHelmValue(elasticSearchValues, "esIndexCleaner", cleanerValues); err != nil {
+						if err := setHelmValue(jaegerValues, "esIndexCleaner", cleanerValues); err != nil {
 							return err
 						}
 					} else {
@@ -260,7 +260,7 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 		} else if err != nil {
 			return err
 		}
-		if rawESIndexCleaner, ok, err := elasticsearchValues.GetMap("esIndexCleaner"); ok && len(rawESIndexCleaner) > 0 {
+		if rawESIndexCleaner, ok, err := jaegerValues.GetMap("esIndexCleaner"); ok && len(rawESIndexCleaner) > 0 {
 			esIndexCleaner := v1.NewHelmValues(nil)
 			if err := fromValues(rawESIndexCleaner, esIndexCleaner); err == nil {
 				elasticsearch.IndexCleaner = esIndexCleaner

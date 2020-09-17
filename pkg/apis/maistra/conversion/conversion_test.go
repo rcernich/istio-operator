@@ -173,6 +173,9 @@ func mergeMaps(source, target map[string]interface{}) {
 				if valmap, ok := val.(map[string]interface{}); ok {
 					mergeMaps(valmap, targetmap)
 					continue
+				} else if valmap == nil {
+					delete(target, key)
+					continue
 				} else {
 					panic(fmt.Sprintf("trying to merge non-map into map: key=%v, value=:%v", key, val))
 				}

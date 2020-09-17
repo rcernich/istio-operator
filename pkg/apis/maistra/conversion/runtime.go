@@ -620,89 +620,93 @@ func runtimeValuesToAutoscalingConfig(in *v1.HelmValues, out *v2.DeploymentRunti
 }
 
 func populateControlPlaneRuntimeConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) (bool, error) {
-	rawGlobalValues, ok, err := in.GetMap("global")
-	if err != nil {
-		return false, err
-	} else if !ok || len(rawGlobalValues) == 0 {
-		return false, nil
-	}
-	globalValues := v1.NewHelmValues(rawGlobalValues)
 	runtime := &v2.ControlPlaneRuntimeConfig{}
 	setRuntime := false
 
-	defaults := &v2.DefaultRuntimeConfig{}
-	setDefaults := false
+	rawGlobalValues, ok, err := in.GetMap("global")
+	if err != nil {
+		return false, err
+	} else if ok && len(rawGlobalValues) > 0 {
+		globalValues := v1.NewHelmValues(rawGlobalValues)
 
-	if rawPDBValues, ok, err := globalValues.GetMap("defaultPodDisruptionBudget"); ok && len(rawPDBValues) > 0 {
-		pdbValues := v1.NewHelmValues(rawPDBValues)
-		if pdbEnabled, ok, err := pdbValues.GetBool("enabled"); ok && pdbEnabled {
-			defaults.Deployment = &v2.CommonDeploymentRuntimeConfig{
-				PodDisruption: &v2.PodDisruptionBudget{},
-			}
-			setDefaults = true
-			if err := fromValues(pdbValues, defaults.Deployment.PodDisruption); err != nil {
+		defaults := &v2.DefaultRuntimeConfig{}
+		setDefaults := false
+
+		if rawPDBValues, ok, err := globalValues.GetMap("defaultPodDisruptionBudget"); ok && len(rawPDBValues) > 0 {
+			pdbValues := v1.NewHelmValues(rawPDBValues)
+			if pdbEnabled, ok, err := pdbValues.GetBool("enabled"); ok && pdbEnabled {
+				defaults.Deployment = &v2.CommonDeploymentRuntimeConfig{
+					PodDisruption: &v2.PodDisruptionBudget{},
+				}
+				setDefaults = true
+				if err := fromValues(pdbValues, defaults.Deployment.PodDisruption); err != nil {
+					return false, err
+				}
+			} else if err != nil {
 				return false, err
 			}
 		} else if err != nil {
 			return false, err
 		}
-	} else if err != nil {
-		return false, err
-	}
 
-	pod := &v2.CommonPodRuntimeConfig{}
-	setPod := false
-	if nodeSelector, ok, err := globalValues.GetMap("defaultNodeSelector"); ok && len(nodeSelector) > 0 {
-		pod.NodeSelector = make(map[string]string)
-		setPod = true
-		if err := fromValues(nodeSelector, &pod.NodeSelector); err != nil {
-			return false, err
-		}
-	} else if err != nil {
-		return false, err
-	}
-	if tolerations, ok, err := globalValues.GetSlice("defaultTolerations"); ok && len(tolerations) > 0 {
-		pod.Tolerations = make([]corev1.Toleration, len(tolerations))
-		setPod = true
-		for index, tolerationValues := range tolerations {
-			if err := fromValues(tolerationValues, &pod.Tolerations[index]); err != nil {
+		pod := &v2.CommonPodRuntimeConfig{}
+		setPod := false
+		if nodeSelector, ok, err := globalValues.GetMap("defaultNodeSelector"); ok && len(nodeSelector) > 0 {
+			pod.NodeSelector = make(map[string]string)
+			setPod = true
+			if err := fromValues(nodeSelector, &pod.NodeSelector); err != nil {
 				return false, err
 			}
-		}
-	} else if err != nil {
-		return false, err
-	}
-	if priorityClassName, ok, err := globalValues.GetString("priorityClassName"); ok {
-		pod.PriorityClassName = priorityClassName
-		setPod = true
-	} else if err != nil {
-		return false, err
-	}
-
-	if setPod {
-		defaults.Pod = pod
-		setDefaults = true
-	}
-
-	container := &v2.CommonContainerConfig{}
-	if applied, err := populateCommonContainerConfig(globalValues, container); err != nil {
-		return false, err
-	} else if applied {
-		defaults.Container = container
-		setDefaults = true
-	}
-	// global resources use a different key
-	if resourcesValues, ok, err := globalValues.GetMap("defaultResources"); ok && len(resourcesValues) > 0 {
-		container.Resources = &corev1.ResourceRequirements{}
-		if err := fromValues(resourcesValues, container.Resources); err != nil {
+		} else if err != nil {
 			return false, err
 		}
-		if defaults.Container == nil {
-			defaults.Container = container
+		if tolerations, ok, err := globalValues.GetSlice("defaultTolerations"); ok && len(tolerations) > 0 {
+			pod.Tolerations = make([]corev1.Toleration, len(tolerations))
+			setPod = true
+			for index, tolerationValues := range tolerations {
+				if err := fromValues(tolerationValues, &pod.Tolerations[index]); err != nil {
+					return false, err
+				}
+			}
+		} else if err != nil {
+			return false, err
 		}
-		setDefaults = true
-	} else if err != nil {
-		return false, err
+		if priorityClassName, ok, err := globalValues.GetString("priorityClassName"); ok {
+			pod.PriorityClassName = priorityClassName
+			setPod = true
+		} else if err != nil {
+			return false, err
+		}
+
+		if setPod {
+			defaults.Pod = pod
+			setDefaults = true
+		}
+
+		container := &v2.CommonContainerConfig{}
+		if applied, err := populateCommonContainerConfig(globalValues, container); err != nil {
+			return false, err
+		} else if applied {
+			defaults.Container = container
+			setDefaults = true
+		}
+		// global resources use a different key
+		if resourcesValues, ok, err := globalValues.GetMap("defaultResources"); ok && len(resourcesValues) > 0 {
+			container.Resources = &corev1.ResourceRequirements{}
+			if err := fromValues(resourcesValues, container.Resources); err != nil {
+				return false, err
+			}
+			if defaults.Container == nil {
+				defaults.Container = container
+			}
+			setDefaults = true
+		} else if err != nil {
+			return false, err
+		}
+		if setDefaults {
+			runtime.Defaults = defaults
+			setRuntime = true
+		}
 	}
 
 	runtime.Components = make(map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig)
@@ -721,11 +725,6 @@ func populateControlPlaneRuntimeConfig(in *v1.HelmValues, out *v2.ControlPlaneSp
 	}
 	if len(runtime.Components) == 0 {
 		runtime.Components = nil
-	}
-
-	if setDefaults {
-		runtime.Defaults = defaults
-		setRuntime = true
 	}
 
 	if setRuntime {

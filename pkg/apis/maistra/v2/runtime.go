@@ -46,6 +46,14 @@ const (
 	ControlPlaneComponentNameTracingJaeger ControlPlaneComponentName = "tracing.jaeger"
 	// ControlPlaneComponentNameTracingJaegerElasticsearch - tracing.jaeger.elasticsearch
 	ControlPlaneComponentNameTracingJaegerElasticsearch ControlPlaneComponentName = "tracing.jaeger.elasticsearch"
+	// ControlPlaneComponentNameTracingJaegerAgent - tracing.jaeger.agent
+	ControlPlaneComponentNameTracingJaegerAgent ControlPlaneComponentName = "tracing.jaeger.agent"
+	// ControlPlaneComponentNameTracingJaegerAllInOne - tracing.jaeger.allInOne
+	ControlPlaneComponentNameTracingJaegerAllInOne ControlPlaneComponentName = "tracing.jaeger.allInOne"
+	// ControlPlaneComponentNameTracingJaegerCollector - tracing.jaeger.collector
+	ControlPlaneComponentNameTracingJaegerCollector ControlPlaneComponentName = "tracing.jaeger.collector"
+	// ControlPlaneComponentNameTracingJaegerQuery - tracing.jaeger.query
+	ControlPlaneComponentNameTracingJaegerQuery ControlPlaneComponentName = "tracing.jaeger.query"
 	// ControlPlaneComponentNamePrometheus - prometheus
 	ControlPlaneComponentNamePrometheus ControlPlaneComponentName = "prometheus"
 	// ControlPlaneComponentNameKiali - kiali
@@ -68,6 +76,10 @@ var ControlPlaneComponentNames = []ControlPlaneComponentName{
 	ControlPlaneComponentNameTracing,
 	ControlPlaneComponentNameTracingJaeger,
 	ControlPlaneComponentNameTracingJaegerElasticsearch,
+	ControlPlaneComponentNameTracingJaegerAgent,
+	ControlPlaneComponentNameTracingJaegerAllInOne,
+	ControlPlaneComponentNameTracingJaegerCollector,
+	ControlPlaneComponentNameTracingJaegerQuery,
 	ControlPlaneComponentNamePrometheus,
 	ControlPlaneComponentNameKiali,
 	ControlPlaneComponentNameGrafana,

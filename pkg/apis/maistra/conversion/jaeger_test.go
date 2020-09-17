@@ -539,17 +539,17 @@ var jaegerTestCases = []conversionTestCase{
 					"resourceName": "my-jaeger",
 					"template":     "production-elasticsearch",
 					"elasticsearch": map[string]interface{}{
-						"nodeCount": 5,
-						"esIndexCleaner": map[string]interface{}{
-							"enabled":      true,
-							"numberOfDays": 7,
-							"schedule":     "55 23 * * *"},
+						"nodeCount":        5,
 						"redundancyPolicy": "ZeroRedundancy",
 						"storage": map[string]interface{}{
 							"size":             "5Gi",
 							"storageClassName": "gp2",
 						},
 					},
+					"esIndexCleaner": map[string]interface{}{
+						"enabled":      true,
+						"numberOfDays": 7,
+						"schedule":     "55 23 * * *"},
 				},
 			},
 		}),

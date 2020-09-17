@@ -10,6 +10,53 @@ import (
 	"github.com/maistra/istio-operator/pkg/controller/versions"
 )
 
+func v1ToV2Hacks(in *v1.ControlPlaneSpec, values *v1.HelmValues) error {
+	// adjustments for 3scale
+	if in.ThreeScale != nil {
+		values.SetField("3scale", in.ThreeScale.DeepCopy().GetContent())
+	}
+
+	// move tracing.jaeger.annotations to tracing.jaeger.podAnnotations
+	if jaegerAnnotations, ok, err := values.GetFieldNoCopy("tracing.jaeger.annotations"); ok {
+		if err := values.SetField("tracing.jaeger.podAnnotations", jaegerAnnotations); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	// normalize jaeger images
+	if agentImage, ok, err := values.GetString("tracing.jaeger.agentImage"); ok {
+		if err := values.SetField("tracing.jaeger.agent.image", agentImage); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	if allInOneImage, ok, err := values.GetString("tracing.jaeger.allInOneImage"); ok {
+		if err := values.SetField("tracing.jaeger.allInOne.image", allInOneImage); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	if collectorImage, ok, err := values.GetString("tracing.jaeger.collectorImage"); ok {
+		if err := values.SetField("tracing.jaeger.collector.image", collectorImage); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	if queryImage, ok, err := values.GetString("tracing.jaeger.queryImage"); ok {
+		if err := values.SetField("tracing.jaeger.query.image", queryImage); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Convert_v1_ControlPlaneSpec_To_v2_ControlPlaneSpec converts a v1 ControlPlaneSpec to its v2 equivalent.
 func Convert_v1_ControlPlaneSpec_To_v2_ControlPlaneSpec(in *v1.ControlPlaneSpec, out *v2.ControlPlaneSpec, s conversion.Scope) error {
 
@@ -29,9 +76,8 @@ func Convert_v1_ControlPlaneSpec_To_v2_ControlPlaneSpec(in *v1.ControlPlaneSpec,
 	// copy to preserve input
 	values := in.Istio.DeepCopy()
 
-	// adjustments for 3scale
-	if in.ThreeScale != nil {
-		values.SetField("3scale", in.ThreeScale.DeepCopy().GetContent())
+	if err := v1ToV2Hacks(in, values); err != nil {
+		return err
 	}
 
 	// Cluster settings
