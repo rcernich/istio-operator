@@ -2,6 +2,7 @@ package conversion
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	v1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
@@ -57,14 +58,10 @@ func populateSecurityValues(in *v2.ControlPlaneSpec, values map[string]interface
 			if in.Version == versions.V2_0.String() {
 				// configure pilot (istiod) settings
 				if istiod.WorkloadCertTTLDefault != "" {
-					if err := setHelmStringValue(values, "pilot.env.DEFAULT_WORKLOAD_CERT_TTL", istiod.WorkloadCertTTLDefault); err != nil {
-						return err
-					}
+					addEnvToComponent(in, "pilot", "DEFAULT_WORKLOAD_CERT_TTL", istiod.WorkloadCertTTLDefault)
 				}
 				if istiod.WorkloadCertTTLMax != "" {
-					if err := setHelmStringValue(values, "pilot.env.MAX_WORKLOAD_CERT_TTL", istiod.WorkloadCertTTLMax); err != nil {
-						return err
-					}
+					addEnvToComponent(in, "pilot", "MAX_WORKLOAD_CERT_TTL", istiod.WorkloadCertTTLMax)
 				}
 			} else {
 				// configure security (citadel) settings
@@ -89,9 +86,7 @@ func populateSecurityValues(in *v2.ControlPlaneSpec, values map[string]interface
 				if in.Version == versions.V2_0.String() {
 					// configure pilot (istiod) settings
 					if pksigner.RootCADir != "" {
-						if err := setHelmStringValue(values, "pilot.env.ROOT_CA_DIR", pksigner.RootCADir); err != nil {
-							return err
-						}
+						addEnvToComponent(in, "pilot", "ROOT_CA_DIR", pksigner.RootCADir)
 					}
 					// XXX: nothing else is currently configurable
 				} else {
@@ -99,9 +94,7 @@ func populateSecurityValues(in *v2.ControlPlaneSpec, values map[string]interface
 					// XXX: nothing here is currently configurable for pre-1.6
 					if pksigner.RootCADir != "" {
 						// to support roundtripping
-						if err := setHelmStringValue(values, "pilot.env.ROOT_CA_DIR", pksigner.RootCADir); err != nil {
-							return err
-						}
+						addEnvToComponent(in, "pilot", "ROOT_CA_DIR", pksigner.RootCADir)
 					}
 				}
 			case v2.IstioCertificateSignerTypeSelfSigned:
@@ -120,24 +113,16 @@ func populateSecurityValues(in *v2.ControlPlaneSpec, values map[string]interface
 					componentRoot = "security"
 				}
 				if selfSigned.TTL != "" {
-					if err := setHelmStringValue(values, componentRoot+".env.CITADEL_SELF_SIGNED_CA_CERT_TTL", selfSigned.TTL); err != nil {
-						return err
-					}
+					addEnvToComponent(in, componentRoot, "CITADEL_SELF_SIGNED_CA_CERT_TTL", selfSigned.TTL)
 				}
 				if selfSigned.GracePeriod != "" {
-					if err := setHelmStringValue(values, componentRoot+".env.CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE", selfSigned.GracePeriod); err != nil {
-						return err
-					}
+					addEnvToComponent(in, componentRoot, "CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE", selfSigned.GracePeriod)
 				}
 				if selfSigned.CheckPeriod != "" {
-					if err := setHelmStringValue(values, componentRoot+".env.CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL", selfSigned.CheckPeriod); err != nil {
-						return err
-					}
+					addEnvToComponent(in, componentRoot, "CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL", selfSigned.CheckPeriod)
 				}
 				if selfSigned.EnableJitter != nil {
-					if err := setHelmBoolValue(values, componentRoot+".env.CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR", *selfSigned.EnableJitter); err != nil {
-						return err
-					}
+					addEnvToComponent(in, componentRoot, "CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR", strconv.FormatBool(*selfSigned.EnableJitter))
 				}
 				// XXX: selfSigned.Org is not supported
 			case "":
@@ -182,9 +167,7 @@ func populateSecurityValues(in *v2.ControlPlaneSpec, values map[string]interface
 			}
 			if tpi.Issuer != "" {
 				// XXX: only supported in 1.6+
-				if err := setHelmStringValue(values, "pilot.env.TOKEN_ISSUER", tpi.Issuer); err != nil {
-					return err
-				}
+				addEnvToComponent(in, "pilot", "TOKEN_ISSUER", tpi.Issuer)
 			}
 			if tpi.Audience != "" {
 				if err := setHelmStringValue(values, "global.sds.token.aud", tpi.Audience); err != nil {
@@ -317,47 +300,55 @@ func populateSecurityConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 			istiod.Type = v2.IstioCertificateSignerTypeSelfSigned
 			selfSignedConfig := &v2.IstioSelfSignedCertificateSignerConfig{}
 			setSelfSigned := false
-			if ttl, ok, err := in.GetString("pilot.env.CITADEL_SELF_SIGNED_CA_CERT_TTL"); ok {
+			if ttl, ok, err := getAndClearComponentEnv(in, "pilot", "CITADEL_SELF_SIGNED_CA_CERT_TTL"); ok {
 				selfSignedConfig.TTL = ttl
 				setSelfSigned = true
 			} else if err != nil {
 				return err
-			} else if ttl, ok, err := in.GetString("security.env.CITADEL_SELF_SIGNED_CA_CERT_TTL"); ok {
+			} else if ttl, ok, err := getAndClearComponentEnv(in, "security", "CITADEL_SELF_SIGNED_CA_CERT_TTL"); ok {
 				selfSignedConfig.TTL = ttl
 				setSelfSigned = true
 			} else if err != nil {
 				return err
 			}
-			if gracePeriod, ok, err := in.GetString("pilot.env.CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE"); ok {
+			if gracePeriod, ok, err := getAndClearComponentEnv(in, "pilot", "CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE"); ok {
 				selfSignedConfig.GracePeriod = gracePeriod
 				setSelfSigned = true
 			} else if err != nil {
 				return err
-			} else if gracePeriod, ok, err := in.GetString("security.env.CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE"); ok {
+			} else if gracePeriod, ok, err := getAndClearComponentEnv(in, "security", "CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE"); ok {
 				selfSignedConfig.GracePeriod = gracePeriod
 				setSelfSigned = true
 			} else if err != nil {
 				return err
 			}
-			if checkPeriod, ok, err := in.GetString("pilot.env.CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL"); ok {
+			if checkPeriod, ok, err := getAndClearComponentEnv(in, "pilot", "CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL"); ok {
 				selfSignedConfig.CheckPeriod = checkPeriod
 				setSelfSigned = true
 			} else if err != nil {
 				return err
-			} else if checkPeriod, ok, err := in.GetString("security.env.CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL"); ok {
+			} else if checkPeriod, ok, err := getAndClearComponentEnv(in, "security", "CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL"); ok {
 				selfSignedConfig.CheckPeriod = checkPeriod
 				setSelfSigned = true
 			} else if err != nil {
 				return err
 			}
-			if enableJitter, ok, err := in.GetBool("pilot.env.CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR"); ok {
-				selfSignedConfig.EnableJitter = &enableJitter
-				setSelfSigned = true
+			if rawnEableJitter, ok, err := getAndClearComponentEnv(in, "pilot", "CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR"); ok {
+				if enableJitter, err := strconv.ParseBool(rawnEableJitter); err == nil {
+					selfSignedConfig.EnableJitter = &enableJitter
+					setSelfSigned = true
+				} else {
+					return err
+				}
 			} else if err != nil {
 				return err
-			} else if enableJitter, ok, err := in.GetBool("security.env.CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR"); ok {
-				selfSignedConfig.EnableJitter = &enableJitter
-				setSelfSigned = true
+			} else if rawnEableJitter, ok, err := getAndClearComponentEnv(in, "security", "CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR"); ok {
+				if enableJitter, err := strconv.ParseBool(rawnEableJitter); err == nil {
+					selfSignedConfig.EnableJitter = &enableJitter
+					setSelfSigned = true
+				} else {
+					return err
+				}
 			} else if err != nil {
 				return err
 			}
@@ -366,7 +357,7 @@ func populateSecurityConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 			}
 		case v2.IstioCertificateSignerTypePrivateKey:
 			istiod.Type = v2.IstioCertificateSignerTypePrivateKey
-			if rootCADir, ok, err := in.GetString("pilot.env.ROOT_CA_DIR"); ok {
+			if rootCADir, ok, err := getAndClearComponentEnv(in, "pilot", "ROOT_CA_DIR"); ok {
 				istiod.PrivateKey = &v2.IstioPrivateKeyCertificateSignerConfig{
 					RootCADir: rootCADir,
 				}
@@ -374,7 +365,7 @@ func populateSecurityConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 				return err
 			}
 		}
-		if workloadCertTTLDefault, ok, err := in.GetString("pilot.env.DEFAULT_WORKLOAD_CERT_TTL"); ok {
+		if workloadCertTTLDefault, ok, err := getAndClearComponentEnv(in, "pilot", "DEFAULT_WORKLOAD_CERT_TTL"); ok {
 			istiod.WorkloadCertTTLDefault = workloadCertTTLDefault
 		} else if err != nil {
 			return err
@@ -383,7 +374,7 @@ func populateSecurityConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 		} else if err != nil {
 			return err
 		}
-		if workloadCertTTLMax, ok, err := in.GetString("pilot.env.MAX_WORKLOAD_CERT_TTL"); ok {
+		if workloadCertTTLMax, ok, err := getAndClearComponentEnv(in, "pilot", "MAX_WORKLOAD_CERT_TTL"); ok {
 			istiod.WorkloadCertTTLMax = workloadCertTTLMax
 		} else if err != nil {
 			return err
@@ -420,7 +411,7 @@ func populateSecurityConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 				identity.Type = v2.IdentityConfigTypeThirdParty
 				thirdPartyConfig := &v2.ThirdPartyIdentityConfig{}
 				setThirdParty := false
-				if issuer, ok, err := in.GetString("pilot.env.TOKEN_ISSUER"); ok {
+				if issuer, ok, err := getAndClearComponentEnv(in, "pilot", "TOKEN_ISSUER"); ok {
 					thirdPartyConfig.Issuer = issuer
 					setThirdParty = true
 					setSecurity = true

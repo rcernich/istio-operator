@@ -121,7 +121,7 @@ var threeScaleTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					"3scale": {
 						Container: &v2.ContainerConfig{
 							CommonContainerConfig: v2.CommonContainerConfig{

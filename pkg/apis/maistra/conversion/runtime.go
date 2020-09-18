@@ -84,38 +84,18 @@ func populateControlPlaneRuntimeValues(runtime *v2.ControlPlaneRuntimeConfig, va
 		}
 		container := runtime.Defaults.Container
 		if container != nil {
-			if container.ImagePullPolicy != "" {
-				if err := setHelmStringValue(values, "global.imagePullPolicy", string(container.ImagePullPolicy)); err != nil {
-					return err
-				}
+			globalValues := make(map[string]interface{})
+			if err := populateCommonContainerConfigValues(container, globalValues); err != nil {
+				return err
 			}
-			if len(container.ImagePullSecrets) > 0 {
-				pullSecretsValues := make([]string, 0)
-				for _, secret := range container.ImagePullSecrets {
-					pullSecretsValues = append(pullSecretsValues, secret.Name)
-				}
-				if err := setHelmStringSliceValue(values, "global.imagePullSecrets", pullSecretsValues); err != nil {
-					return err
-				}
+			// patch up resources
+			if resources, ok := globalValues["resources"]; ok {
+				globalValues["defaultResources"] = resources
+				delete(globalValues, "resources")
 			}
-			if container.ImageRegistry != "" {
-				if err := setHelmStringValue(values, "global.hub", container.ImageRegistry); err != nil {
-					return err
-				}
-			}
-			if container.ImageTag != "" {
-				if err := setHelmStringValue(values, "global.tag", container.ImageTag); err != nil {
-					return err
-				}
-			}
-			if container.Resources != nil {
-				if resourcesValues, err := toValues(container.Resources); err == nil {
-					if len(resourcesValues) > 0 {
-						if err := setHelmValue(values, "global.defaultResources", resourcesValues); err != nil {
-							return err
-						}
-					}
-				} else {
+			// add values to the global set
+			for key, value := range globalValues {
+				if err := setHelmValue(values, "global."+key, value); err != nil {
 					return err
 				}
 			}
@@ -124,7 +104,7 @@ func populateControlPlaneRuntimeValues(runtime *v2.ControlPlaneRuntimeConfig, va
 
 	for component, config := range runtime.Components {
 		componentValues := make(map[string]interface{})
-		if err := populateRuntimeValues(&config, componentValues); err == nil {
+		if err := populateRuntimeValues(config, componentValues); err == nil {
 			for key, value := range componentValues {
 				if err := setHelmValue(values, string(component)+"."+key, value); err != nil {
 					return err
@@ -159,8 +139,6 @@ func populateRuntimeValues(runtime *v2.ComponentRuntimeConfig, componentValues m
 	}
 	if err := populateContainerConfigValues(runtime.Container, componentValues); err != nil {
 		return err
-	}
-	if runtime.Deployment != nil {
 	}
 
 	return nil
@@ -316,6 +294,29 @@ func populateContainerConfigValues(containerConfig *v2.ContainerConfig, componen
 	if containerConfig == nil {
 		return nil
 	}
+	if err := populateCommonContainerConfigValues(&containerConfig.CommonContainerConfig, componentValues); err != nil {
+		return err
+	}
+	if containerConfig.Image != "" {
+		if err := setHelmStringValue(componentValues, "image", containerConfig.Image); err != nil {
+			return err
+		}
+	}
+	if len(containerConfig.Env) > 0 {
+		for key, value := range containerConfig.Env {
+			if err := setHelmValue(componentValues, "env."+key, value); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func populateCommonContainerConfigValues(containerConfig *v2.CommonContainerConfig, componentValues map[string]interface{}) error {
+	if containerConfig == nil {
+		return nil
+	}
 	if containerConfig.ImagePullPolicy != "" {
 		if err := setHelmStringValue(componentValues, "imagePullPolicy", string(containerConfig.ImagePullPolicy)); err != nil {
 			return err
@@ -332,11 +333,6 @@ func populateContainerConfigValues(containerConfig *v2.ContainerConfig, componen
 	}
 	if containerConfig.ImageRegistry != "" {
 		if err := setHelmStringValue(componentValues, "hub", containerConfig.ImageRegistry); err != nil {
-			return err
-		}
-	}
-	if containerConfig.Image != "" {
-		if err := setHelmStringValue(componentValues, "image", containerConfig.Image); err != nil {
 			return err
 		}
 	}
@@ -709,11 +705,11 @@ func populateControlPlaneRuntimeConfig(in *v1.HelmValues, out *v2.ControlPlaneSp
 		}
 	}
 
-	runtime.Components = make(map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig)
+	runtime.Components = make(map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig)
 	for _, component := range v2.ControlPlaneComponentNames {
 		if componentValues, ok, err := in.GetMap(string(component)); ok {
-			componentConfig := v2.ComponentRuntimeConfig{}
-			if applied, err := runtimeValuesToComponentRuntimeConfig(v1.NewHelmValues(componentValues), &componentConfig); err != nil {
+			componentConfig := &v2.ComponentRuntimeConfig{}
+			if applied, err := runtimeValuesToComponentRuntimeConfig(v1.NewHelmValues(componentValues), componentConfig); err != nil {
 				return false, err
 			} else if applied {
 				runtime.Components[component] = componentConfig
@@ -739,6 +735,23 @@ func populateContainerConfig(in *v1.HelmValues, out *v2.ContainerConfig) (bool, 
 	if image, ok, err := in.GetString("image"); ok {
 		out.Image = image
 		setContainer = true
+	} else if err != nil {
+		return false, err
+	}
+	if rawEnvValues, ok, err := in.GetMap("env"); ok {
+		out.Env = make(map[string]string)
+		for name, rawValue := range rawEnvValues {
+			if rawValue == nil {
+				continue
+			}
+			switch value := rawValue.(type) {
+			case string:
+				out.Env[name] = value
+			default:
+				return false, fmt.Errorf("unknown type for env.%s value, expected string: %T", name, rawValue)
+			}
+			setContainer = true
+		}
 	} else if err != nil {
 		return false, err
 	}
@@ -893,4 +906,41 @@ func populateComponentServiceConfig(in *v1.HelmValues, out *v2.ComponentServiceC
 	}
 
 	return setValues, nil
+}
+
+func addEnvToComponent(in *v2.ControlPlaneSpec, component, name, value string) {
+	if in.Runtime == nil {
+		in.Runtime = &v2.ControlPlaneRuntimeConfig{}
+	}
+	if in.Runtime.Components == nil {
+		in.Runtime.Components = make(map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig)
+	}
+	componentConfig, ok := in.Runtime.Components[v2.ControlPlaneComponentName(component)]
+	if !ok {
+		componentConfig = &v2.ComponentRuntimeConfig{}
+		in.Runtime.Components[v2.ControlPlaneComponentName(component)] = componentConfig
+	}
+	if componentConfig.Container == nil {
+		componentConfig.Container = &v2.ContainerConfig{}
+	}
+	if componentConfig.Container.Env == nil {
+		componentConfig.Container.Env = make(map[string]string)
+	}
+	componentConfig.Container.Env[name] = value
+}
+
+func getAndClearComponentEnv(in *v1.HelmValues, component, name string) (string, bool, error) {
+	if rawComponentEnv, ok, err := in.GetFieldNoCopy(component + ".env"); ok && rawComponentEnv != nil {
+		if env, ok := rawComponentEnv.(map[string]interface{}); ok {
+			if value, ok := env[name]; ok {
+				delete(env, name)
+				return fmt.Sprintf("%s", value), true, nil
+			}
+			return "", false, nil
+		}
+		return "", false, fmt.Errorf("%s.env is not a map[string]interface{}: %T", component, rawComponentEnv)
+	} else if err != nil {
+		return "", false, err
+	}
+	return "", false, nil
 }

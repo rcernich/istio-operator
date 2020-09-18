@@ -258,7 +258,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameSecurity: {},
 				},
 			},
@@ -282,7 +282,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameSecurity: {
 						Pod: &v2.PodRuntimeConfig{
 							CommonPodRuntimeConfig: v2.CommonPodRuntimeConfig{
@@ -444,7 +444,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameSecurity: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							Replicas: &replicaCount2,
@@ -485,7 +485,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameSecurity: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							AutoScaling: &v2.AutoScalerConfig{
@@ -536,7 +536,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameGalley: {},
 				},
 			},
@@ -560,7 +560,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameGalley: {
 						Pod: &v2.PodRuntimeConfig{
 							CommonPodRuntimeConfig: v2.CommonPodRuntimeConfig{
@@ -722,7 +722,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameGalley: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							Replicas: &replicaCount2,
@@ -763,7 +763,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameGalley: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							AutoScaling: &v2.AutoScalerConfig{
@@ -814,7 +814,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNamePilot: {},
 				},
 			},
@@ -838,7 +838,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNamePilot: {
 						Pod: &v2.PodRuntimeConfig{
 							CommonPodRuntimeConfig: v2.CommonPodRuntimeConfig{
@@ -1000,7 +1000,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNamePilot: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							Replicas: &replicaCount2,
@@ -1041,7 +1041,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNamePilot: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							AutoScaling: &v2.AutoScalerConfig{
@@ -1088,11 +1088,47 @@ var runtimeTestCases = []conversionTestCase{
 		}),
 	},
 	{
+		name: "pilot.env." + versions.V2_0.String(),
+		spec: &v2.ControlPlaneSpec{
+			Version: versions.V2_0.String(),
+			Runtime: &v2.ControlPlaneRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
+					v2.ControlPlaneComponentNamePilot: {
+						Container: &v2.ContainerConfig{
+							Env: map[string]string{
+								"PILOT_PUSH_THROTTLE": "100",
+							},
+						},
+					},
+				},
+			},
+		},
+		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
+			"pilot": map[string]interface{}{
+				"env": map[string]interface{}{
+					"PILOT_PUSH_THROTTLE": "100",
+				},
+			},
+		}),
+		completeIstio: v1.NewHelmValues(map[string]interface{}{
+			"global": map[string]interface{}{
+				"useMCP": true,
+				"multiCluster": map[string]interface{}{
+					"enabled": false,
+				},
+				"meshExpansion": map[string]interface{}{
+					"enabled": false,
+					"useILB":  false,
+				},
+			},
+		}),
+	},
+	{
 		name: "mixer.policy.runtime.defaults." + versions.V2_0.String(),
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameMixerPolicy: {},
 				},
 			},
@@ -1116,7 +1152,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameMixerPolicy: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							Replicas: &replicaCount2,
@@ -1293,7 +1329,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameMixerPolicy: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							Replicas: &replicaCount2,
@@ -1346,7 +1382,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameMixerTelemetry: {},
 				},
 			},
@@ -1370,7 +1406,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameMixerTelemetry: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							Replicas: &replicaCount2,
@@ -1547,7 +1583,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameMixerTelemetry: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							Replicas: &replicaCount2,
@@ -1600,7 +1636,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameTracing: {
 						Deployment: &v2.DeploymentRuntimeConfig{
 							Replicas: &replicaCount2,
@@ -1803,7 +1839,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameTracingJaegerAgent: {
 						Container: &v2.ContainerConfig{
 							Image: "custom-agent",
@@ -1875,7 +1911,7 @@ var runtimeTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Runtime: &v2.ControlPlaneRuntimeConfig{
-				Components: map[v2.ControlPlaneComponentName]v2.ComponentRuntimeConfig{
+				Components: map[v2.ControlPlaneComponentName]*v2.ComponentRuntimeConfig{
 					v2.ControlPlaneComponentNameTracingJaegerElasticsearch: {
 						Pod: &v2.PodRuntimeConfig{
 							CommonPodRuntimeConfig: v2.CommonPodRuntimeConfig{

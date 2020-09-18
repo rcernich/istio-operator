@@ -149,14 +149,16 @@ func populateTracingAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 		return err
 	}
 
-	if rawSampling, ok, err := in.GetFieldNoCopy("pilot.traceSampling"); ok {
-		if sampling, ok := rawSampling.(float64); ok {
-			out.Tracing.Sampling = &sampling
-		} else {
-			return fmt.Errorf("could not convert pilot.traceSampling value to float64: %T", rawSampling)
-		}
+	if sampling, ok, err := in.GetFloat64("pilot.traceSampling"); ok {
+		out.Tracing.Sampling = &sampling
 	} else if err != nil {
-		return err
+		// try int64
+		if intSampling, ok, newErr := in.GetInt64("pilot.traceSampling"); ok {
+			sampling = float64(intSampling)
+			out.Tracing.Sampling = &sampling
+		} else if newErr != nil {
+			return err
+		}
 	}
 
 	switch out.Tracing.Type {

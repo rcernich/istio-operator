@@ -15,7 +15,7 @@ type ControlPlaneRuntimeConfig struct {
 	// componets.  The key of the map is the component name to which the settings
 	// should be applied.
 	// +optional
-	Components map[ControlPlaneComponentName]ComponentRuntimeConfig `json:"components,omitempty"`
+	Components map[ControlPlaneComponentName]*ComponentRuntimeConfig `json:"components,omitempty"`
 	// Defaults will be merged into specific component config.
 	// .Values.global.defaultResources, e.g.
 	// +optional
@@ -222,6 +222,8 @@ type ContainerConfig struct {
 	CommonContainerConfig `json:",inline"`
 	// +optional
 	Image string `json:"image,omitempty"`
+	// +optional
+	Env map[string]string `json:"env,omitempty"`
 }
 
 // CommonContainerConfig represents container settings common to both defaults

@@ -109,7 +109,7 @@ type ThreeScaleGRPCConfig struct {
 	MaxConnTimeout *int32 `json:"max_conn_timeout,omitempty"`
 }
 
-// ThreeScaleGRPCConfig represents 3scale adapter options for its 'backend'
+// ThreeScaleBackendConfig represents 3scale adapter options for its 'backend'
 // section.
 type ThreeScaleBackendConfig struct {
 	// EnableCache if true, attempts to create an in-memory apisonator cache for

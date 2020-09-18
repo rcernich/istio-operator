@@ -213,6 +213,10 @@ func (v *versionStrategyV2_0) Render(ctx context.Context, cr *common.ControllerR
 	if err != nil {
 		return nil, fmt.Errorf("Could not set field status.lastAppliedConfiguration.istio.global.configRootNamespace: %v", err)
 	}
+	err = spec.Istio.SetField("global.configNamespace", smcp.GetNamespace())
+	if err != nil {
+		return nil, fmt.Errorf("Could not set field status.lastAppliedConfiguration.istio.global.configNamespace: %v", err)
+	}
 
 	// XXX: using values.yaml settings, as things may have been overridden in profiles/templates
 	if isComponentEnabled(spec.Istio, v2_0ChartMapping[TracingChart].enabledField) {

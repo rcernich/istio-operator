@@ -11,7 +11,7 @@ type AddonsConfig struct {
 	// Visualization configures visualization solutions used with the mesh
 	// +optional
 	Visualization VisualizationAddonsConfig `json:"visualization,omitempty"`
-	// Misc configures miscelaneous solutions used with the mesh
+	// Misc configures miscellaneous solutions used with the mesh
 	// +optional
 	Misc *MiscAddonsConfig `json:"misc,omitempty"`
 }
@@ -75,6 +75,7 @@ type VisualizationAddonsConfig struct {
 	Kiali *KialiAddonConfig `json:"kiali,omitempty"`
 }
 
+// MiscAddonsConfig configures miscellaneous addons
 type MiscAddonsConfig struct {
 	// +optional
 	ThreeScale *ThreeScaleConfig `json:"3scale,omitempty"`

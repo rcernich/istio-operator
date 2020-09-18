@@ -365,6 +365,13 @@ func (in *ComponentServiceConfig) DeepCopy() *ComponentServiceConfig {
 func (in *ContainerConfig) DeepCopyInto(out *ContainerConfig) {
 	*out = *in
 	in.CommonContainerConfig.DeepCopyInto(&out.CommonContainerConfig)
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 
@@ -409,9 +416,17 @@ func (in *ControlPlaneRuntimeConfig) DeepCopyInto(out *ControlPlaneRuntimeConfig
 	*out = *in
 	if in.Components != nil {
 		in, out := &in.Components, &out.Components
-		*out = make(map[ControlPlaneComponentName]ComponentRuntimeConfig, len(*in))
+		*out = make(map[ControlPlaneComponentName]*ComponentRuntimeConfig, len(*in))
 		for key, val := range *in {
-			(*out)[key] = *val.DeepCopy()
+			var outVal *ComponentRuntimeConfig
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = new(ComponentRuntimeConfig)
+				(*in).DeepCopyInto(*out)
+			}
+			(*out)[key] = outVal
 		}
 	}
 	if in.Defaults != nil {

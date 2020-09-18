@@ -181,9 +181,7 @@ func gatewayConfigToValues(in *v2.GatewayConfig) (map[string]interface{}, error)
 		}
 	}
 	if in.RouterMode != "" {
-		if err := setHelmStringValue(gatewayValues, "env.ISTIO_META_ROUTER_MODE", string(in.RouterMode)); err != nil {
-			return nil, err
-		}
+		addEnvToGateway(in, "ISTIO_META_ROUTER_MODE", string(in.RouterMode))
 	}
 
 	// Service specific settings
@@ -288,6 +286,11 @@ func gatewayConfigToValues(in *v2.GatewayConfig) (map[string]interface{}, error)
 }
 
 func gatewayEgressConfigToValues(in *v2.EgressGatewayConfig) (map[string]interface{}, error) {
+	// add Env before populating runtime values for base GatewayConfig
+	if in.RequestedNetworkView != nil {
+		addEnvToGateway(&in.GatewayConfig, "ISTIO_META_REQUESTED_NETWORK_VIEW", strings.Join(in.RequestedNetworkView, ","))
+	}
+
 	gatewayValues, err := gatewayConfigToValues(&in.GatewayConfig)
 	if err != nil {
 		return nil, err
@@ -296,12 +299,6 @@ func gatewayEgressConfigToValues(in *v2.EgressGatewayConfig) (map[string]interfa
 	// Always set this to allow round-tripping
 	if err := setHelmStringValue(gatewayValues, "gatewayType", "egress"); err != nil {
 		return nil, err
-	}
-
-	if in.RequestedNetworkView != nil {
-		if err := setHelmStringValue(gatewayValues, "env.ISTIO_META_REQUESTED_NETWORK_VIEW", strings.Join(in.RequestedNetworkView, ",")); err != nil {
-			return nil, err
-		}
 	}
 
 	return gatewayValues, nil
@@ -375,14 +372,12 @@ func populateGatewaysConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 				egressGateway := v2.EgressGatewayConfig{
 					GatewayConfig: gc,
 				}
-				if rawNetworkView, ok, err := gatewayValues.GetString("env.ISTIO_META_REQUESTED_NETWORK_VIEW"); ok {
+				if rawNetworkView, ok := getAndClearEnv(&egressGateway.GatewayConfig, "ISTIO_META_REQUESTED_NETWORK_VIEW"); ok {
 					if rawNetworkView == "" {
 						egressGateway.RequestedNetworkView = make([]string, 0)
 					} else {
 						egressGateway.RequestedNetworkView = strings.Split(rawNetworkView, ",")
 					}
-				} else if err != nil {
-					return err
 				}
 				if name == "istio-egressgateway" {
 					gatewaysConfig.ClusterEgress = &egressGateway
@@ -473,12 +468,6 @@ func gatewayValuesToConfig(in *v1.HelmValues, out *v2.GatewayConfig) error {
 	}
 	if namespace, ok, err := in.GetString("namespace"); ok {
 		out.Namespace = namespace
-	} else if err != nil {
-		return err
-	}
-	// env.ISTIO_META_ROUTER_MODE
-	if routerMode, ok, err := in.GetString("env.ISTIO_META_ROUTER_MODE"); ok {
-		out.RouterMode = v2.RouterModeType(routerMode)
 	} else if err != nil {
 		return err
 	}
@@ -578,7 +567,39 @@ func gatewayValuesToConfig(in *v1.HelmValues, out *v2.GatewayConfig) error {
 		out.Runtime = runtime
 	}
 
+	// env.ISTIO_META_ROUTER_MODE
+	if routerMode, ok := getAndClearEnv(out, "ISTIO_META_ROUTER_MODE"); ok {
+		out.RouterMode = v2.RouterModeType(routerMode)
+	}
+
 	return nil
+}
+
+func addEnvToGateway(in *v2.GatewayConfig, name, value string) {
+	if in.Runtime == nil {
+		in.Runtime = &v2.ComponentRuntimeConfig{}
+	}
+	if in.Runtime.Container == nil {
+		in.Runtime.Container = &v2.ContainerConfig{}
+	}
+	if in.Runtime.Container.Env == nil {
+		in.Runtime.Container.Env = make(map[string]string)
+	}
+	in.Runtime.Container.Env[name] = value
+}
+
+func getAndClearEnv(in *v2.GatewayConfig, name string) (string, bool) {
+	if in.Runtime == nil || in.Runtime.Container == nil || in.Runtime.Container.Env == nil {
+		return "", false
+	}
+	if value, ok := in.Runtime.Container.Env[name]; ok {
+		delete(in.Runtime.Container.Env, name)
+		if len(in.Runtime.Container.Env) == 0 {
+			in.Runtime.Container.Env = nil
+		}
+		return value, ok
+	}
+	return "", false
 }
 
 func expansionPortsForVersion(version string) ([]corev1.ServicePort, error) {

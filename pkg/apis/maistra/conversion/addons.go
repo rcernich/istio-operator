@@ -143,6 +143,14 @@ func populateAddonsConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 		return err
 	}
 
+	// HACK - remove grafana component's runtime env, as it is incorporated into
+	// the grafana config directly
+	if out.Runtime != nil && out.Runtime.Components != nil {
+		if grafanaComponentConfig, ok := out.Runtime.Components[v2.ControlPlaneComponentNameGrafana]; ok && grafanaComponentConfig.Container != nil {
+			grafanaComponentConfig.Container.Env = nil
+		}
+	}
+
 	if addonsConfig.Metrics.Prometheus != nil || addonsConfig.Tracing.Type != "" ||
 		addonsConfig.Tracing.Jaeger != nil || addonsConfig.Visualization.Grafana != nil ||
 		addonsConfig.Visualization.Kiali != nil || addonsConfig.Misc != nil {

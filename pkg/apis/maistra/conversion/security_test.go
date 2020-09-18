@@ -58,7 +58,7 @@ var securityTestCases = []conversionTestCase{
 					Enablement: v2.Enablement{
 						Enabled: &featureEnabled,
 					},
-					Auto:   &featureEnabled,
+					Auto: &featureEnabled,
 				},
 			},
 		},
@@ -163,10 +163,6 @@ var securityTestCases = []conversionTestCase{
 				"ca": map[string]interface{}{
 					"implementation": "Istiod",
 				},
-				"env": map[string]interface{}{
-					"DEFAULT_WORKLOAD_CERT_TTL": "24h",
-					"MAX_WORKLOAD_CERT_TTL":     "7d",
-				},
 			},
 		}),
 		completeIstio: v1.NewHelmValues(map[string]interface{}{
@@ -178,6 +174,12 @@ var securityTestCases = []conversionTestCase{
 				"meshExpansion": map[string]interface{}{
 					"enabled": false,
 					"useILB":  false,
+				},
+			},
+			"pilot": map[string]interface{}{
+				"env": map[string]interface{}{
+					"DEFAULT_WORKLOAD_CERT_TTL": "24h",
+					"MAX_WORKLOAD_CERT_TTL":     "7d",
 				},
 			},
 		}),
@@ -279,12 +281,6 @@ var securityTestCases = []conversionTestCase{
 				"ca": map[string]interface{}{
 					"implementation": "Istiod",
 				},
-				"env": map[string]interface{}{
-					"CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR":           true,
-					"CITADEL_SELF_SIGNED_CA_CERT_TTL":                       "1y",
-					"CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL":          "1h",
-					"CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE": "20%",
-				},
 			},
 			"security": map[string]interface{}{
 				"selfSigned": true,
@@ -299,6 +295,14 @@ var securityTestCases = []conversionTestCase{
 				"meshExpansion": map[string]interface{}{
 					"enabled": false,
 					"useILB":  false,
+				},
+			},
+			"pilot": map[string]interface{}{
+				"env": map[string]interface{}{
+					"CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR":           "true",
+					"CITADEL_SELF_SIGNED_CA_CERT_TTL":                       "1y",
+					"CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL":          "1h",
+					"CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE": "20%",
 				},
 			},
 		}),
@@ -397,9 +401,6 @@ var securityTestCases = []conversionTestCase{
 				"ca": map[string]interface{}{
 					"implementation": "Istiod",
 				},
-				"env": map[string]interface{}{
-					"ROOT_CA_DIR": "/etc/cacerts",
-				},
 			},
 			"security": map[string]interface{}{
 				"selfSigned": false,
@@ -414,6 +415,11 @@ var securityTestCases = []conversionTestCase{
 				"meshExpansion": map[string]interface{}{
 					"enabled": false,
 					"useILB":  false,
+				},
+			},
+			"pilot": map[string]interface{}{
+				"env": map[string]interface{}{
+					"ROOT_CA_DIR": "/etc/cacerts",
 				},
 			},
 		}),
@@ -715,12 +721,6 @@ var securityTestCases = []conversionTestCase{
 			},
 			"security": map[string]interface{}{
 				"selfSigned": true,
-				"env": map[string]interface{}{
-					"CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR":           true,
-					"CITADEL_SELF_SIGNED_CA_CERT_TTL":                       "1y",
-					"CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL":          "1h",
-					"CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE": "20%",
-				},
 			},
 		}),
 		completeIstio: v1.NewHelmValues(map[string]interface{}{
@@ -732,6 +732,14 @@ var securityTestCases = []conversionTestCase{
 				"meshExpansion": map[string]interface{}{
 					"enabled": false,
 					"useILB":  false,
+				},
+			},
+			"security": map[string]interface{}{
+				"env": map[string]interface{}{
+					"CITADEL_ENABLE_JITTER_FOR_ROOT_CERT_ROTATOR":           "true",
+					"CITADEL_SELF_SIGNED_CA_CERT_TTL":                       "1y",
+					"CITADEL_SELF_SIGNED_ROOT_CERT_CHECK_INTERVAL":          "1h",
+					"CITADEL_SELF_SIGNED_ROOT_CERT_GRACE_PERIOD_PERCENTILE": "20%",
 				},
 			},
 		}),
@@ -830,9 +838,6 @@ var securityTestCases = []conversionTestCase{
 				"ca": map[string]interface{}{
 					"implementation": "Istiod",
 				},
-				"env": map[string]interface{}{
-					"ROOT_CA_DIR": "/etc/cacerts",
-				},
 			},
 			"security": map[string]interface{}{
 				"selfSigned": false,
@@ -847,6 +852,11 @@ var securityTestCases = []conversionTestCase{
 				"meshExpansion": map[string]interface{}{
 					"enabled": false,
 					"useILB":  false,
+				},
+			},
+			"pilot": map[string]interface{}{
+				"env": map[string]interface{}{
+					"ROOT_CA_DIR": "/etc/cacerts",
 				},
 			},
 		}),
@@ -1059,11 +1069,6 @@ var securityTestCases = []conversionTestCase{
 					},
 				},
 			},
-			"pilot": map[string]interface{}{
-				"env": map[string]interface{}{
-					"TOKEN_ISSUER": "https://my-issuer.example.com",
-				},
-			},
 		}),
 		completeIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
@@ -1074,6 +1079,11 @@ var securityTestCases = []conversionTestCase{
 				"meshExpansion": map[string]interface{}{
 					"enabled": false,
 					"useILB":  false,
+				},
+			},
+			"pilot": map[string]interface{}{
+				"env": map[string]interface{}{
+					"TOKEN_ISSUER": "https://my-issuer.example.com",
 				},
 			},
 		}),
@@ -1186,11 +1196,6 @@ var securityTestCases = []conversionTestCase{
 					},
 				},
 			},
-			"pilot": map[string]interface{}{
-				"env": map[string]interface{}{
-					"TOKEN_ISSUER": "https://my-issuer.example.com",
-				},
-			},
 		}),
 		completeIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
@@ -1201,6 +1206,11 @@ var securityTestCases = []conversionTestCase{
 				"meshExpansion": map[string]interface{}{
 					"enabled": false,
 					"useILB":  false,
+				},
+			},
+			"pilot": map[string]interface{}{
+				"env": map[string]interface{}{
+					"TOKEN_ISSUER": "https://my-issuer.example.com",
 				},
 			},
 		}),
