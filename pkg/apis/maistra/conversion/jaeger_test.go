@@ -12,7 +12,8 @@ import (
 var (
 	jaegerMaxTraces              = int64(15000)
 	jaegerElasticsearchNodeCount = int32(5)
-	traceSampling                = int32(100)
+	traceSampling                = int32(1)
+	traceSamplingInt             = int32(100)
 )
 
 var jaegerTestCases = []conversionTestCase{
@@ -32,7 +33,7 @@ var jaegerTestCases = []conversionTestCase{
 				"enableTracing": false,
 			},
 			"pilot": map[string]interface{}{
-				"traceSampling": 100.0,
+				"traceSampling": 0.01,
 			},
 			"tracing": map[string]interface{}{
 				"enabled":  false,
@@ -94,8 +95,9 @@ var jaegerTestCases = []conversionTestCase{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
 				Tracing: &v2.TracingConfig{
-					Type:   v2.TracerTypeJaeger,
-					Jaeger: &v2.JaegerTracerConfig{},
+					Sampling: &traceSamplingInt,
+					Type:     v2.TracerTypeJaeger,
+					Jaeger:   &v2.JaegerTracerConfig{},
 				},
 			},
 		},
@@ -105,6 +107,9 @@ var jaegerTestCases = []conversionTestCase{
 				"proxy": map[string]interface{}{
 					"tracer": "jaeger",
 				},
+			},
+			"pilot": map[string]interface{}{
+				"traceSampling": 1,
 			},
 			"tracing": map[string]interface{}{
 				"enabled":  true,

@@ -153,12 +153,16 @@ func populateTracingAddonConfig(in *v1.HelmValues, out *v2.TracingConfig) (bool,
 		return false, err
 	}
 
-	if rawSampling, ok, err := in.GetInt64("pilot.traceSampling"); ok {
+	if rawSampling, ok, err := in.GetFloat64("pilot.traceSampling"); ok {
+		sampling := int32(rawSampling*100.0)
+		out.Sampling = &sampling
+		setTracer = true
+	} else if rawSampling, ok, newErr := in.GetInt64("pilot.traceSampling"); ok {
 		// sampling: 0 - 100% = 0 - 10000, i.e. 1% = 100
 		sampling := int32(rawSampling*100)
 		out.Sampling = &sampling
 		setTracer = true
-	} else if err != nil {
+	} else if newErr != nil {
 		return false, err
 	}
 

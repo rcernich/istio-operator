@@ -38,7 +38,7 @@ func populateAddonsValues(in *v2.ControlPlaneSpec, values map[string]interface{}
 	// Tracing
 	if in.Addons.Tracing != nil {
 		if in.Addons.Tracing.Sampling != nil {
-			if err := setHelmValue(values, "pilot.traceSampling", *in.Addons.Tracing.Sampling); err != nil {
+			if err := setHelmFloatValue(values, "pilot.traceSampling", float64(*in.Addons.Tracing.Sampling)/100.0); err != nil {
 				return err
 			}
 		}
