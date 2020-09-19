@@ -64,7 +64,7 @@ spec:
           spec:
             properties:
               istio:
-                type: Any
+                type: object
                 x-kubernetes-preserve-unknown-fields: true
               networkType:
                 type: string
@@ -75,7 +75,7 @@ spec:
               template:
                 type: string
               threeScale:
-                type: Any
+                type: object
                 x-kubernetes-preserve-unknown-fields: true
               version:
                 type: string
@@ -150,7 +150,7 @@ spec:
               lastAppliedConfiguration:
                 properties:
                   istio:
-                    type: Any
+                    type: object
                     x-kubernetes-preserve-unknown-fields: true
                   networkType:
                     type: string
@@ -161,7 +161,7 @@ spec:
                   template:
                     type: string
                   threeScale:
-                    type: Any
+                    type: object
                     x-kubernetes-preserve-unknown-fields: true
                   version:
                     type: string
@@ -259,7 +259,7 @@ spec:
                                             type: object
                                         type: object
                                       tls:
-                                        type: Any
+                                        type: object
                                         x-kubernetes-preserve-unknown-fields: true
                                     type: object
                                   metadata:
@@ -373,7 +373,7 @@ spec:
                                   elasticsearch:
                                     properties:
                                       indexCleaner:
-                                        type: Any
+                                        type: object
                                         x-kubernetes-preserve-unknown-fields: true
                                       nodeCount:
                                         format: int32
@@ -381,7 +381,7 @@ spec:
                                       redundancyPolicy:
                                         type: string
                                       storage:
-                                        type: Any
+                                        type: object
                                         x-kubernetes-preserve-unknown-fields: true
                                     type: object
                                   memory:
@@ -491,7 +491,7 @@ spec:
                                             type: object
                                         type: object
                                       tls:
-                                        type: Any
+                                        type: object
                                         x-kubernetes-preserve-unknown-fields: true
                                     type: object
                                   metadata:
@@ -552,7 +552,7 @@ spec:
                                             type: object
                                         type: object
                                       tls:
-                                        type: Any
+                                        type: object
                                         x-kubernetes-preserve-unknown-fields: true
                                     type: object
                                   metadata:
@@ -3131,7 +3131,7 @@ spec:
                       stackDriverFilter:
                         properties:
                           configOverride:
-                            type: Any
+                            type: object
                             x-kubernetes-preserve-unknown-fields: true
                           disableOutbound:
                             type: boolean
@@ -3278,7 +3278,7 @@ spec:
                                                 type: object
                                             type: object
                                           tls:
-                                            type: Any
+                                            type: object
                                             x-kubernetes-preserve-unknown-fields: true
                                         type: object
                                       metadata:
@@ -3392,7 +3392,7 @@ spec:
                                       elasticsearch:
                                         properties:
                                           indexCleaner:
-                                            type: Any
+                                            type: object
                                             x-kubernetes-preserve-unknown-fields: true
                                           nodeCount:
                                             format: int32
@@ -3400,7 +3400,7 @@ spec:
                                           redundancyPolicy:
                                             type: string
                                           storage:
-                                            type: Any
+                                            type: object
                                             x-kubernetes-preserve-unknown-fields: true
                                         type: object
                                       memory:
@@ -3510,7 +3510,7 @@ spec:
                                                 type: object
                                             type: object
                                           tls:
-                                            type: Any
+                                            type: object
                                             x-kubernetes-preserve-unknown-fields: true
                                         type: object
                                       metadata:
@@ -3571,7 +3571,7 @@ spec:
                                                 type: object
                                             type: object
                                           tls:
-                                            type: Any
+                                            type: object
                                             x-kubernetes-preserve-unknown-fields: true
                                         type: object
                                       metadata:
@@ -6150,7 +6150,7 @@ spec:
                           stackDriverFilter:
                             properties:
                               configOverride:
-                                type: Any
+                                type: object
                                 x-kubernetes-preserve-unknown-fields: true
                               disableOutbound:
                                 type: boolean
@@ -6246,7 +6246,7 @@ spec:
               appliedValues:
                 properties:
                   istio:
-                    type: Any
+                    type: object
                     x-kubernetes-preserve-unknown-fields: true
                   networkType:
                     type: string
@@ -6257,7 +6257,7 @@ spec:
                   template:
                     type: string
                   threeScale:
-                    type: Any
+                    type: object
                     x-kubernetes-preserve-unknown-fields: true
                   version:
                     type: string

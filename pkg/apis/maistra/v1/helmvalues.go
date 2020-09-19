@@ -9,6 +9,7 @@ import (
 )
 
 // HelmValues is typedef for Helm .Values
+// +kubebuilder:validation:Type=object
 // +kubebuilder:validation:XPreserveUnknownFields
 type HelmValues struct {
 	data map[string]interface{} `json:"-"`

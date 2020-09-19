@@ -6,7 +6,9 @@ import (
 	"path"
 
 	pkgerrors "github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -253,6 +255,10 @@ func (v *versionStrategyV2_0) Render(ctx context.Context, cr *common.ControllerR
 					}
 				}
 			} else if !(errors.IsNotFound(err) || errors.IsGone(err)) {
+				if meta.IsNoMatchError(err) {
+					cr.EventRecorder.Eventf(smcp, corev1.EventTypeWarning, eventReasonRendering, "Cannot install Jaeger: %s", err)
+					return nil, pkgerrors.Wrapf(err, "cannot install control plane, Jaeger not installed")
+				}
 				return nil, pkgerrors.Wrapf(err, "error retrieving jaeger resource \"%s/%s\"", smcp.GetNamespace(), jaegerResource)
 			} else if err := spec.Istio.SetField("tracing.jaeger.install", true); err != nil {
 				return nil, pkgerrors.Wrapf(err, "error enabling jaeger install")
@@ -279,6 +285,10 @@ func (v *versionStrategyV2_0) Render(ctx context.Context, cr *common.ControllerR
 				}
 			}
 		} else if !(errors.IsNotFound(err) || errors.IsGone(err)) {
+			if meta.IsNoMatchError(err) {
+				cr.EventRecorder.Eventf(smcp, corev1.EventTypeWarning, eventReasonRendering, "Cannot install Kiali: %s", err)
+				return nil, pkgerrors.Wrapf(err, "cannot install control plane, Kiali not installed")
+			}
 			return nil, pkgerrors.Wrapf(err, "error retrieving kiali resource \"%s/%s\"", smcp.GetNamespace(), kialiResource)
 		} else if err := spec.Istio.SetField("kiali.install", true); err != nil {
 			return nil, pkgerrors.Wrapf(err, "error enabling kiali install")
