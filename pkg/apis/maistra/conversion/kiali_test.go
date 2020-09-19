@@ -19,7 +19,7 @@ var kialiTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Kiali: nil,
 				},
 			},
@@ -43,7 +43,7 @@ var kialiTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Kiali: &v2.KialiAddonConfig{},
 				},
 			},
@@ -67,7 +67,7 @@ var kialiTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Kiali: &v2.KialiAddonConfig{
 						Enablement: v2.Enablement{
 							Enabled: &featureEnabled,
@@ -101,7 +101,7 @@ var kialiTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Kiali: &v2.KialiAddonConfig{
 						Name:    "my-kiali",
 						Install: &v2.KialiInstallConfig{},
@@ -132,7 +132,7 @@ var kialiTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Kiali: &v2.KialiAddonConfig{
 						Name: "my-kiali",
 						Install: &v2.KialiInstallConfig{
@@ -176,7 +176,7 @@ var kialiTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Kiali: &v2.KialiAddonConfig{
 						Name: "my-kiali",
 						Install: &v2.KialiInstallConfig{
@@ -226,7 +226,7 @@ var kialiTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Kiali: &v2.KialiAddonConfig{
 						Name: "my-kiali",
 						Install: &v2.KialiInstallConfig{
@@ -261,7 +261,7 @@ var kialiTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Kiali: &v2.KialiAddonConfig{
 						Name: "my-kiali",
 						Install: &v2.KialiInstallConfig{
@@ -332,7 +332,7 @@ var kialiTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Kiali: &v2.KialiAddonConfig{
 						Name: "my-kiali",
 						Install: &v2.KialiInstallConfig{

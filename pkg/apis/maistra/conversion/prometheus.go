@@ -63,34 +63,30 @@ func populatePrometheusAddonValues(in *v2.ControlPlaneSpec, values map[string]in
 	return nil
 }
 
-func populatePrometheusAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
+func populatePrometheusAddonConfig(in *v1.HelmValues, out *v2.PrometheusAddonConfig) (bool, error) {
 	rawPrometheusValues, ok, err := in.GetMap("prometheus")
 	if err != nil {
-		return err
+		return false, err
 	} else if !ok || len(rawPrometheusValues) == 0 {
 		// nothing to do
 		// check to see if grafana.Address should be set
 		if address, ok, err := in.GetString("kiali.prometheusAddr"); ok {
 			// If grafana URL is set, assume we're using an existing grafana install
-			out.Metrics.Prometheus = &v2.PrometheusAddonConfig{
-				Address: &address,
-			}
+			out.Address = &address
+			return true, nil
 		} else if err != nil {
-			return err
+			return false, err
 		}
-		return nil
+		return false, nil
 	}
 	prometheusValues := v1.NewHelmValues(rawPrometheusValues)
 
-	if out.Metrics.Prometheus == nil {
-		out.Metrics.Prometheus = &v2.PrometheusAddonConfig{}
-	}
-	prometheus := out.Metrics.Prometheus
+	prometheus := out
 
 	if enabled, ok, err := prometheusValues.GetBool("enabled"); ok {
 		prometheus.Enabled = &enabled
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	install := &v2.PrometheusInstallConfig{}
@@ -100,13 +96,13 @@ func populatePrometheusAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) erro
 		install.Config.Retention = retention
 		setInstall = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if scrapeInterval, ok, err := prometheusValues.GetString("scrapeInterval"); ok {
 		install.Config.ScrapeInterval = scrapeInterval
 		setInstall = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	if securityEnabled, ok, err := prometheusValues.GetBool("security.enabled"); ok {
@@ -114,23 +110,23 @@ func populatePrometheusAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) erro
 		install.UseTLS = &securityEnabled
 		setInstall = true
 	} else if err != nil {
-		return err
+		return false, err
 	} else if provisionPrometheusCert, ok, err := prometheusValues.GetBool("provisionPrometheusCert"); ok {
 		// v2_0
 		install.UseTLS = &provisionPrometheusCert
 		setInstall = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if applied, err := populateComponentServiceConfig(prometheusValues, &install.Service); err == nil {
 		setInstall = setInstall || applied
 	} else {
-		return err
+		return false, err
 	}
 
 	if setInstall {
 		prometheus.Install = install
 	}
 
-	return nil
+	return true, nil
 }

@@ -204,7 +204,7 @@ func TestAddonsInstall(t *testing.T) {
 								Version:  versions.V2_0.String(),
 								Profiles: []string{"maistra"},
 								Addons: &maistrav2.AddonsConfig{
-									Visualization: maistrav2.VisualizationAddonsConfig{
+									Visualization: &maistrav2.VisualizationAddonsConfig{
 										Kiali: &maistrav2.KialiAddonConfig{
 											Enablement: maistrav2.Enablement{
 												Enabled: &enable,
@@ -212,7 +212,7 @@ func TestAddonsInstall(t *testing.T) {
 											Name: tc.kialiName,
 										},
 									},
-									Tracing: maistrav2.TracingConfig{
+									Tracing: &maistrav2.TracingConfig{
 										Type: maistrav2.TracerTypeJaeger,
 										Jaeger: &maistrav2.JaegerTracerConfig{
 											Name: tc.jaegerName,

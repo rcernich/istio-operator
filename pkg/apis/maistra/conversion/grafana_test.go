@@ -23,7 +23,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: nil,
 				},
 			},
@@ -47,7 +47,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{},
 				},
 			},
@@ -71,7 +71,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Enablement: v2.Enablement{
 							Enabled: &featureEnabled,
@@ -103,7 +103,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Address: &grafanaTestAddress,
 					},
@@ -135,7 +135,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{},
 					},
@@ -161,7 +161,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Config: v2.GrafanaConfig{
@@ -205,7 +205,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Persistence: &v2.ComponentPersistenceConfig{},
@@ -233,7 +233,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Persistence: &v2.ComponentPersistenceConfig{
@@ -273,7 +273,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Persistence: &v2.ComponentPersistenceConfig{
@@ -303,7 +303,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Persistence: &v2.ComponentPersistenceConfig{
@@ -351,7 +351,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Security: &v2.GrafanaSecurityConfig{},
@@ -379,7 +379,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Security: &v2.GrafanaSecurityConfig{
@@ -423,7 +423,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Service: v2.ComponentServiceConfig{
@@ -471,7 +471,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Service: v2.ComponentServiceConfig{
@@ -501,7 +501,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Service: v2.ComponentServiceConfig{
@@ -570,7 +570,7 @@ var grafanaTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Visualization: v2.VisualizationAddonsConfig{
+				Visualization: &v2.VisualizationAddonsConfig{
 					Grafana: &v2.GrafanaAddonConfig{
 						Install: &v2.GrafanaInstallConfig{
 							Service: v2.ComponentServiceConfig{

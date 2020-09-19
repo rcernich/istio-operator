@@ -4,13 +4,13 @@ package v2
 type AddonsConfig struct {
 	// Metrics configures metrics storage solutions for the mesh.
 	// +optional
-	Metrics MetricsAddonsConfig `json:"metrics,omitempty"`
+	Metrics *MetricsAddonsConfig `json:"metrics,omitempty"`
 	// Tracing configures tracing solutions used with the mesh.
 	// +optional
-	Tracing TracingConfig `json:"tracing,omitempty"`
+	Tracing *TracingConfig `json:"tracing,omitempty"`
 	// Visualization configures visualization solutions used with the mesh
 	// +optional
-	Visualization VisualizationAddonsConfig `json:"visualization,omitempty"`
+	Visualization *VisualizationAddonsConfig `json:"visualization,omitempty"`
 	// Misc configures miscellaneous solutions used with the mesh
 	// +optional
 	Misc *MiscAddonsConfig `json:"misc,omitempty"`

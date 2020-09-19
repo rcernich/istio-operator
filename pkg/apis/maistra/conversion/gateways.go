@@ -128,7 +128,7 @@ func populateGatewaysValues(in *v2.ControlPlaneSpec, values map[string]interface
 	}
 
 	for name, gateway := range gateways.IngressGateways {
-		if gatewayValues, err := gatewayIngressConfigToValues(&gateway); err == nil {
+		if gatewayValues, err := gatewayIngressConfigToValues(gateway); err == nil {
 			if len(gatewayValues) > 0 {
 				if err := setHelmValue(gatewayValues, "name", name); err != nil {
 					return err
@@ -143,7 +143,7 @@ func populateGatewaysValues(in *v2.ControlPlaneSpec, values map[string]interface
 	}
 
 	for name, gateway := range gateways.EgressGateways {
-		if gatewayValues, err := gatewayEgressConfigToValues(&gateway); err == nil {
+		if gatewayValues, err := gatewayEgressConfigToValues(gateway); err == nil {
 			if len(gatewayValues) > 0 {
 				if err := setHelmValue(gatewayValues, "name", name); err != nil {
 					return err
@@ -339,8 +339,8 @@ func gatewayIngressConfigToValues(in *v2.IngressGatewayConfig) (map[string]inter
 
 func populateGatewaysConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	gatewaysConfig := &v2.GatewaysConfig{
-		EgressGateways:  make(map[string]v2.EgressGatewayConfig),
-		IngressGateways: make(map[string]v2.IngressGatewayConfig),
+		EgressGateways:  make(map[string]*v2.EgressGatewayConfig),
+		IngressGateways: make(map[string]*v2.IngressGatewayConfig),
 	}
 	setGatewaysConfig := false
 	if gateways, ok, err := in.GetMap("gateways"); ok {
@@ -369,7 +369,7 @@ func populateGatewaysConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 
 			if isEgressGateway(gatewayValues) || name == "istio-egressgateway" {
 				// egress only
-				egressGateway := v2.EgressGatewayConfig{
+				egressGateway := &v2.EgressGatewayConfig{
 					GatewayConfig: gc,
 				}
 				if rawNetworkView, ok := getAndClearEnv(&egressGateway.GatewayConfig, "ISTIO_META_REQUESTED_NETWORK_VIEW"); ok {
@@ -380,7 +380,7 @@ func populateGatewaysConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 					}
 				}
 				if name == "istio-egressgateway" {
-					gatewaysConfig.ClusterEgress = &egressGateway
+					gatewaysConfig.ClusterEgress = egressGateway
 				} else {
 					gatewaysConfig.EgressGateways[name] = egressGateway
 				}
@@ -409,7 +409,7 @@ func populateGatewaysConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 					return err
 				}
 				if name == "istio-ingressgateway" {
-					clusterIngress := v2.ClusterIngressGatewayConfig{
+					clusterIngress := &v2.ClusterIngressGatewayConfig{
 						IngressGatewayConfig: ingressGateway,
 					}
 					if k8sIngressEnabled, ok, err := in.GetBool("global.k8sIngress.enabled"); ok {
@@ -417,7 +417,7 @@ func populateGatewaysConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 					} else if err != nil {
 						return err
 					}
-					gatewaysConfig.ClusterIngress = &clusterIngress
+					gatewaysConfig.ClusterIngress = clusterIngress
 
 					if iorEnabled, ok, err := gatewayValues.GetBool("ior_enabled"); ok {
 						gatewaysConfig.OpenShiftRoute = &v2.OpenShiftRouteConfig{
@@ -430,7 +430,7 @@ func populateGatewaysConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 					}
 				} else if name != "istio-ilbgateway" {
 					// ilb gateway is handled by cluster config
-					gatewaysConfig.IngressGateways[name] = ingressGateway
+					gatewaysConfig.IngressGateways[name] = &ingressGateway
 				}
 			}
 		}

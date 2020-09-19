@@ -145,13 +145,13 @@ func TestParallelInstallationOfCharts(t *testing.T) {
 					},
 				},
 				Addons: &maistrav2.AddonsConfig{
-					Metrics: maistrav2.MetricsAddonsConfig{
+					Metrics: &maistrav2.MetricsAddonsConfig{
 						Prometheus: &maistrav2.PrometheusAddonConfig{
 							Enablement: maistrav2.Enablement{Enabled: &disabled},
 						},
 					},
-					Tracing: maistrav2.TracingConfig{Type: maistrav2.TracerTypeNone},
-					Visualization: maistrav2.VisualizationAddonsConfig{
+					Tracing: &maistrav2.TracingConfig{Type: maistrav2.TracerTypeNone},
+					Visualization: &maistrav2.VisualizationAddonsConfig{
 						Grafana: &maistrav2.GrafanaAddonConfig{
 							Enablement: maistrav2.Enablement{Enabled: &enabled},
 							Install:    &maistrav2.GrafanaInstallConfig{},

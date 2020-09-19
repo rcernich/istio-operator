@@ -772,7 +772,7 @@ func newControlPlane(version string) *maistrav2.ServiceMeshControlPlane {
 		Spec: maistrav2.ControlPlaneSpec{
 			Version: version,
 			Addons: &maistrav2.AddonsConfig{
-				Visualization: maistrav2.VisualizationAddonsConfig{
+				Visualization: &maistrav2.VisualizationAddonsConfig{
 					Kiali: &maistrav2.KialiAddonConfig{
 						Enablement: maistrav2.Enablement{
 							Enabled: &enabled,

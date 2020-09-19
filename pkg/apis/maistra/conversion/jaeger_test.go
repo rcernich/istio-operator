@@ -21,7 +21,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type:     v2.TracerTypeNone,
 					Sampling: &traceSampling,
 				},
@@ -57,7 +57,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type:   v2.TracerTypeJaeger,
 					Jaeger: nil,
 				},
@@ -93,7 +93,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type:   v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{},
 				},
@@ -129,7 +129,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",
@@ -170,7 +170,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name:    "my-jaeger",
@@ -212,7 +212,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",
@@ -256,7 +256,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",
@@ -303,7 +303,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",
@@ -351,7 +351,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",
@@ -404,7 +404,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",
@@ -451,7 +451,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",
@@ -499,7 +499,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",
@@ -571,7 +571,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",
@@ -615,7 +615,7 @@ var jaegerTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Tracing: v2.TracingConfig{
+				Tracing: &v2.TracingConfig{
 					Type: v2.TracerTypeJaeger,
 					Jaeger: &v2.JaegerTracerConfig{
 						Name: "my-jaeger",

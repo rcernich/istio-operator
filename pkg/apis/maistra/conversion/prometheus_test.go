@@ -20,7 +20,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: nil,
 				},
 			},
@@ -44,7 +44,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{},
 				},
 			},
@@ -68,7 +68,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{
 						Enablement: v2.Enablement{
 							Enabled: &featureEnabled,
@@ -100,7 +100,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{
 						Address: &prometheusTestAddress,
 					},
@@ -130,7 +130,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{
 						Install: &v2.PrometheusInstallConfig{},
 					},
@@ -156,7 +156,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{
 						Install: &v2.PrometheusInstallConfig{
 							UseTLS: &featureEnabled,
@@ -194,7 +194,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V1_1.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{
 						Install: &v2.PrometheusInstallConfig{
 							UseTLS: &featureEnabled,
@@ -234,7 +234,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{
 						Install: &v2.PrometheusInstallConfig{
 							Service: v2.ComponentServiceConfig{
@@ -282,7 +282,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{
 						Install: &v2.PrometheusInstallConfig{
 							Service: v2.ComponentServiceConfig{
@@ -312,7 +312,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{
 						Install: &v2.PrometheusInstallConfig{
 							Service: v2.ComponentServiceConfig{
@@ -381,7 +381,7 @@ var prometheusTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Metrics: v2.MetricsAddonsConfig{
+				Metrics: &v2.MetricsAddonsConfig{
 					Prometheus: &v2.PrometheusAddonConfig{
 						Install: &v2.PrometheusInstallConfig{
 							Service: v2.ComponentServiceConfig{

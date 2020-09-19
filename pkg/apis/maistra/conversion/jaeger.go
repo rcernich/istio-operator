@@ -125,84 +125,80 @@ func populateJaegerAddonValues(jaeger *v2.JaegerTracerConfig, values map[string]
 	return nil
 }
 
-func populateTracingAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
+func populateTracingAddonConfig(in *v1.HelmValues, out *v2.TracingConfig) (bool, error) {
+	setTracer := false
 	if tracer, ok, err := in.GetString("tracing.provider"); ok && tracer != "" {
-		if out.Tracing.Type, err = tracerTypeFromString(tracer); err != nil {
-			return err
+		if out.Type, err = tracerTypeFromString(tracer); err != nil {
+			return false, err
 		}
+		setTracer = true
 	} else if err != nil {
-		return err
+		return false, err
 	} else if tracer, ok, err := in.GetString("global.proxy.tracer"); ok && tracer != "" {
-		if out.Tracing.Type, err = tracerTypeFromString(tracer); err != nil {
-			return err
+		if out.Type, err = tracerTypeFromString(tracer); err != nil {
+			return false, err
 		}
+		setTracer = true
 	} else if err != nil {
-		return err
+		return false, err
 	} else if traceEnabled, ok, err := in.GetBool("tracing.enabled"); ok {
 		if traceEnabled {
 			// default to jaeger if enabled and no proxy.tracer specified
-			out.Tracing.Type = v2.TracerTypeJaeger
+			out.Type = v2.TracerTypeJaeger
 		} else {
-			out.Tracing.Type = v2.TracerTypeNone
+			out.Type = v2.TracerTypeNone
 		}
+		setTracer = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	if sampling, ok, err := in.GetFloat64("pilot.traceSampling"); ok {
-		out.Tracing.Sampling = &sampling
+		out.Sampling = &sampling
+		setTracer = true
 	} else if err != nil {
 		// try int64
 		if intSampling, ok, newErr := in.GetInt64("pilot.traceSampling"); ok {
 			sampling = float64(intSampling)
-			out.Tracing.Sampling = &sampling
+			out.Sampling = &sampling
+			setTracer = true
 		} else if newErr != nil {
-			return err
+			return false, err
 		}
 	}
 
-	switch out.Tracing.Type {
-	case v2.TracerTypeJaeger:
-		return populateJaegerAddonConfig(in, out)
-	case v2.TracerTypeNone:
-		return nil
-	case "":
-		return nil
+	jaeger := &v2.JaegerTracerConfig{}
+	if updated, err := populateJaegerAddonConfig(in, jaeger); updated {
+		out.Jaeger = jaeger
+		setTracer = true
+	} else if err != nil {
+		return false, err
 	}
-	return fmt.Errorf("unknown tracer type: %s", out.Tracing.Type)
+	return setTracer, nil
 }
 
-func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
+func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.JaegerTracerConfig) (bool, error) {
 	rawTracingValues, ok, err := in.GetMap("tracing")
 	if err != nil {
-		return err
+		return false, err
 	} else if !ok || len(rawTracingValues) == 0 {
-		return nil
+		return false, nil
 	}
 	tracingValues := v1.NewHelmValues(rawTracingValues)
 	rawJaegerValues, ok, err := tracingValues.GetMap("jaeger")
 	if err != nil {
-		return err
+		return false, err
 	} else if !ok || len(rawJaegerValues) == 0 {
-		return nil
+		return false, nil
 	}
 	jaegerValues := v1.NewHelmValues(rawJaegerValues)
 
-	out.Tracing.Jaeger = &v2.JaegerTracerConfig{}
-	jaeger := out.Tracing.Jaeger
+	jaeger := out
 
 	if resourceName, ok, err := jaegerValues.GetString("resourceName"); ok && resourceName != "" {
 		jaeger.Name = resourceName
 	} else if err != nil {
-		return err
-	}
-
-	if enabled, ok, err := tracingValues.GetBool("enabled"); ok && !enabled {
-		// no install for this case.  tracer settings will be configured from
-		// referenced resource
-		return nil
-	} else if err != nil {
-		return nil
+		return false, err
 	}
 
 	setInstall := false
@@ -221,10 +217,10 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 		case "":
 			// do nothing
 		default:
-			return fmt.Errorf("unknown jaeger.template: %s", template)
+			return false, fmt.Errorf("unknown jaeger.template: %s", template)
 		}
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if maxTraces, ok, err := jaegerValues.GetInt64("memory.max_traces"); ok {
 		storage.Memory = &v2.JaegerMemoryStorageConfig{
@@ -232,7 +228,7 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 		}
 		setStorage = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if rawElasticsearchValues, ok, err := jaegerValues.GetMap("elasticsearch"); ok && len(rawElasticsearchValues) > 0 {
 		elasticsearchValues := v1.NewHelmValues(rawElasticsearchValues)
@@ -243,7 +239,7 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 			elasticsearch.NodeCount = &nodeCount
 			setElasticsearch = true
 		} else if err != nil {
-			return err
+			return false, err
 		}
 		if rawStorage, ok, err := elasticsearchValues.GetMap("storage"); ok && len(rawStorage) > 0 {
 			storage := v1.NewHelmValues(nil)
@@ -251,16 +247,16 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 				elasticsearch.Storage = storage
 				setElasticsearch = true
 			} else {
-				return err
+				return false, err
 			}
 		} else if err != nil {
-			return err
+			return false, err
 		}
 		if redundancyPolicy, ok, err := elasticsearchValues.GetString("redundancyPolicy"); ok && redundancyPolicy != "" {
 			elasticsearch.RedundancyPolicy = redundancyPolicy
 			setElasticsearch = true
 		} else if err != nil {
-			return err
+			return false, err
 		}
 		if rawESIndexCleaner, ok, err := jaegerValues.GetMap("esIndexCleaner"); ok && len(rawESIndexCleaner) > 0 {
 			esIndexCleaner := v1.NewHelmValues(nil)
@@ -268,17 +264,17 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 				elasticsearch.IndexCleaner = esIndexCleaner
 				setElasticsearch = true
 			} else {
-				return err
+				return false, err
 			}
 		} else if err != nil {
-			return err
+			return false, err
 		}
 		if setElasticsearch {
 			storage.Elasticsearch = elasticsearch
 			setStorage = true
 		}
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if setStorage {
 		install.Storage = storage
@@ -291,23 +287,23 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 		ingressConfig.Enabled = &enabled
 		setIngressConfig = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if rawAnnotations, ok, err := tracingValues.GetMap("ingress.annotations"); ok && len(rawAnnotations) > 0 {
 		setIngressConfig = true
 		if err := setMetadataAnnotations(rawAnnotations, &ingressConfig.Metadata); err != nil {
-			return err
+			return false, err
 		}
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if rawLabels, ok, err := tracingValues.GetMap("ingress.labels"); ok && len(rawLabels) > 0 {
 		setIngressConfig = true
 		if err := setMetadataLabels(rawLabels, &ingressConfig.Metadata); err != nil {
-			return err
+			return false, err
 		}
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if setIngressConfig {
 		install.Ingress = ingressConfig
@@ -318,26 +314,26 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.AddonsConfig) error {
 	if podAnnotations, ok, err := jaegerValues.GetMap("podAnnotations"); ok && len(podAnnotations) > 0 {
 		tracingValues = tracingValues.DeepCopy()
 		if err := tracingValues.SetField("podAnnotations", podAnnotations); err != nil {
-			return err
+			return false, err
 		}
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	// need to move jaeger.podLables to tracing.podLabels
 	if podLabels, ok, err := jaegerValues.GetMap("podLabels"); ok && len(podLabels) > 0 {
 		tracingValues = tracingValues.DeepCopy()
 		if err := tracingValues.SetField("podLabels", podLabels); err != nil {
-			return err
+			return false, err
 		}
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	if setInstall {
 		jaeger.Install = install
 	}
 
-	return nil
+	return true, nil
 }
 
 func tracerTypeFromString(tracer string) (v2.TracerType, error) {
