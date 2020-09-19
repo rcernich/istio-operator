@@ -3058,7 +3058,7 @@ func (in *TracingConfig) DeepCopyInto(out *TracingConfig) {
 	*out = *in
 	if in.Sampling != nil {
 		in, out := &in.Sampling, &out.Sampling
-		*out = new(float64)
+		*out = new(int32)
 		**out = **in
 	}
 	if in.Jaeger != nil {
