@@ -53,6 +53,9 @@ func populateAddonsValues(in *v2.ControlPlaneSpec, values map[string]interface{}
 			if err := setHelmStringValue(values, "tracing.provider", "none"); err != nil {
 				return err
 			}
+			if err := setHelmStringValue(values, "global.proxy.tracer", "none"); err != nil {
+				return err
+			}
 		case v2.TracerTypeJaeger:
 			if err := setHelmValue(values, "tracing.provider", "jaeger"); err != nil {
 				return err

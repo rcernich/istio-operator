@@ -26,6 +26,10 @@ spec:
   proxy:
     autoInject: true
     networking:
+      protocol:
+        autoDetect:
+          inbound: false
+          outbound: false
       dns:
         refreshRate: 300s
 

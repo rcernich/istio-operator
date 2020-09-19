@@ -31,6 +31,9 @@ var jaegerTestCases = []conversionTestCase{
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"global": map[string]interface{}{
 				"enableTracing": false,
+				"proxy": map[string]interface{}{
+					"tracer": "none",
+				},
 			},
 			"pilot": map[string]interface{}{
 				"traceSampling": 0.01,

@@ -42,10 +42,6 @@ func populateJaegerAddonValues(jaeger *v2.JaegerTracerConfig, values map[string]
 		return nil
 	}
 
-	if err := setHelmStringValue(tracingValues, "provider", "jaeger"); err != nil {
-		return err
-	}
-
 	if jaeger.Install.Storage != nil {
 		switch jaeger.Install.Storage.Type {
 		case v2.JaegerStorageTypeMemory:
