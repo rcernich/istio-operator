@@ -6,7 +6,7 @@ spec:
   runtime:
     defaults:
       container:
-        tag: 2.0.0
+        imageTag: 2.0.0
 
   gateways:
     enabled: true

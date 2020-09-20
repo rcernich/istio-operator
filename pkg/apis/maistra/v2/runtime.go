@@ -221,7 +221,7 @@ type PodAntiAffinityTerm struct {
 type ContainerConfig struct {
 	CommonContainerConfig `json:",inline"`
 	// +optional
-	Image string `json:"image,omitempty"`
+	Image string `json:"imageName,omitempty"`
 	// +optional
 	Env map[string]string `json:"env,omitempty"`
 }
@@ -230,9 +230,9 @@ type ContainerConfig struct {
 // and component specific configuration.
 type CommonContainerConfig struct {
 	// +optional
-	ImageRegistry string `json:"registry,omitempty"`
+	ImageRegistry string `json:"imageRegistry,omitempty"`
 	// +optional
-	ImageTag string `json:"tag,omitempty"`
+	ImageTag string `json:"imageTag,omitempty"`
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// +optional

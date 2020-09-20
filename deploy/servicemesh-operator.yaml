@@ -597,7 +597,7 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                  image:
+                                  imageName:
                                     type: string
                                   imagePullPolicy:
                                     type: string
@@ -608,7 +608,9 @@ spec:
                                           type: string
                                       type: object
                                     type: array
-                                  registry:
+                                  imageRegistry:
+                                    type: string
+                                  imageTag:
                                     type: string
                                   resources:
                                     properties:
@@ -629,8 +631,6 @@ spec:
                                           x-kubernetes-int-or-string: true
                                         type: object
                                     type: object
-                                  tag:
-                                    type: string
                                 type: object
                               deployment:
                                 properties:
@@ -967,7 +967,7 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                image:
+                                imageName:
                                   type: string
                                 imagePullPolicy:
                                   type: string
@@ -978,7 +978,9 @@ spec:
                                         type: string
                                     type: object
                                   type: array
-                                registry:
+                                imageRegistry:
+                                  type: string
+                                imageTag:
                                   type: string
                                 resources:
                                   properties:
@@ -999,8 +1001,6 @@ spec:
                                         x-kubernetes-int-or-string: true
                                       type: object
                                   type: object
-                                tag:
-                                  type: string
                               type: object
                             deployment:
                               properties:
@@ -1297,7 +1297,7 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                image:
+                                imageName:
                                   type: string
                                 imagePullPolicy:
                                   type: string
@@ -1308,7 +1308,9 @@ spec:
                                         type: string
                                     type: object
                                   type: array
-                                registry:
+                                imageRegistry:
+                                  type: string
+                                imageTag:
                                   type: string
                                 resources:
                                   properties:
@@ -1329,8 +1331,6 @@ spec:
                                         x-kubernetes-int-or-string: true
                                       type: object
                                   type: object
-                                tag:
-                                  type: string
                               type: object
                             deployment:
                               properties:
@@ -1457,7 +1457,7 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                image:
+                                imageName:
                                   type: string
                                 imagePullPolicy:
                                   type: string
@@ -1468,7 +1468,9 @@ spec:
                                         type: string
                                     type: object
                                   type: array
-                                registry:
+                                imageRegistry:
+                                  type: string
+                                imageTag:
                                   type: string
                                 resources:
                                   properties:
@@ -1489,8 +1491,6 @@ spec:
                                         x-kubernetes-int-or-string: true
                                       type: object
                                   type: object
-                                tag:
-                                  type: string
                               type: object
                           type: object
                         service:
@@ -1676,7 +1676,7 @@ spec:
                                 additionalProperties:
                                   type: string
                                 type: object
-                              image:
+                              imageName:
                                 type: string
                               imagePullPolicy:
                                 type: string
@@ -1687,7 +1687,9 @@ spec:
                                       type: string
                                   type: object
                                 type: array
-                              registry:
+                              imageRegistry:
+                                type: string
+                              imageTag:
                                 type: string
                               resources:
                                 properties:
@@ -1708,8 +1710,6 @@ spec:
                                       x-kubernetes-int-or-string: true
                                     type: object
                                 type: object
-                              tag:
-                                type: string
                             type: object
                           deployment:
                             properties:
@@ -2032,7 +2032,7 @@ spec:
                                 additionalProperties:
                                   type: string
                                 type: object
-                              image:
+                              imageName:
                                 type: string
                               imagePullPolicy:
                                 type: string
@@ -2043,7 +2043,9 @@ spec:
                                       type: string
                                   type: object
                                 type: array
-                              registry:
+                              imageRegistry:
+                                type: string
+                              imageTag:
                                 type: string
                               resources:
                                 properties:
@@ -2064,8 +2066,6 @@ spec:
                                       x-kubernetes-int-or-string: true
                                     type: object
                                 type: object
-                              tag:
-                                type: string
                             type: object
                           deployment:
                             properties:
@@ -2192,7 +2192,7 @@ spec:
                                 additionalProperties:
                                   type: string
                                 type: object
-                              image:
+                              imageName:
                                 type: string
                               imagePullPolicy:
                                 type: string
@@ -2203,7 +2203,9 @@ spec:
                                       type: string
                                   type: object
                                 type: array
-                              registry:
+                              imageRegistry:
+                                type: string
+                              imageTag:
                                 type: string
                               resources:
                                 properties:
@@ -2224,8 +2226,6 @@ spec:
                                       x-kubernetes-int-or-string: true
                                     type: object
                                 type: object
-                              tag:
-                                type: string
                             type: object
                         type: object
                       service:
@@ -2627,7 +2627,7 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                  image:
+                                  imageName:
                                     type: string
                                   imagePullPolicy:
                                     type: string
@@ -2638,7 +2638,9 @@ spec:
                                           type: string
                                       type: object
                                     type: array
-                                  registry:
+                                  imageRegistry:
+                                    type: string
+                                  imageTag:
                                     type: string
                                   resources:
                                     properties:
@@ -2659,8 +2661,6 @@ spec:
                                           x-kubernetes-int-or-string: true
                                         type: object
                                     type: object
-                                  tag:
-                                    type: string
                                 type: object
                             type: object
                           type:
@@ -2724,7 +2724,7 @@ spec:
                             additionalProperties:
                               type: string
                             type: object
-                          image:
+                          imageName:
                             type: string
                           imagePullPolicy:
                             type: string
@@ -2735,7 +2735,9 @@ spec:
                                   type: string
                               type: object
                             type: array
-                          registry:
+                          imageRegistry:
+                            type: string
+                          imageTag:
                             type: string
                           resources:
                             properties:
@@ -2756,8 +2758,6 @@ spec:
                                   x-kubernetes-int-or-string: true
                                 type: object
                             type: object
-                          tag:
-                            type: string
                         type: object
                       readiness:
                         properties:
@@ -2789,7 +2789,7 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
-                            image:
+                            imageName:
                               type: string
                             imagePullPolicy:
                               type: string
@@ -2800,7 +2800,9 @@ spec:
                                     type: string
                                 type: object
                               type: array
-                            registry:
+                            imageRegistry:
+                              type: string
+                            imageTag:
                               type: string
                             resources:
                               properties:
@@ -2821,8 +2823,6 @@ spec:
                                     x-kubernetes-int-or-string: true
                                   type: object
                               type: object
-                            tag:
-                              type: string
                           type: object
                         deployment:
                           properties:
@@ -2953,7 +2953,9 @@ spec:
                                   type: string
                               type: object
                             type: array
-                          registry:
+                          imageRegistry:
+                            type: string
+                          imageTag:
                             type: string
                           resources:
                             properties:
@@ -2974,8 +2976,6 @@ spec:
                                   x-kubernetes-int-or-string: true
                                 type: object
                             type: object
-                          tag:
-                            type: string
                         type: object
                       deployment:
                         properties:
@@ -3616,7 +3616,7 @@ spec:
                                         additionalProperties:
                                           type: string
                                         type: object
-                                      image:
+                                      imageName:
                                         type: string
                                       imagePullPolicy:
                                         type: string
@@ -3627,7 +3627,9 @@ spec:
                                               type: string
                                           type: object
                                         type: array
-                                      registry:
+                                      imageRegistry:
+                                        type: string
+                                      imageTag:
                                         type: string
                                       resources:
                                         properties:
@@ -3648,8 +3650,6 @@ spec:
                                               x-kubernetes-int-or-string: true
                                             type: object
                                         type: object
-                                      tag:
-                                        type: string
                                     type: object
                                   deployment:
                                     properties:
@@ -3986,7 +3986,7 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
-                                    image:
+                                    imageName:
                                       type: string
                                     imagePullPolicy:
                                       type: string
@@ -3997,7 +3997,9 @@ spec:
                                             type: string
                                         type: object
                                       type: array
-                                    registry:
+                                    imageRegistry:
+                                      type: string
+                                    imageTag:
                                       type: string
                                     resources:
                                       properties:
@@ -4018,8 +4020,6 @@ spec:
                                             x-kubernetes-int-or-string: true
                                           type: object
                                       type: object
-                                    tag:
-                                      type: string
                                   type: object
                                 deployment:
                                   properties:
@@ -4316,7 +4316,7 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
-                                    image:
+                                    imageName:
                                       type: string
                                     imagePullPolicy:
                                       type: string
@@ -4327,7 +4327,9 @@ spec:
                                             type: string
                                         type: object
                                       type: array
-                                    registry:
+                                    imageRegistry:
+                                      type: string
+                                    imageTag:
                                       type: string
                                     resources:
                                       properties:
@@ -4348,8 +4350,6 @@ spec:
                                             x-kubernetes-int-or-string: true
                                           type: object
                                       type: object
-                                    tag:
-                                      type: string
                                   type: object
                                 deployment:
                                   properties:
@@ -4476,7 +4476,7 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
-                                    image:
+                                    imageName:
                                       type: string
                                     imagePullPolicy:
                                       type: string
@@ -4487,7 +4487,9 @@ spec:
                                             type: string
                                         type: object
                                       type: array
-                                    registry:
+                                    imageRegistry:
+                                      type: string
+                                    imageTag:
                                       type: string
                                     resources:
                                       properties:
@@ -4508,8 +4510,6 @@ spec:
                                             x-kubernetes-int-or-string: true
                                           type: object
                                       type: object
-                                    tag:
-                                      type: string
                                   type: object
                               type: object
                             service:
@@ -4695,7 +4695,7 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                  image:
+                                  imageName:
                                     type: string
                                   imagePullPolicy:
                                     type: string
@@ -4706,7 +4706,9 @@ spec:
                                           type: string
                                       type: object
                                     type: array
-                                  registry:
+                                  imageRegistry:
+                                    type: string
+                                  imageTag:
                                     type: string
                                   resources:
                                     properties:
@@ -4727,8 +4729,6 @@ spec:
                                           x-kubernetes-int-or-string: true
                                         type: object
                                     type: object
-                                  tag:
-                                    type: string
                                 type: object
                               deployment:
                                 properties:
@@ -5051,7 +5051,7 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                  image:
+                                  imageName:
                                     type: string
                                   imagePullPolicy:
                                     type: string
@@ -5062,7 +5062,9 @@ spec:
                                           type: string
                                       type: object
                                     type: array
-                                  registry:
+                                  imageRegistry:
+                                    type: string
+                                  imageTag:
                                     type: string
                                   resources:
                                     properties:
@@ -5083,8 +5085,6 @@ spec:
                                           x-kubernetes-int-or-string: true
                                         type: object
                                     type: object
-                                  tag:
-                                    type: string
                                 type: object
                               deployment:
                                 properties:
@@ -5211,7 +5211,7 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                  image:
+                                  imageName:
                                     type: string
                                   imagePullPolicy:
                                     type: string
@@ -5222,7 +5222,9 @@ spec:
                                           type: string
                                       type: object
                                     type: array
-                                  registry:
+                                  imageRegistry:
+                                    type: string
+                                  imageTag:
                                     type: string
                                   resources:
                                     properties:
@@ -5243,8 +5245,6 @@ spec:
                                           x-kubernetes-int-or-string: true
                                         type: object
                                     type: object
-                                  tag:
-                                    type: string
                                 type: object
                             type: object
                           service:
@@ -5646,7 +5646,7 @@ spec:
                                         additionalProperties:
                                           type: string
                                         type: object
-                                      image:
+                                      imageName:
                                         type: string
                                       imagePullPolicy:
                                         type: string
@@ -5657,7 +5657,9 @@ spec:
                                               type: string
                                           type: object
                                         type: array
-                                      registry:
+                                      imageRegistry:
+                                        type: string
+                                      imageTag:
                                         type: string
                                       resources:
                                         properties:
@@ -5678,8 +5680,6 @@ spec:
                                               x-kubernetes-int-or-string: true
                                             type: object
                                         type: object
-                                      tag:
-                                        type: string
                                     type: object
                                 type: object
                               type:
@@ -5743,7 +5743,7 @@ spec:
                                 additionalProperties:
                                   type: string
                                 type: object
-                              image:
+                              imageName:
                                 type: string
                               imagePullPolicy:
                                 type: string
@@ -5754,7 +5754,9 @@ spec:
                                       type: string
                                   type: object
                                 type: array
-                              registry:
+                              imageRegistry:
+                                type: string
+                              imageTag:
                                 type: string
                               resources:
                                 properties:
@@ -5775,8 +5777,6 @@ spec:
                                       x-kubernetes-int-or-string: true
                                     type: object
                                 type: object
-                              tag:
-                                type: string
                             type: object
                           readiness:
                             properties:
@@ -5808,7 +5808,7 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                image:
+                                imageName:
                                   type: string
                                 imagePullPolicy:
                                   type: string
@@ -5819,7 +5819,9 @@ spec:
                                         type: string
                                     type: object
                                   type: array
-                                registry:
+                                imageRegistry:
+                                  type: string
+                                imageTag:
                                   type: string
                                 resources:
                                   properties:
@@ -5840,8 +5842,6 @@ spec:
                                         x-kubernetes-int-or-string: true
                                       type: object
                                   type: object
-                                tag:
-                                  type: string
                               type: object
                             deployment:
                               properties:
@@ -5972,7 +5972,9 @@ spec:
                                       type: string
                                   type: object
                                 type: array
-                              registry:
+                              imageRegistry:
+                                type: string
+                              imageTag:
                                 type: string
                               resources:
                                 properties:
@@ -5993,8 +5995,6 @@ spec:
                                       x-kubernetes-int-or-string: true
                                     type: object
                                 type: object
-                              tag:
-                                type: string
                             type: object
                           deployment:
                             properties:
