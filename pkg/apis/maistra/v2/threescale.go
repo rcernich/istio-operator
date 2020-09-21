@@ -1,9 +1,9 @@
 package v2
 
-// ThreeScaleConfig represents configuration options for the installation of the
+// ThreeScaleAddonConfig represents configuration options for the installation of the
 // 3scale adapter.  The options are structured similarly to what is defined by
 // the 3scale ConfigMap.
-type ThreeScaleConfig struct {
+type ThreeScaleAddonConfig struct {
 	Enablement `json:",inline"`
 
 	// ListenerAddr sets the listen address for the gRPC server.

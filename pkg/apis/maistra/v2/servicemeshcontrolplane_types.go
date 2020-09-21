@@ -125,6 +125,9 @@ type ControlPlaneSpec struct {
 	// .Values.mixer.telemetry.enabled, true if not null.  1.6, .Values.telemetry.enabled
 	// +optional
 	Telemetry *TelemetryConfig `json:"telemetry,omitempty"`
+	// Tracing configures tracing for the mesh.
+	// +optional
+	Tracing *TracingConfig `json:"tracing,omitempty"`
 	// Gateways configures gateways for the mesh
 	// .Values.gateways.*
 	// +optional

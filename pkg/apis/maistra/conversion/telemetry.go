@@ -116,57 +116,6 @@ func populateMixerTelemetryValues(in *v2.ControlPlaneSpec, istiod bool, values m
 				return err
 			}
 		}
-		if mixer.Adapters.Prometheus == nil {
-			if err := setHelmBoolValue(telemetryAdaptersValues, "prometheus.enabled", false); err != nil {
-				return err
-			}
-		} else {
-			if err := setHelmBoolValue(telemetryAdaptersValues, "prometheus.enabled", true); err != nil {
-				return err
-			}
-			if mixer.Adapters.Prometheus.MetricsExpiryDuration != "" {
-				if err := setHelmStringValue(telemetryAdaptersValues, "prometheus.metricsExpiryDuration", mixer.Adapters.Prometheus.MetricsExpiryDuration); err != nil {
-					return err
-				}
-			}
-		}
-		if mixer.Adapters.Stackdriver == nil {
-			if err := setHelmBoolValue(telemetryAdaptersValues, "stackdriver.enabled", false); err != nil {
-				return err
-			}
-		} else {
-			stackdriver := mixer.Adapters.Stackdriver
-			if err := setHelmBoolValue(telemetryAdaptersValues, "stackdriver.enabled", true); err != nil {
-				return err
-			}
-			if err := setHelmBoolValue(telemetryAdaptersValues, "stackdriver.contextGraph.enabled", stackdriver.EnableContextGraph); err != nil {
-				return err
-			}
-			if err := setHelmBoolValue(telemetryAdaptersValues, "stackdriver.logging.enabled", stackdriver.EnableLogging); err != nil {
-				return err
-			}
-			if err := setHelmBoolValue(telemetryAdaptersValues, "stackdriver.metrics.enabled", stackdriver.EnableMetrics); err != nil {
-				return err
-			}
-			if stackdriver.Auth != nil {
-				auth := stackdriver.Auth
-				if err := setHelmBoolValue(telemetryAdaptersValues, "stackdriver.auth.appCredentials", auth.AppCredentials); err != nil {
-					return err
-				}
-				if err := setHelmStringValue(telemetryAdaptersValues, "stackdriver.auth.apiKey", auth.APIKey); err != nil {
-					return err
-				}
-				if err := setHelmStringValue(telemetryAdaptersValues, "stackdriver.auth.serviceAccountPath", auth.ServiceAccountPath); err != nil {
-					return err
-				}
-			}
-			if stackdriver.Tracer != nil {
-				tracer := mixer.Adapters.Stackdriver.Tracer
-				if err := setHelmIntValue(telemetryAdaptersValues, "stackdriver.tracer.sampleProbability", int64(tracer.SampleProbability)); err != nil {
-					return err
-				}
-			}
-		}
 		if len(telemetryAdaptersValues) > 0 {
 			if err := setHelmValue(values, "mixer.adapters", telemetryAdaptersValues); err != nil {
 				return err
@@ -300,11 +249,6 @@ func populateRemoteTelemetryValues(in *v2.ControlPlaneSpec, istiod bool, values 
 }
 
 func populateIstiodTelemetryValues(in *v2.ControlPlaneSpec, values map[string]interface{}) error {
-	istiod := in.Telemetry.Istiod
-	if istiod == nil {
-		istiod = &v2.IstiodTelemetryConfig{}
-	}
-
 	// Make sure mixer is disabled
 	if err := setHelmBoolValue(values, "mixer.enabled", false); err != nil {
 		return err
@@ -328,59 +272,6 @@ func populateIstiodTelemetryValues(in *v2.ControlPlaneSpec, values map[string]in
 	}
 	if err := setHelmBoolValue(telemetryValues, "v2.enabled", true); err != nil {
 		return err
-	}
-
-	// Adapters
-	if istiod.MetadataExchange != nil {
-		me := istiod.MetadataExchange
-		if err := setHelmBoolValue(telemetryValues, "v2.metadataExchange.wasmEnabled", me.WASMEnabled); err != nil {
-			return err
-		}
-	}
-
-	if istiod.PrometheusFilter != nil {
-		prometheus := istiod.PrometheusFilter
-		if err := setHelmBoolValue(telemetryValues, "v2.prometheus.enabled", true); err != nil {
-			return err
-		}
-		if err := setHelmBoolValue(telemetryValues, "v2.prometheus.wasmEnabled", prometheus.WASMEnabled); err != nil {
-			return err
-		}
-		if err := setHelmBoolValue(values, "meshConfig.enablePrometheusMerge", prometheus.Scrape); err != nil {
-			return err
-		}
-	}
-
-	if istiod.StackDriverFilter != nil {
-		stackdriver := istiod.StackDriverFilter
-		if err := setHelmBoolValue(telemetryValues, "v2.stackdriver.enabled", true); err != nil {
-			return err
-		}
-		if err := setHelmBoolValue(telemetryValues, "v2.stackdriver.logging", stackdriver.Logging); err != nil {
-			return err
-		}
-		if err := setHelmBoolValue(telemetryValues, "v2.stackdriver.monitoring", stackdriver.Monitoring); err != nil {
-			return err
-		}
-		if err := setHelmBoolValue(telemetryValues, "v2.stackdriver.topology", stackdriver.Topology); err != nil {
-			return err
-		}
-		if err := setHelmBoolValue(telemetryValues, "v2.stackdriver.disableOutbound", stackdriver.DisableOutbound); err != nil {
-			return err
-		}
-		if err := setHelmValue(telemetryValues, "v2.stackdriver.configOverride", stackdriver.ConfigOverride.GetContent()); err != nil {
-			return err
-		}
-	}
-
-	if istiod.AccessLogTelemetryFilter != nil {
-		accessLog := istiod.AccessLogTelemetryFilter
-		if err := setHelmBoolValue(telemetryValues, "v2.accessLogPolicy.enabled", true); err != nil {
-			return err
-		}
-		if err := setHelmStringValue(telemetryValues, "v2.accessLogPolicy.logWindowDuration", accessLog.LogWindowDuration); err != nil {
-			return err
-		}
 	}
 
 	// set the telemetry values
@@ -465,12 +356,7 @@ func populateTelemetryConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec, versio
 	}
 	switch telemetryType {
 	case v2.TelemetryTypeIstiod:
-		config := &v2.IstiodTelemetryConfig{}
-		if applied, err := populateIstiodTelemetryConfig(in, config); err != nil {
-			return err
-		} else if applied {
-			out.Telemetry.Istiod = config
-		}
+		// nothing to do
 	case v2.TelemetryTypeMixer:
 		config := &v2.MixerTelemetryConfig{}
 		if applied, err := populateMixerTelemetryConfig(in, config); err != nil {
@@ -578,68 +464,6 @@ func populateMixerTelemetryConfig(in *v1.HelmValues, out *v2.MixerTelemetryConfi
 		} else if err != nil {
 			return false, err
 		}
-		if prometheus, ok, err := telemetryAdaptersValues.GetBool("prometheus.enabled"); ok && prometheus {
-			adapters.Prometheus = &v2.MixerTelemetryPrometheusConfig{}
-			if metricsExpiryDuration, ok, err := telemetryAdaptersValues.GetString("prometheus.metricsExpiryDuration"); ok {
-				adapters.Prometheus.MetricsExpiryDuration = metricsExpiryDuration
-			} else if err != nil {
-				return false, err
-			}
-			setAdapters = true
-		} else if err != nil {
-			return false, err
-		}
-		if stackdriver, ok, err := telemetryAdaptersValues.GetBool("stackdriver.enabled"); ok && stackdriver {
-			adapters.Stackdriver = &v2.MixerTelemetryStackdriverConfig{}
-			setAdapters = true
-			if contextGraph, ok, err := telemetryAdaptersValues.GetBool("stackdriver.contextGraph.enabled"); ok {
-				adapters.Stackdriver.EnableContextGraph = contextGraph
-			} else if err != nil {
-				return false, err
-			}
-			if logging, ok, err := telemetryAdaptersValues.GetBool("stackdriver.logging.enabled"); ok {
-				adapters.Stackdriver.EnableLogging = logging
-			} else if err != nil {
-				return false, err
-			}
-			if metrics, ok, err := telemetryAdaptersValues.GetBool("stackdriver.metrics.enabled"); ok {
-				adapters.Stackdriver.EnableMetrics = metrics
-			} else if err != nil {
-				return false, err
-			}
-			auth := &v2.MixerTelemetryStackdriverAuthConfig{}
-			setAuth := false
-			if appCredentials, ok, err := telemetryAdaptersValues.GetBool("stackdriver.auth.appCredentials"); ok {
-				auth.AppCredentials = appCredentials
-				setAuth = true
-			} else if err != nil {
-				return false, err
-			}
-			if apiKey, ok, err := telemetryAdaptersValues.GetString("stackdriver.auth.apiKey"); ok {
-				auth.APIKey = apiKey
-				setAuth = true
-			} else if err != nil {
-				return false, err
-			}
-			if serviceAccountPath, ok, err := telemetryAdaptersValues.GetString("stackdriver.auth.serviceAccountPath"); ok {
-				auth.ServiceAccountPath = serviceAccountPath
-				setAuth = true
-			} else if err != nil {
-				return false, err
-			}
-			if setAuth {
-				adapters.Stackdriver.Auth = auth
-			}
-			if sampleProbability, ok, err := telemetryAdaptersValues.GetInt64("stackdriver.tracer.sampleProbability"); ok {
-				adapters.Stackdriver.Tracer = &v2.MixerTelemetryStackdriverTracerConfig{
-					SampleProbability: int(sampleProbability),
-				}
-			} else if err != nil {
-				return false, err
-			}
-		} else if err != nil {
-			return false, err
-		}
 		if setAdapters {
 			out.Adapters = adapters
 			setValues = true
@@ -698,96 +522,6 @@ func populateRemoteTelemetryConfig(in *v1.HelmValues, out *v2.RemoteTelemetryCon
 	} else if applied {
 		out.Batching = batching
 		setValues = true
-	}
-
-	return setValues, nil
-}
-
-func populateIstiodTelemetryConfig(in *v1.HelmValues, out *v2.IstiodTelemetryConfig) (bool, error) {
-	setValues := false
-
-	rawTelemetryValues, ok, err := in.GetMap("telemetry")
-	if err != nil {
-		return false, err
-	} else if !ok || len(rawTelemetryValues) == 0 {
-		rawTelemetryValues = make(map[string]interface{})
-	}
-	telemetryValues := v1.NewHelmValues(rawTelemetryValues)
-
-	// Adapters
-	if metadataExchangeWASM, ok, err := telemetryValues.GetBool("v2.metadataExchange.wasmEnabled"); ok {
-		out.MetadataExchange = &v2.MetadataExchangeConfig{
-			WASMEnabled: metadataExchangeWASM,
-		}
-		setValues = true
-	} else if err != nil {
-		return false, err
-	}
-
-	if prometheus, ok, err := telemetryValues.GetBool("v2.prometheus.enabled"); ok && prometheus {
-		out.PrometheusFilter = &v2.PrometheusFilterConfig{}
-		setValues = true
-		if wasmEnabled, ok, err := telemetryValues.GetBool("v2.prometheus.wasmEnabled"); ok {
-			out.PrometheusFilter.WASMEnabled = wasmEnabled
-		} else if err != nil {
-			return false, err
-		}
-		if wasmEnabled, ok, err := telemetryValues.GetBool("v2.prometheus.wasmEnabled"); ok {
-			out.PrometheusFilter.WASMEnabled = wasmEnabled
-		} else if err != nil {
-			return false, err
-		}
-		if enablePrometheusMerge, ok, err := in.GetBool("meshConfig.enablePrometheusMerge"); ok {
-			out.PrometheusFilter.Scrape = enablePrometheusMerge
-		} else if err != nil {
-			return false, err
-		}
-	} else if err != nil {
-		return false, err
-	}
-
-	if stackdriver, ok, err := telemetryValues.GetBool("v2.stackdriver.enabled"); ok && stackdriver {
-		out.StackDriverFilter = &v2.StackDriverFilterConfig{}
-		setValues = true
-		if logging, ok, err := telemetryValues.GetBool("v2.stackdriver.logging"); ok {
-			out.StackDriverFilter.Logging = logging
-		} else if err != nil {
-			return false, err
-		}
-		if monitoring, ok, err := telemetryValues.GetBool("v2.stackdriver.monitoring"); ok {
-			out.StackDriverFilter.Monitoring = monitoring
-		} else if err != nil {
-			return false, err
-		}
-		if topology, ok, err := telemetryValues.GetBool("v2.stackdriver.topology"); ok {
-			out.StackDriverFilter.Topology = topology
-		} else if err != nil {
-			return false, err
-		}
-		if disableOutbound, ok, err := telemetryValues.GetBool("v2.stackdriver.disableOutbound"); ok {
-			out.StackDriverFilter.DisableOutbound = disableOutbound
-		} else if err != nil {
-			return false, err
-		}
-		if configOverride, ok, err := telemetryValues.GetMap("v2.stackdriver.configOverride"); ok && len(configOverride) > 0 {
-			out.StackDriverFilter.ConfigOverride = v1.NewHelmValues(configOverride)
-		} else if err != nil {
-			return false, err
-		}
-	} else if err != nil {
-		return false, err
-	}
-
-	if accessLogPolicy, ok, err := telemetryValues.GetBool("v2.accessLogPolicy.enabled"); ok && accessLogPolicy {
-		out.AccessLogTelemetryFilter = &v2.AccessLogTelemetryFilterConfig{}
-		setValues = true
-		if logWindowDuration, ok, err := telemetryValues.GetString("v2.accessLogPolicy.logWindowDuration"); ok {
-			out.AccessLogTelemetryFilter.LogWindowDuration = logWindowDuration
-		} else if err != nil {
-			return false, err
-		}
-	} else if err != nil {
-		return false, err
 	}
 
 	return setValues, nil

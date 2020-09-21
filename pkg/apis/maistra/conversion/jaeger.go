@@ -2,14 +2,12 @@ package conversion
 
 import (
 	"fmt"
-	"strings"
 
 	v1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 	v2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
 )
 
-func populateJaegerAddonValues(jaeger *v2.JaegerTracerConfig, values map[string]interface{}) (reterr error) {
-
+func populateJaegerAddonValues(jaeger *v2.JaegerAddonConfig, values map[string]interface{}) (reterr error) {
 	if jaeger == nil {
 		return nil
 	}
@@ -121,58 +119,7 @@ func populateJaegerAddonValues(jaeger *v2.JaegerTracerConfig, values map[string]
 	return nil
 }
 
-func populateTracingAddonConfig(in *v1.HelmValues, out *v2.TracingConfig) (bool, error) {
-	setTracer := false
-	if tracer, ok, err := in.GetString("tracing.provider"); ok && tracer != "" {
-		if out.Type, err = tracerTypeFromString(tracer); err != nil {
-			return false, err
-		}
-		setTracer = true
-	} else if err != nil {
-		return false, err
-	} else if tracer, ok, err := in.GetString("global.proxy.tracer"); ok && tracer != "" {
-		if out.Type, err = tracerTypeFromString(tracer); err != nil {
-			return false, err
-		}
-		setTracer = true
-	} else if err != nil {
-		return false, err
-	} else if traceEnabled, ok, err := in.GetBool("tracing.enabled"); ok {
-		if traceEnabled {
-			// default to jaeger if enabled and no proxy.tracer specified
-			out.Type = v2.TracerTypeJaeger
-		} else {
-			out.Type = v2.TracerTypeNone
-		}
-		setTracer = true
-	} else if err != nil {
-		return false, err
-	}
-
-	if rawSampling, ok, err := in.GetFloat64("pilot.traceSampling"); ok {
-		sampling := int32(rawSampling*100.0)
-		out.Sampling = &sampling
-		setTracer = true
-	} else if rawSampling, ok, newErr := in.GetInt64("pilot.traceSampling"); ok {
-		// sampling: 0 - 100% = 0 - 10000, i.e. 1% = 100
-		sampling := int32(rawSampling*100)
-		out.Sampling = &sampling
-		setTracer = true
-	} else if newErr != nil {
-		return false, err
-	}
-
-	jaeger := &v2.JaegerTracerConfig{}
-	if updated, err := populateJaegerAddonConfig(in, jaeger); updated {
-		out.Jaeger = jaeger
-		setTracer = true
-	} else if err != nil {
-		return false, err
-	}
-	return setTracer, nil
-}
-
-func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.JaegerTracerConfig) (bool, error) {
+func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.JaegerAddonConfig) (bool, error) {
 	rawTracingValues, ok, err := in.GetMap("tracing")
 	if err != nil {
 		return false, err
@@ -189,9 +136,10 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.JaegerTracerConfig) (b
 	jaegerValues := v1.NewHelmValues(rawJaegerValues)
 
 	jaeger := out
-
+	setJaeger := false
 	if resourceName, ok, err := jaegerValues.GetString("resourceName"); ok && resourceName != "" {
 		jaeger.Name = resourceName
+		setJaeger = true
 	} else if err != nil {
 		return false, err
 	}
@@ -326,17 +274,8 @@ func populateJaegerAddonConfig(in *v1.HelmValues, out *v2.JaegerTracerConfig) (b
 
 	if setInstall {
 		jaeger.Install = install
+		setJaeger = true
 	}
 
-	return true, nil
-}
-
-func tracerTypeFromString(tracer string) (v2.TracerType, error) {
-	switch strings.ToLower(tracer) {
-	case strings.ToLower(string(v2.TracerTypeJaeger)):
-		return v2.TracerTypeJaeger, nil
-	case strings.ToLower(string(v2.TracerTypeNone)):
-		return v2.TracerTypeNone, nil
-	}
-	return v2.TracerTypeNone, fmt.Errorf("unknown tracer type %s", tracer)
+	return setJaeger, nil
 }

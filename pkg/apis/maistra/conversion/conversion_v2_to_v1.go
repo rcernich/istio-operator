@@ -127,6 +127,11 @@ func Convert_v2_ControlPlaneSpec_To_v1_ControlPlaneSpec(in *v2.ControlPlaneSpec,
 		return err
 	}
 
+	// Tracing
+	if err := populateTracingValues(in, values); err != nil {
+		return err
+	}
+
 	// Gateways
 	if err := populateGatewaysValues(in, values); err != nil {
 		return err

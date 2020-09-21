@@ -1,8 +1,6 @@
 package conversion
 
 import (
-	"fmt"
-
 	v1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 	v2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
 )
@@ -12,80 +10,40 @@ func populateAddonsValues(in *v2.ControlPlaneSpec, values map[string]interface{}
 		return nil
 	}
 
-	if in.Addons.Visualization != nil {
-		// do kiali first, so it doesn't override any kiali.* settings added by other addons (e.g. prometheus, grafana, jaeger)
-		// XXX: not sure how important this is, as these settings should be updated as part of reconcilation
-		if in.Addons.Visualization.Kiali != nil {
-			if err := populateKialiAddonValues(in.Addons.Visualization.Kiali, values); err != nil {
-				return err
-			}
-		}
-		if in.Addons.Visualization.Grafana != nil {
-			if err := populateGrafanaAddonValues(in.Addons.Visualization.Grafana, values); err != nil {
-				return err
-			}
+	// do kiali first, so it doesn't override any kiali.* settings added by other addons (e.g. prometheus, grafana, jaeger)
+	// XXX: not sure how important this is, as these settings should be updated as part of reconcilation
+	if in.Addons.Kiali != nil {
+		if err := populateKialiAddonValues(in.Addons.Kiali, values); err != nil {
+			return err
 		}
 	}
-
-	if in.Addons.Metrics != nil {
-		if in.Addons.Metrics.Prometheus != nil {
-			if err := populatePrometheusAddonValues(in, values); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Tracing
-	if in.Addons.Tracing != nil {
-		if in.Addons.Tracing.Sampling != nil {
-			if err := setHelmFloatValue(values, "pilot.traceSampling", float64(*in.Addons.Tracing.Sampling)/100.0); err != nil {
-				return err
-			}
-		}
-		switch in.Addons.Tracing.Type {
-		case v2.TracerTypeNone:
-			if err := setHelmBoolValue(values, "tracing.enabled", false); err != nil {
-				return err
-			}
-			if err := setHelmBoolValue(values, "global.enableTracing", false); err != nil {
-				return err
-			}
-			if err := setHelmStringValue(values, "tracing.provider", "none"); err != nil {
-				return err
-			}
-			if err := setHelmStringValue(values, "global.proxy.tracer", "none"); err != nil {
-				return err
-			}
-		case v2.TracerTypeJaeger:
-			if err := setHelmValue(values, "tracing.provider", "jaeger"); err != nil {
-				return err
-			}
-			if err := setHelmBoolValue(values, "tracing.enabled", true); err != nil {
-				return err
-			}
-			if err := setHelmBoolValue(values, "global.enableTracing", true); err != nil {
-				return err
-			}
-			if err := setHelmStringValue(values, "global.proxy.tracer", "jaeger"); err != nil {
-				return err
-			}
-		case "":
-			// nothing to do
-		default:
-			return fmt.Errorf("Unknown tracer type: %s", in.Addons.Tracing.Type)
-		}
-
-		// always add values, even if they're not enabled to support profiles
-		if err := populateJaegerAddonValues(in.Addons.Tracing.Jaeger, values); err != nil {
+	if in.Addons.Grafana != nil {
+		if err := populateGrafanaAddonValues(in.Addons.Grafana, values); err != nil {
 			return err
 		}
 	}
 
-	if in.Addons.Misc != nil {
-		if in.Addons.Misc.ThreeScale != nil {
-			if err := populateThreeScaleAddonValues(in.Addons.Misc.ThreeScale, values); err != nil {
-				return err
-			}
+	if in.Addons.Prometheus != nil {
+		if err := populatePrometheusAddonValues(in, values); err != nil {
+			return err
+		}
+	}
+
+	if in.Addons.Jaeger != nil {
+		if err := populateJaegerAddonValues(in.Addons.Jaeger, values); err != nil {
+			return err
+		}
+	}
+
+	if in.Addons.Stackdriver != nil {
+		if err := populateStackDriverAddonValues(in.Addons.Stackdriver, values); err != nil {
+			return err
+		}
+	}
+
+	if in.Addons.ThreeScale != nil {
+		if err := populateThreeScaleAddonValues(in.Addons.ThreeScale, values); err != nil {
+			return err
 		}
 	}
 
@@ -136,50 +94,49 @@ func populateAddonIngressValues(ingress *v2.ComponentIngressConfig, addonIngress
 func populateAddonsConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	addonsConfig := &v2.AddonsConfig{}
 	setAddons := false
-	visualization := &v2.VisualizationAddonsConfig{}
-	setVisualization := false
 	kiali := &v2.KialiAddonConfig{}
 	if updated, err := populateKialiAddonConfig(in, kiali); updated {
-		visualization.Kiali = kiali
-		setVisualization = true
+		addonsConfig.Kiali = kiali
+		setAddons = true
 	} else if err != nil {
 		return err
 	}
 	prometheus := &v2.PrometheusAddonConfig{}
 	if updated, err := populatePrometheusAddonConfig(in, prometheus); updated {
-		addonsConfig.Metrics = &v2.MetricsAddonsConfig{
-			Prometheus: prometheus,
-		}
+		addonsConfig.Prometheus = prometheus
 		setAddons = true
 	} else if err != nil {
 		return err
 	}
-	tracing := &v2.TracingConfig{}
-	if updated, err := populateTracingAddonConfig(in, tracing); updated {
-		addonsConfig.Tracing = tracing
+	jaeger := &v2.JaegerAddonConfig{}
+	if updated, err := populateJaegerAddonConfig(in, jaeger); updated {
+		addonsConfig.Jaeger = jaeger
+		setAddons = true
+	} else if err != nil {
+		return err
+	}
+	stackdriver := &v2.StackdriverAddonConfig{}
+	if updated, err := populateStackdriverAddonConfig(in, stackdriver); updated {
+		addonsConfig.Stackdriver = stackdriver
 		setAddons = true
 	} else if err != nil {
 		return err
 	}
 	grafana := &v2.GrafanaAddonConfig{}
 	if updated, err := populateGrafanaAddonConfig(in, grafana); updated {
-		visualization.Grafana = grafana
-		setVisualization = true
+		addonsConfig.Grafana = grafana
+		setAddons = true
 	} else if err != nil {
 		return err
 	}
-	misc := &v2.MiscAddonsConfig{}
-	if updated, err := populateMiscAddonsConfig(in, misc); updated {
-		addonsConfig.Misc = misc
+	threeScale := &v2.ThreeScaleAddonConfig{}
+	if updated, err := populateThreeScaleAddonConfig(in, threeScale); updated {
+		addonsConfig.ThreeScale = threeScale
 		setAddons = true
 	} else if err != nil {
 		return err
 	}
 
-	if setVisualization {
-		addonsConfig.Visualization = visualization
-		setAddons = true
-	}
 	if setAddons {
 		out.Addons = addonsConfig
 	}
@@ -193,15 +150,6 @@ func populateAddonsConfig(in *v1.HelmValues, out *v2.ControlPlaneSpec) error {
 	}
 
 	return nil
-}
-
-func populateMiscAddonsConfig(in *v1.HelmValues, out *v2.MiscAddonsConfig) (bool, error) {
-	miscConfig := out
-	if err := populateThreeScaleAddonConfig(in, miscConfig); err != nil {
-		return false, err
-	}
-
-	return miscConfig.ThreeScale != nil, nil
 }
 
 func populateAddonIngressConfig(in *v1.HelmValues, out *v2.ComponentIngressConfig) (bool, error) {

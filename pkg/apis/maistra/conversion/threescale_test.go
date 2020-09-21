@@ -48,37 +48,35 @@ var threeScaleTestCases = []conversionTestCase{
 		spec: &v2.ControlPlaneSpec{
 			Version: versions.V2_0.String(),
 			Addons: &v2.AddonsConfig{
-				Misc: &v2.MiscAddonsConfig{
-					ThreeScale: &v2.ThreeScaleConfig{
-						Enablement: v2.Enablement{
-							Enabled: &featureEnabled,
-						},
-						ListenAddr: &threeScaleTestListenAddr,
-						LogGRPC:    &featureDisabled,
-						LogJSON:    &featureEnabled,
-						LogLevel:   "info",
-						Metrics: &v2.ThreeScaleMetricsConfig{
-							Port:   &threeScaleTestMetricsPort,
-							Report: &featureEnabled,
-						},
-						System: &v2.ThreeScaleSystemConfig{
-							CacheMaxSize:         &threeScaleTestCacheMaxSize,
-							CacheRefreshRetries:  &threeScaleTestCacheRefreshRetries,
-							CacheRefreshInterval: &threeScaleTestCacheRefreshInterval,
-							CacheTTL:             &threeScaleTestCacheTTL,
-						},
-						Client: &v2.ThreeScaleClientConfig{
-							AllowInsecureConnections: &featureDisabled,
-							Timeout:                  &threeScaleTestClientTimeout,
-						},
-						GRPC: &v2.ThreeScaleGRPCConfig{
-							MaxConnTimeout: &threeScaleTestGRPCMaxConnTimeout,
-						},
-						Backend: &v2.ThreeScaleBackendConfig{
-							EnableCache:        &featureDisabled,
-							CacheFlushInterval: &threeScaleTestBackendCachFlushInterval,
-							PolicyFailClosed:   &featureEnabled,
-						},
+				ThreeScale: &v2.ThreeScaleAddonConfig{
+					Enablement: v2.Enablement{
+						Enabled: &featureEnabled,
+					},
+					ListenAddr: &threeScaleTestListenAddr,
+					LogGRPC:    &featureDisabled,
+					LogJSON:    &featureEnabled,
+					LogLevel:   "info",
+					Metrics: &v2.ThreeScaleMetricsConfig{
+						Port:   &threeScaleTestMetricsPort,
+						Report: &featureEnabled,
+					},
+					System: &v2.ThreeScaleSystemConfig{
+						CacheMaxSize:         &threeScaleTestCacheMaxSize,
+						CacheRefreshRetries:  &threeScaleTestCacheRefreshRetries,
+						CacheRefreshInterval: &threeScaleTestCacheRefreshInterval,
+						CacheTTL:             &threeScaleTestCacheTTL,
+					},
+					Client: &v2.ThreeScaleClientConfig{
+						AllowInsecureConnections: &featureDisabled,
+						Timeout:                  &threeScaleTestClientTimeout,
+					},
+					GRPC: &v2.ThreeScaleGRPCConfig{
+						MaxConnTimeout: &threeScaleTestGRPCMaxConnTimeout,
+					},
+					Backend: &v2.ThreeScaleBackendConfig{
+						EnableCache:        &featureDisabled,
+						CacheFlushInterval: &threeScaleTestBackendCachFlushInterval,
+						PolicyFailClosed:   &featureEnabled,
 					},
 				},
 			},
@@ -150,37 +148,35 @@ var threeScaleTestCases = []conversionTestCase{
 				},
 			},
 			Addons: &v2.AddonsConfig{
-				Misc: &v2.MiscAddonsConfig{
-					ThreeScale: &v2.ThreeScaleConfig{
-						Enablement: v2.Enablement{
-							Enabled: &featureEnabled,
-						},
-						ListenAddr: &threeScaleTestListenAddr,
-						LogGRPC:    &featureDisabled,
-						LogJSON:    &featureEnabled,
-						LogLevel:   "info",
-						Metrics: &v2.ThreeScaleMetricsConfig{
-							Port:   &threeScaleTestMetricsPort,
-							Report: &featureEnabled,
-						},
-						System: &v2.ThreeScaleSystemConfig{
-							CacheMaxSize:         &threeScaleTestCacheMaxSize,
-							CacheRefreshRetries:  &threeScaleTestCacheRefreshRetries,
-							CacheRefreshInterval: &threeScaleTestCacheRefreshInterval,
-							CacheTTL:             &threeScaleTestCacheTTL,
-						},
-						Client: &v2.ThreeScaleClientConfig{
-							AllowInsecureConnections: &featureDisabled,
-							Timeout:                  &threeScaleTestClientTimeout,
-						},
-						GRPC: &v2.ThreeScaleGRPCConfig{
-							MaxConnTimeout: &threeScaleTestGRPCMaxConnTimeout,
-						},
-						Backend: &v2.ThreeScaleBackendConfig{
-							EnableCache:        &featureDisabled,
-							CacheFlushInterval: &threeScaleTestBackendCachFlushInterval,
-							PolicyFailClosed:   &featureEnabled,
-						},
+				ThreeScale: &v2.ThreeScaleAddonConfig{
+					Enablement: v2.Enablement{
+						Enabled: &featureEnabled,
+					},
+					ListenAddr: &threeScaleTestListenAddr,
+					LogGRPC:    &featureDisabled,
+					LogJSON:    &featureEnabled,
+					LogLevel:   "info",
+					Metrics: &v2.ThreeScaleMetricsConfig{
+						Port:   &threeScaleTestMetricsPort,
+						Report: &featureEnabled,
+					},
+					System: &v2.ThreeScaleSystemConfig{
+						CacheMaxSize:         &threeScaleTestCacheMaxSize,
+						CacheRefreshRetries:  &threeScaleTestCacheRefreshRetries,
+						CacheRefreshInterval: &threeScaleTestCacheRefreshInterval,
+						CacheTTL:             &threeScaleTestCacheTTL,
+					},
+					Client: &v2.ThreeScaleClientConfig{
+						AllowInsecureConnections: &featureDisabled,
+						Timeout:                  &threeScaleTestClientTimeout,
+					},
+					GRPC: &v2.ThreeScaleGRPCConfig{
+						MaxConnTimeout: &threeScaleTestGRPCMaxConnTimeout,
+					},
+					Backend: &v2.ThreeScaleBackendConfig{
+						EnableCache:        &featureDisabled,
+						CacheFlushInterval: &threeScaleTestBackendCachFlushInterval,
+						PolicyFailClosed:   &featureEnabled,
 					},
 				},
 			},

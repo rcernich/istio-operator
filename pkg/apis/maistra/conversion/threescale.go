@@ -5,7 +5,7 @@ import (
 	v2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
 )
 
-func populateThreeScaleAddonValues(threeScale *v2.ThreeScaleConfig, values map[string]interface{}) (reterr error) {
+func populateThreeScaleAddonValues(threeScale *v2.ThreeScaleAddonConfig, values map[string]interface{}) (reterr error) {
 	if threeScale == nil {
 		return nil
 	}
@@ -124,46 +124,43 @@ func populateThreeScaleAddonValues(threeScale *v2.ThreeScaleConfig, values map[s
 	return nil
 }
 
-func populateThreeScaleAddonConfig(in *v1.HelmValues, out *v2.MiscAddonsConfig) error {
+func populateThreeScaleAddonConfig(in *v1.HelmValues, out *v2.ThreeScaleAddonConfig) (bool, error) {
 	rawThreeScaleValues, ok, err := in.GetMap("3scale")
 	if err != nil {
-		return err
+		return false, err
 	} else if !ok || len(rawThreeScaleValues) == 0 {
 		// nothing to do
-		return nil
+		return false, nil
 	}
 
-	if out.ThreeScale == nil {
-		out.ThreeScale = &v2.ThreeScaleConfig{}
-	}
-	threeScale := out.ThreeScale
+	threeScale := out
 	threeScaleValues := v1.NewHelmValues(rawThreeScaleValues)
 
 	if enabled, ok, err := threeScaleValues.GetBool("enabled"); ok {
 		threeScale.Enabled = &enabled
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if rawListenAddr, ok, err := threeScaleValues.GetInt64("PARAM_THREESCALE_LISTEN_ADDR"); ok {
 		listernAddr := int32(rawListenAddr)
 		threeScale.ListenAddr = &listernAddr
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if logGRPC, ok, err := threeScaleValues.GetBool("PARAM_THREESCALE_LOG_GRPC"); ok {
 		threeScale.LogGRPC = &logGRPC
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if logJSON, ok, err := threeScaleValues.GetBool("PARAM_THREESCALE_LOG_JSON"); ok {
 		threeScale.LogJSON = &logJSON
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if logLevel, ok, err := threeScaleValues.GetString("PARAM_THREESCALE_LOG_LEVEL"); ok {
 		threeScale.LogLevel = logLevel
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	metrics := &v2.ThreeScaleMetricsConfig{}
@@ -173,13 +170,13 @@ func populateThreeScaleAddonConfig(in *v1.HelmValues, out *v2.MiscAddonsConfig) 
 		metrics.Port = &port
 		setMetrics = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if report, ok, err := threeScaleValues.GetBool("PARAM_THREESCALE_REPORT_METRICS"); ok {
 		metrics.Report = &report
 		setMetrics = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if setMetrics {
 		threeScale.Metrics = metrics
@@ -191,28 +188,28 @@ func populateThreeScaleAddonConfig(in *v1.HelmValues, out *v2.MiscAddonsConfig) 
 		system.CacheMaxSize = &cacheMaxSize
 		setSystem = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if rawCacheRefreshRetries, ok, err := threeScaleValues.GetInt64("PARAM_THREESCALE_CACHE_REFRESH_RETRIES"); ok {
 		cacheRefreshRetries := int32(rawCacheRefreshRetries)
 		system.CacheRefreshRetries = &cacheRefreshRetries
 		setSystem = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if rawCacheRefreshInterval, ok, err := threeScaleValues.GetInt64("PARAM_THREESCALE_CACHE_REFRESH_SECONDS"); ok {
 		cacheRefreshInterval := int32(rawCacheRefreshInterval)
 		system.CacheRefreshInterval = &cacheRefreshInterval
 		setSystem = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if rawCacheTTL, ok, err := threeScaleValues.GetInt64("PARAM_THREESCALE_CACHE_TTL_SECONDS"); ok {
 		cacheTTL := int32(rawCacheTTL)
 		system.CacheTTL = &cacheTTL
 		setSystem = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if setSystem {
 		threeScale.System = system
@@ -224,14 +221,14 @@ func populateThreeScaleAddonConfig(in *v1.HelmValues, out *v2.MiscAddonsConfig) 
 		client.AllowInsecureConnections = &allowInsecureConnections
 		setClient = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if rawTimeout, ok, err := threeScaleValues.GetInt64("PARAM_THREESCALE_CLIENT_TIMEOUT_SECONDS"); ok {
 		timeout := int32(rawTimeout)
 		client.Timeout = &timeout
 		setClient = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if setClient {
 		threeScale.Client = client
@@ -243,7 +240,7 @@ func populateThreeScaleAddonConfig(in *v1.HelmValues, out *v2.MiscAddonsConfig) 
 			MaxConnTimeout: &maxConnTimeout,
 		}
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	backend := &v2.ThreeScaleBackendConfig{}
@@ -252,24 +249,24 @@ func populateThreeScaleAddonConfig(in *v1.HelmValues, out *v2.MiscAddonsConfig) 
 		backend.EnableCache = &enableCache
 		setBackend = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if rawCacheFlushInterval, ok, err := threeScaleValues.GetInt64("PARAM_THREESCALE_BACKEND_CACHE_FLUSH_INTERVAL_SECONDS"); ok {
 		cacheFlushInterval := int32(rawCacheFlushInterval)
 		backend.CacheFlushInterval = &cacheFlushInterval
 		setBackend = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if policyFailClosed, ok, err := threeScaleValues.GetBool("PARAM_THREESCALE_BACKEND_CACHE_POLICY_FAIL_CLOSED"); ok {
 		backend.PolicyFailClosed = &policyFailClosed
 		setBackend = true
 	} else if err != nil {
-		return err
+		return false, err
 	}
 	if setBackend {
 		threeScale.Backend = backend
 	}
 
-	return nil
+	return true, nil
 }
