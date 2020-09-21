@@ -89,17 +89,18 @@ type MixerTelemetryAdaptersConfig struct {
 	// +optional
 	KubernetesEnv *bool `json:"kubernetesenv,omitempty"`
 	// Stdio enables and configures the stdio adapter.
-	// .Values.mixer.adapters.stdio.enabled, defaults to false (null)
 	// +optional
 	Stdio *MixerTelemetryStdioConfig `json:"stdio,omitempty"`
 }
 
 // MixerTelemetryStdioConfig configures the stdio adapter for mixer telemetry.
 type MixerTelemetryStdioConfig struct {
+	// .Values.mixer.adapters.stdio.enabled
+	Enablement `json:",inline"`
 	// OutputAsJSON if true.
 	// .Values.mixer.adapters.stdio.outputAsJson, defaults to false
 	// +optional
-	OutputAsJSON bool `json:"outputAsJSON,omitempty"`
+	OutputAsJSON *bool `json:"outputAsJSON,omitempty"`
 }
 
 

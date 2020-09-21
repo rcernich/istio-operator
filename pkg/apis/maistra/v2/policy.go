@@ -89,6 +89,3 @@ type RemotePolicyConfig struct {
 	// +optional
 	FailOpen *bool `json:"failOpen,omitempty"`
 }
-
-// IstiodPolicyConfig configures policy aspects of istiod
-type IstiodPolicyConfig struct{}

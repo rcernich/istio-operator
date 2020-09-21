@@ -104,16 +104,16 @@ func populateMixerTelemetryValues(in *v2.ControlPlaneSpec, istiod bool, values m
 				return err
 			}
 		}
-		if mixer.Adapters.Stdio == nil {
-			if err := setHelmBoolValue(telemetryAdaptersValues, "stdio.enabled", false); err != nil {
-				return err
+		if mixer.Adapters.Stdio != nil {
+			if mixer.Adapters.Stdio.Enabled != nil {
+				if err := setHelmBoolValue(telemetryAdaptersValues, "stdio.enabled", *mixer.Adapters.Stdio.Enabled); err != nil {
+					return err
+				}
 			}
-		} else {
-			if err := setHelmBoolValue(telemetryAdaptersValues, "stdio.enabled", true); err != nil {
-				return err
-			}
-			if err := setHelmBoolValue(telemetryAdaptersValues, "stdio.outputAsJson", mixer.Adapters.Stdio.OutputAsJSON); err != nil {
-				return err
+			if mixer.Adapters.Stdio.OutputAsJSON != nil {
+				if err := setHelmBoolValue(telemetryAdaptersValues, "stdio.outputAsJson", *mixer.Adapters.Stdio.OutputAsJSON); err != nil {
+					return err
+				}
 			}
 		}
 		if len(telemetryAdaptersValues) > 0 {
@@ -453,16 +453,22 @@ func populateMixerTelemetryConfig(in *v1.HelmValues, out *v2.MixerTelemetryConfi
 		} else if err != nil {
 			return false, err
 		}
-		if stdio, ok, err := telemetryAdaptersValues.GetBool("stdio.enabled"); ok && stdio {
-			adapters.Stdio = &v2.MixerTelemetryStdioConfig{}
-			if outputAsJSON, ok, err := telemetryAdaptersValues.GetBool("stdio.outputAsJson"); ok {
-				adapters.Stdio.OutputAsJSON = outputAsJSON
-			} else if err != nil {
-				return false, err
-			}
-			setAdapters = true
+		stdio := &v2.MixerTelemetryStdioConfig{}
+		setStdio := false
+		if enabled, ok, err := telemetryAdaptersValues.GetBool("stdio.enabled"); ok {
+			stdio.Enabled = &enabled
+			setStdio = true
 		} else if err != nil {
 			return false, err
+		}
+		if outputAsJSON, ok, err := telemetryAdaptersValues.GetBool("stdio.outputAsJson"); ok {
+			stdio.OutputAsJSON = &outputAsJSON
+		} else if err != nil {
+			return false, err
+		}
+		if setStdio {
+			adapters.Stdio = stdio
+			setAdapters = true
 		}
 		if setAdapters {
 			out.Adapters = adapters

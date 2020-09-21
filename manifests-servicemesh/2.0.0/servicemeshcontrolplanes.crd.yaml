@@ -3149,6 +3149,8 @@ spec:
                             type: boolean
                           stdio:
                             properties:
+                              enabled:
+                                type: boolean
                               outputAsJSON:
                                 type: boolean
                             type: object
@@ -6148,6 +6150,8 @@ spec:
                                 type: boolean
                               stdio:
                                 properties:
+                                  enabled:
+                                    type: boolean
                                   outputAsJSON:
                                     type: boolean
                                 type: object

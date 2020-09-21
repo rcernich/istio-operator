@@ -750,11 +750,6 @@ var telemetryTestCases = []conversionTestCase{
 				"telemetry": map[string]interface{}{
 					"enabled": true,
 				},
-				"adapters": map[string]interface{}{
-					"stdio": map[string]interface{}{
-						"enabled": false,
-					},
-				},
 			},
 			"telemetry": map[string]interface{}{
 				"implementation": "Mixer",
@@ -805,9 +800,6 @@ var telemetryTestCases = []conversionTestCase{
 						"enabled": true,
 					},
 					"useAdapterCRDs": false,
-					"stdio": map[string]interface{}{
-						"enabled": false,
-					},
 				},
 			},
 			"telemetry": map[string]interface{}{
@@ -1415,7 +1407,11 @@ var telemetryTestCases = []conversionTestCase{
 				Type: v2.TelemetryTypeMixer,
 				Mixer: &v2.MixerTelemetryConfig{
 					Adapters: &v2.MixerTelemetryAdaptersConfig{
-						Stdio: &v2.MixerTelemetryStdioConfig{},
+						Stdio: &v2.MixerTelemetryStdioConfig{
+							Enablement: v2.Enablement{
+								Enabled: &featureEnabled,
+							},
+						},
 					},
 				},
 			},
@@ -1429,7 +1425,6 @@ var telemetryTestCases = []conversionTestCase{
 				"adapters": map[string]interface{}{
 					"stdio": map[string]interface{}{
 						"enabled":      true,
-						"outputAsJson": false,
 					},
 				},
 			},
@@ -1466,7 +1461,10 @@ var telemetryTestCases = []conversionTestCase{
 				Mixer: &v2.MixerTelemetryConfig{
 					Adapters: &v2.MixerTelemetryAdaptersConfig{
 						Stdio: &v2.MixerTelemetryStdioConfig{
-							OutputAsJSON: featureEnabled,
+							Enablement: v2.Enablement{
+								Enabled: &featureEnabled,
+							},
+							OutputAsJSON: &featureEnabled,
 						},
 					},
 				},
@@ -1641,11 +1639,6 @@ var telemetryTestCases = []conversionTestCase{
 				"telemetry": map[string]interface{}{
 					"enabled": true,
 				},
-				"adapters": map[string]interface{}{
-					"stdio": map[string]interface{}{
-						"enabled": false,
-					},
-				},
 			},
 			"telemetry": map[string]interface{}{
 				"implementation": "Mixer",
@@ -1689,9 +1682,6 @@ var telemetryTestCases = []conversionTestCase{
 						"enabled": true,
 					},
 					"useAdapterCRDs": false,
-					"stdio": map[string]interface{}{
-						"enabled": false,
-					},
 				},
 			},
 			"telemetry": map[string]interface{}{
@@ -2203,7 +2193,11 @@ var telemetryTestCases = []conversionTestCase{
 				Type: v2.TelemetryTypeMixer,
 				Mixer: &v2.MixerTelemetryConfig{
 					Adapters: &v2.MixerTelemetryAdaptersConfig{
-						Stdio: &v2.MixerTelemetryStdioConfig{},
+						Stdio: &v2.MixerTelemetryStdioConfig{
+							Enablement: v2.Enablement{
+								Enabled: &featureEnabled,
+							},
+						},
 					},
 				},
 			},
@@ -2217,7 +2211,6 @@ var telemetryTestCases = []conversionTestCase{
 				"adapters": map[string]interface{}{
 					"stdio": map[string]interface{}{
 						"enabled":      true,
-						"outputAsJson": false,
 					},
 				},
 			},
@@ -2247,7 +2240,10 @@ var telemetryTestCases = []conversionTestCase{
 				Mixer: &v2.MixerTelemetryConfig{
 					Adapters: &v2.MixerTelemetryAdaptersConfig{
 						Stdio: &v2.MixerTelemetryStdioConfig{
-							OutputAsJSON: featureEnabled,
+							Enablement: v2.Enablement{
+								Enabled: &featureEnabled,
+							},
+							OutputAsJSON: &featureEnabled,
 						},
 					},
 				},
