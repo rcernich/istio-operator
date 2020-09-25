@@ -3,8 +3,12 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: istio-ingressgateway
+  name: {{ $gateway.name | default "istio-ingressgateway" }}
+{{- if or (not $gateway.namespace) (eq $gateway.name "istio-ingressgateway") }}
   namespace: {{ .Release.Namespace }}
+{{- else }}
+  namespace: {{ $gateway.namespace }}
+{{- end }}
   labels:
     app: {{ index .Values "gateways" "istio-ingressgateway" "labels" "istio" }}
     release: {{ .Release.Name }}

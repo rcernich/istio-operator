@@ -3,7 +3,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ $gateway.name | default "istio-ingressgateway" }}-sds
+
+{{- if or (not $gateway.namespace) (eq $gateway.name "istio-ingressgateway") }}
   namespace: {{ .Release.Namespace }}
+{{- else }}
+  namespace: {{ $gateway.namespace }}
+{{- end }}
   labels:
     maistra-version: 2.0.0
     release: {{ .Release.Name }}

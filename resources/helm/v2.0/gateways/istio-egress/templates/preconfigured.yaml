@@ -4,7 +4,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
   name: istio-multicluster-egressgateway
+
+{{- if or (not $gateway.namespace) (eq $gateway.name "istio-egressgateway") }}
   namespace: {{ .Release.Namespace }}
+{{- else }}
+  namespace: {{ $gateway.namespace }}
+{{- end }}
   labels:
     maistra-version: 2.0.0
 {{ $gateway.labels | toYaml | indent 4 }}
@@ -25,7 +30,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: istio-multicluster-egressgateway
-  namespace: {{ .Release.Namespace }} 
+
+{{- if or (not $gateway.namespace) (eq $gateway.name "istio-egressgateway") }}
+  namespace: {{ .Release.Namespace }}
+{{- else }}
+  namespace: {{ $gateway.namespace }}
+{{- end }}
   labels:
     maistra-version: 2.0.0
 {{ $gateway.labels | toYaml | indent 4 }}
@@ -51,7 +61,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
   name: istio-multicluster-egressgateway
+
+{{- if or (not $gateway.namespace) (eq $gateway.name "istio-egressgateway") }}
   namespace: {{ .Release.Namespace }}
+{{- else }}
+  namespace: {{ $gateway.namespace }}
+{{- end }}
   labels:
     maistra-version: 2.0.0
 {{ $gateway.labels | toYaml | indent 4 }}
@@ -72,7 +87,12 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: istio-multicluster-egressgateway
+
+{{- if or (not $gateway.namespace) (eq $gateway.name "istio-egressgateway") }}
   namespace: {{ .Release.Namespace }}
+{{- else }}
+  namespace: {{ $gateway.namespace }}
+{{- end }}
   labels:
     maistra-version: 2.0.0
 {{ $gateway.labels | toYaml | indent 4 }}

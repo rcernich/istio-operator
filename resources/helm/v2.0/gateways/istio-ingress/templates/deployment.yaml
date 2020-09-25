@@ -3,7 +3,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $gateway.name | default "istio-ingressgateway" }}
+
+{{- if or (not $gateway.namespace) (eq $gateway.name "istio-ingressgateway") }}
   namespace: {{ .Release.Namespace }}
+{{- else }}
+  namespace: {{ $gateway.namespace }}
+{{- end }}
   labels:
     maistra-version: 2.0.0
 {{ $gateway.labels | toYaml | indent 4 }}

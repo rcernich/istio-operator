@@ -210,6 +210,29 @@ function patchGateways() {
 \1  containerPort: {{ $val.targetPort | default $val.port }}/' ${HELM_DIR}/gateways/istio-ingress/templates/deployment.yaml
   sed_wrap -i -e 's/\(^ *\)- containerPort: {{ $val.targetPort | default $val.port }}/\1- name: {{ $val.name }}\
 \1  containerPort: {{ $val.targetPort | default $val.port }}/' ${HELM_DIR}/gateways/istio-egress/templates/deployment.yaml
+
+  # install in specified namespace
+  for file in $(find ${HELM_DIR}/gateways/istio-ingress/templates -type f -name "*.yaml" ! -name "meshexpansion.yaml"); do
+    sed_wrap -i -e 's/^\( *\)namespace:.*/\
+{{- if or (not $gateway.namespace) (eq $gateway.name "istio-ingressgateway") }}\
+\1namespace: {{ .Release.Namespace }}\
+{{- else }}\
+\1namespace: {{ $gateway.namespace }}\
+{{- end }}/' $file
+  done
+  for file in $(find ${HELM_DIR}/gateways/istio-egress/templates -type f -name "*.yaml"); do
+    sed_wrap -i -e 's/^\( *\)namespace:.*/\
+{{- if or (not $gateway.namespace) (eq $gateway.name "istio-egressgateway") }}\
+\1namespace: {{ .Release.Namespace }}\
+{{- else }}\
+\1namespace: {{ $gateway.namespace }}\
+{{- end }}/' $file
+  done
+  sed_wrap -i -e '1 {
+    i \{\{ $gateway := index .Values "gateways" "istio-ingressgateway" \}\}\
+\{\{- if and .Values.global.meshExpansion.enabled (eq $gateway.name "istio-ingressgateway") \}\}
+    d
+    }' ${HELM_DIR}/gateways/istio-ingress/templates/meshexpansion.yaml
 }
 
 function patchSidecarInjector() {
