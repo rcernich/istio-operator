@@ -296,7 +296,7 @@ func (r *controlPlaneInstanceReconciler) Reconcile(ctx context.Context) (result 
 	reconciliationMessage = "Pruning obsolete resources"
 	r.EventRecorder.Event(r.Instance, corev1.EventTypeNormal, eventReasonPruning, reconciliationMessage)
 	log.Info(reconciliationMessage)
-	err = r.prune(ctx, r.meshGeneration)
+	err = r.prune(ctx, controlPlanePrunerConfig, r.Instance.Namespace, r.meshGeneration)
 	if err != nil {
 		reconciliationReason = status.ConditionReasonReconcileError
 		reconciliationMessage = "Error pruning obsolete resources"

@@ -23,79 +23,100 @@ type pruneConfig struct {
 	supportsDeleteCollection bool
 }
 
+type prunerConfig struct {
+	namespacedResources    map[schema.GroupVersionKind]pruneConfig
+	nonNamespacedResources map[schema.GroupVersionKind]pruneConfig
+}
+
 var (
-	// XXX: move this into a ConfigMap so users can override things if they add new types in customized charts
-	// ordered by which types should be deleted, first to last
-	namespacedResources = map[schema.GroupVersionKind]pruneConfig{
-		gvk("kiali.io", "v1alpha1", "Kiali"):                         {supportsDeleteCollection: true},
-		gvk("autoscaling", "v2beta1", "HorizontalPodAutoscaler"):     {supportsDeleteCollection: true},
-		gvk("policy", "v1beta1", "PodDisruptionBudget"):              {supportsDeleteCollection: true},
-		gvk("route.openshift.io", "v1", "Route"):                     {supportsDeleteCollection: true},
-		gvk("apps", "v1", "Deployment"):                              {supportsDeleteCollection: true},
-		gvk("apps", "v1", "DaemonSet"):                               {supportsDeleteCollection: true},
-		gvk("apps", "v1", "StatefulSet"):                             {supportsDeleteCollection: true},
-		gvk("extensions", "v1beta1", "Ingress"):                      {supportsDeleteCollection: true},
-		gvk("", "v1", "Service"):                                     {supportsDeleteCollection: false},
-		gvk("", "v1", "Endpoints"):                                   {supportsDeleteCollection: true},
-		gvk("", "v1", "ConfigMap"):                                   {supportsDeleteCollection: true},
-		gvk("", "v1", "PersistentVolumeClaim"):                       {supportsDeleteCollection: true},
-		gvk("", "v1", "Pod"):                                         {supportsDeleteCollection: true},
-		gvk("", "v1", "Secret"):                                      {supportsDeleteCollection: true},
-		gvk("", "v1", "ServiceAccount"):                              {supportsDeleteCollection: true},
-		gvk("networking.k8s.io", "v1", "NetworkPolicy"):              {supportsDeleteCollection: true},
-		gvk("rbac.authorization.k8s.io", "v1beta1", "RoleBinding"):   {supportsDeleteCollection: true},
-		gvk("rbac.authorization.k8s.io", "v1", "RoleBinding"):        {supportsDeleteCollection: true},
-		gvk("rbac.authorization.k8s.io", "v1beta1", "Role"):          {supportsDeleteCollection: true},
-		gvk("rbac.authorization.k8s.io", "v1", "Role"):               {supportsDeleteCollection: true},
-		gvk("authentication.istio.io", "v1alpha1", "Policy"):         {supportsDeleteCollection: true},
-		gvk("config.istio.io", "v1alpha2", "adapter"):                {supportsDeleteCollection: true},
-		gvk("config.istio.io", "v1alpha2", "attributemanifest"):      {supportsDeleteCollection: true},
-		gvk("config.istio.io", "v1alpha2", "handler"):                {supportsDeleteCollection: true},
-		gvk("config.istio.io", "v1alpha2", "kubernetes"):             {supportsDeleteCollection: true},
-		gvk("config.istio.io", "v1alpha2", "logentry"):               {supportsDeleteCollection: true},
-		gvk("config.istio.io", "v1alpha2", "metric"):                 {supportsDeleteCollection: true},
-		gvk("config.istio.io", "v1alpha2", "rule"):                   {supportsDeleteCollection: true},
-		gvk("config.istio.io", "v1alpha2", "template"):               {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1alpha3", "DestinationRule"):    {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1beta1", "DestinationRule"):     {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1alpha3", "EnvoyFilter"):        {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1alpha3", "Gateway"):            {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1beta1", "Gateway"):             {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1alpha3", "ServiceEntry"):       {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1beta1", "ServiceEntry"):        {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1alpha3", "Sidecar"):            {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1beta1", "Sidecar"):             {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1alpha3", "VirtualService"):     {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1beta1", "VirtualService"):      {supportsDeleteCollection: true},
-		gvk("jaegertracing.io", "v1", "Jaeger"):                      {supportsDeleteCollection: true},
-		gvk("authentication.maistra.io", "v1", "ServiceMeshPolicy"):  {supportsDeleteCollection: true},
-		gvk("security.istio.io", "v1beta1", "AuthorizationPolicy"):   {supportsDeleteCollection: true},
-		gvk("security.istio.io", "v1beta1", "PeerAuthentication"):    {supportsDeleteCollection: true},
-		gvk("security.istio.io", "v1beta1", "RequestAuthentication"): {supportsDeleteCollection: true},
-		gvk("networking.istio.io", "v1alpha3", "WorkloadEntry"):      {supportsDeleteCollection: true},
+	controlPlanePrunerConfig = prunerConfig{
+		// XXX: move this into a ConfigMap so users can override things if they add new types in customized charts
+		// ordered by which types should be deleted, first to last
+		namespacedResources: map[schema.GroupVersionKind]pruneConfig{
+			gvk("kiali.io", "v1alpha1", "Kiali"):                         {supportsDeleteCollection: true},
+			gvk("autoscaling", "v2beta1", "HorizontalPodAutoscaler"):     {supportsDeleteCollection: true},
+			gvk("policy", "v1beta1", "PodDisruptionBudget"):              {supportsDeleteCollection: true},
+			gvk("route.openshift.io", "v1", "Route"):                     {supportsDeleteCollection: true},
+			gvk("apps", "v1", "Deployment"):                              {supportsDeleteCollection: true},
+			gvk("apps", "v1", "DaemonSet"):                               {supportsDeleteCollection: true},
+			gvk("apps", "v1", "StatefulSet"):                             {supportsDeleteCollection: true},
+			gvk("extensions", "v1beta1", "Ingress"):                      {supportsDeleteCollection: true},
+			gvk("", "v1", "Service"):                                     {supportsDeleteCollection: false},
+			gvk("", "v1", "Endpoints"):                                   {supportsDeleteCollection: true},
+			gvk("", "v1", "ConfigMap"):                                   {supportsDeleteCollection: true},
+			gvk("", "v1", "PersistentVolumeClaim"):                       {supportsDeleteCollection: true},
+			gvk("", "v1", "Pod"):                                         {supportsDeleteCollection: true},
+			gvk("", "v1", "Secret"):                                      {supportsDeleteCollection: true},
+			gvk("", "v1", "ServiceAccount"):                              {supportsDeleteCollection: true},
+			gvk("networking.k8s.io", "v1", "NetworkPolicy"):              {supportsDeleteCollection: true},
+			gvk("rbac.authorization.k8s.io", "v1", "RoleBinding"):        {supportsDeleteCollection: true},
+			gvk("rbac.authorization.k8s.io", "v1", "Role"):               {supportsDeleteCollection: true},
+			gvk("authentication.istio.io", "v1alpha1", "Policy"):         {supportsDeleteCollection: true},
+			gvk("config.istio.io", "v1alpha2", "adapter"):                {supportsDeleteCollection: true},
+			gvk("config.istio.io", "v1alpha2", "attributemanifest"):      {supportsDeleteCollection: true},
+			gvk("config.istio.io", "v1alpha2", "handler"):                {supportsDeleteCollection: true},
+			gvk("config.istio.io", "v1alpha2", "kubernetes"):             {supportsDeleteCollection: true},
+			gvk("config.istio.io", "v1alpha2", "logentry"):               {supportsDeleteCollection: true},
+			gvk("config.istio.io", "v1alpha2", "metric"):                 {supportsDeleteCollection: true},
+			gvk("config.istio.io", "v1alpha2", "rule"):                   {supportsDeleteCollection: true},
+			gvk("config.istio.io", "v1alpha2", "template"):               {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1alpha3", "DestinationRule"):    {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1beta1", "DestinationRule"):     {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1alpha3", "EnvoyFilter"):        {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1alpha3", "Gateway"):            {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1beta1", "Gateway"):             {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1alpha3", "ServiceEntry"):       {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1beta1", "ServiceEntry"):        {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1alpha3", "Sidecar"):            {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1beta1", "Sidecar"):             {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1alpha3", "VirtualService"):     {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1beta1", "VirtualService"):      {supportsDeleteCollection: true},
+			gvk("jaegertracing.io", "v1", "Jaeger"):                      {supportsDeleteCollection: true},
+			gvk("authentication.maistra.io", "v1", "ServiceMeshPolicy"):  {supportsDeleteCollection: true},
+			gvk("security.istio.io", "v1beta1", "AuthorizationPolicy"):   {supportsDeleteCollection: true},
+			gvk("security.istio.io", "v1beta1", "PeerAuthentication"):    {supportsDeleteCollection: true},
+			gvk("security.istio.io", "v1beta1", "RequestAuthentication"): {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1alpha3", "WorkloadEntry"):      {supportsDeleteCollection: true},
+		},
+
+		// ordered by which types should be deleted, first to last
+		nonNamespacedResources: map[schema.GroupVersionKind]pruneConfig{
+			gvk("admissionregistration.k8s.io", "v1beta1", "MutatingWebhookConfiguration"):   {supportsDeleteCollection: true},
+			gvk("admissionregistration.k8s.io", "v1beta1", "ValidatingWebhookConfiguration"): {supportsDeleteCollection: true},
+			gvk("certmanager.k8s.io", "v1alpha1", "ClusterIssuer"):                           {supportsDeleteCollection: true},
+			gvk("rbac.authorization.k8s.io", "v1", "ClusterRole"):                            {supportsDeleteCollection: true},
+			gvk("rbac.authorization.k8s.io", "v1", "ClusterRoleBinding"):                     {supportsDeleteCollection: true},
+		},
 	}
 
-	// ordered by which types should be deleted, first to last
-	nonNamespacedResources = map[schema.GroupVersionKind]pruneConfig{
-		gvk("admissionregistration.k8s.io", "v1beta1", "MutatingWebhookConfiguration"):   {supportsDeleteCollection: true},
-		gvk("admissionregistration.k8s.io", "v1beta1", "ValidatingWebhookConfiguration"): {supportsDeleteCollection: true},
-		gvk("certmanager.k8s.io", "v1alpha1", "ClusterIssuer"):                           {supportsDeleteCollection: true},
-		gvk("rbac.authorization.k8s.io", "v1", "ClusterRole"):                            {supportsDeleteCollection: true},
-		gvk("rbac.authorization.k8s.io", "v1", "ClusterRoleBinding"):                     {supportsDeleteCollection: true},
+	gatewayPrunerConfig = prunerConfig{
+		namespacedResources: map[schema.GroupVersionKind]pruneConfig{
+			gvk("networking.istio.io", "v1alpha3", "DestinationRule"):    {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1beta1", "DestinationRule"):     {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1alpha3", "EnvoyFilter"):        {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1alpha3", "Gateway"):            {supportsDeleteCollection: true},
+			gvk("networking.istio.io", "v1beta1", "Gateway"):             {supportsDeleteCollection: true},
+			gvk("autoscaling", "v2beta1", "HorizontalPodAutoscaler"):     {supportsDeleteCollection: true},
+			gvk("policy", "v1beta1", "PodDisruptionBudget"):              {supportsDeleteCollection: true},
+			gvk("apps", "v1", "Deployment"):                              {supportsDeleteCollection: true},
+			gvk("", "v1", "ServiceAccount"):                              {supportsDeleteCollection: true},
+			gvk("rbac.authorization.k8s.io", "v1", "Role"):               {supportsDeleteCollection: true},
+			gvk("rbac.authorization.k8s.io", "v1", "RoleBinding"):        {supportsDeleteCollection: true},
+			gvk("extensions", "v1beta1", "Ingress"):                      {supportsDeleteCollection: true},
+			gvk("route.openshift.io", "v1", "Route"):                     {supportsDeleteCollection: true},
+			gvk("", "v1", "Service"):                                     {supportsDeleteCollection: false},
+			gvk("networking.k8s.io", "v1", "NetworkPolicy"):              {supportsDeleteCollection: true},
+		},
 	}
 )
 
-func (r *controlPlaneInstanceReconciler) prune(ctx context.Context, generation string) error {
+func (r *controlPlaneInstanceReconciler) prune(ctx context.Context, config prunerConfig, namespace, generation string) error {
 	allErrors := []error{}
-	err := r.pruneResources(ctx, namespacedResources, generation, r.Instance.Namespace)
+	err := r.pruneResources(ctx, config.namespacedResources, generation, namespace)
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}
-	err = r.pruneResources(ctx, namespacedResources, generation, r.OperatorNamespace)
-	if err != nil {
-		allErrors = append(allErrors, err)
-	}
-	err = r.pruneResources(ctx, nonNamespacedResources, generation, "")
+	err = r.pruneResources(ctx, config.nonNamespacedResources, generation, "")
 	if err != nil {
 		allErrors = append(allErrors, err)
 	}

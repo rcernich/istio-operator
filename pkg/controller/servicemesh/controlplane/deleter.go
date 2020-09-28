@@ -40,7 +40,7 @@ func (r *controlPlaneInstanceReconciler) Delete(ctx context.Context) error {
 	log.Info("Deleting ServiceMeshControlPlane")
 
 	r.EventRecorder.Event(r.Instance, corev1.EventTypeNormal, eventReasonDeleting, "Deleting service mesh")
-	err := r.prune(ctx, "")
+	err := r.prune(ctx, controlPlanePrunerConfig, r.Instance.Namespace, "")
 	if err == nil {
 		r.EventRecorder.Event(r.Instance, corev1.EventTypeNormal, eventReasonDeleted, "Successfully deleted service mesh resources")
 	} else {
